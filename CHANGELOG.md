@@ -2,11 +2,13 @@
 
 ## 1.2.0 - 2026-05-04
 
+- Changed parsing strategy so universal air segment extraction runs before source-specific parsing.
 - Added configuration default merging so older live `config/settings.php` files do not disable new feature flags.
 - Improved flexible GDS fallback parsing for merged airline/flight formats such as `3U3902 L 20JUN 6 KTMTFU DK1`.
 - Fixed low-confidence Amadeus/Travelport detections blocking the flexible GDS fallback.
 - Added Sichuan Airlines, Chengdu Tianfu, and a local `3U` airline badge.
 - Reworked share/display controls into grouped sections.
+- Removed browser-native fieldset rendering from the control panel.
 - Added auto-refresh of the itinerary card when share/display settings are changed after conversion.
 
 ## 1.0.0 - 2026-05-01

@@ -17,6 +17,11 @@ final class PnrParserFactory
 
     public static function parse(string $raw): ParseResult
     {
+        $genericResult = (new GenericAirSegmentParser())->parse($raw);
+        if ($genericResult->isRenderable()) {
+            return $genericResult;
+        }
+
         $bestParser = null;
         $bestScore = -1;
 
@@ -29,11 +34,9 @@ final class PnrParserFactory
         }
 
         if ($bestParser === null || $bestScore < 20) {
-            $genericResult = (new GenericAirSegmentParser())->parse($raw);
             return count($genericResult->segments) > 0 ? $genericResult : (new UnknownParser())->parse($raw);
         }
 
-        $genericResult = (new GenericAirSegmentParser())->parse($raw);
         $result = $bestParser->parse($raw);
         if (
             count($genericResult->segments) > 0

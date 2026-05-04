@@ -114,8 +114,11 @@ $formatTime = static function (string $time, bool $use24): string {
             <label class="field-label" for="pnr_text">Raw PNR / itinerary text</label>
             <textarea id="pnr_text" name="pnr_text" rows="16" spellcheck="false" placeholder="Paste Amadeus, Travelport/Galileo/Smartpoint/Worldspan, or Sabre itinerary text here."><?= Html::e($rawInput) ?></textarea>
 
-            <fieldset class="settings-panel">
-                <legend>Step 2: Share and display</legend>
+            <section class="settings-panel" aria-labelledby="settings-title">
+                <div class="settings-title">
+                    <p class="eyebrow">Step 2</p>
+                    <h3 id="settings-title">Share and display</h3>
+                </div>
                 <?php
                 $optionGroups = [
                     'Branding' => [
@@ -187,7 +190,7 @@ $formatTime = static function (string $time, bool $use24): string {
                         <?php endforeach; ?>
                     </div>
                 </div>
-            </fieldset>
+            </section>
 
             <div class="actions">
                 <button class="button button-primary" type="submit">Convert</button>

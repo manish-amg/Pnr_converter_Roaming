@@ -53,7 +53,7 @@ final class GenericAirSegmentParser extends BaseParser
         }
 
         return new ParseResult(
-            'Generic GDS air segment style',
+            $this->sourceLabel($raw),
             $confidence,
             $score,
             $this->extractPassengers($lines),
@@ -148,5 +148,20 @@ final class GenericAirSegmentParser extends BaseParser
     private function looksLikeAirSegment(string $line): bool
     {
         return preg_match('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}[A-Z]?\b/i', $line) === 1;
+    }
+
+    private function sourceLabel(string $raw): string
+    {
+        if (preg_match('/\bRP\/[A-Z0-9]+\/|^\s*---\s*MSC\s*---/mi', $raw) === 1) {
+            return 'Amadeus / universal GDS style';
+        }
+        if (preg_match('/\b(?:GALILEO|SMARTPOINT|WORLDSPAN|TRAVELPORT|RLOC|VENDOR LOCATOR)\b/i', $raw) === 1) {
+            return 'Travelport Galileo / Smartpoint / Worldspan style';
+        }
+        if (preg_match('/\b(?:SABRE|1S|RECEIVED FROM|TKT\/TIME LIMIT)\b/i', $raw) === 1) {
+            return 'Sabre / universal GDS style';
+        }
+
+        return 'Universal GDS air segment style';
     }
 }

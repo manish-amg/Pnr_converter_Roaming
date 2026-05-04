@@ -133,7 +133,14 @@ input:focus-visible {
   background: #fbfdfd;
 }
 
-.settings-panel legend { padding: 0 6px; }
+.settings-title {
+  grid-column: 1 / -1;
+}
+
+.settings-title h3 {
+  color: var(--ink);
+  font-size: 18px;
+}
 
 .option-group {
   display: grid;

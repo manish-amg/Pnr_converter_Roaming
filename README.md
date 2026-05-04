@@ -34,6 +34,8 @@ pnr-converter/
   data/
     airlines.php
     airports.php
+  docs/
+    SYSTEM-REBUILD-NOTES.md
   tests/
     fixtures/
     run-tests.php
