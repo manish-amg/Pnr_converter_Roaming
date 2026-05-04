@@ -16,7 +16,7 @@ final class AmadeusParser extends BaseParser
         if (preg_match('/\bNM\d+[A-Z]+\/[A-Z]+/i', $raw) === 1) {
             $score += 25;
         }
-        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}\s+(?:[1-7]\*?)?[A-Z]{6}\s+[A-Z]{2}\d?/mi', $raw) === 1) {
+        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}\s+(?:[1-7]\*?\s*)?[A-Z]{6}\s+[A-Z]{2}\d?/mi', $raw) === 1) {
             $score += 35;
         }
         if (preg_match('/\bAPIS|FA PAX|TK OK|SSR DOCS\b/i', $raw) === 1) {
@@ -72,7 +72,7 @@ final class AmadeusParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
-        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?\s*)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;
         }

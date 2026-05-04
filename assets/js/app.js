@@ -9,6 +9,8 @@
   const copyTextBtn = byId('copyTextBtn');
   const copyImageBtn = byId('copyImageBtn');
   const resetBtn = byId('resetBtn');
+  const form = document.querySelector('form');
+  const settingsPanel = document.querySelector('.settings-panel');
 
   if (shareModeBtn) {
     shareModeBtn.addEventListener('click', () => {
@@ -30,6 +32,20 @@
     resetBtn.addEventListener('click', () => {
       const textarea = byId('pnr_text');
       if (textarea) textarea.value = '';
+    });
+  }
+
+  if (form && settingsPanel && card) {
+    let refreshTimer;
+    settingsPanel.addEventListener('change', () => {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.submit();
+        }
+      }, 120);
     });
   }
 

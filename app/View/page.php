@@ -114,35 +114,48 @@ $formatTime = static function (string $time, bool $use24): string {
             <label class="field-label" for="pnr_text">Raw PNR / itinerary text</label>
             <textarea id="pnr_text" name="pnr_text" rows="16" spellcheck="false" placeholder="Paste Amadeus, Travelport/Galileo/Smartpoint/Worldspan, or Sabre itinerary text here."><?= Html::e($rawInput) ?></textarea>
 
-            <fieldset class="settings-grid settings-grid-rich">
-                <legend>Step 2: Share options</legend>
+            <fieldset class="settings-panel">
+                <legend>Step 2: Share and display</legend>
                 <?php
-                $optionLabels = [
-                    'show_agency_header' => 'Show agency header',
-                    'show_agency_footer' => 'Show footer/contact',
-                    'show_disclaimer' => 'Show disclaimer',
-                    'show_airline_name' => 'Show airline name',
-                    'show_airline_logo' => 'Show airline logo',
-                    'show_transit_time' => 'Transit time',
-                    'use_12_hour_clock' => '12 hour clock',
-                    'show_operated_by' => 'Show operated by',
-                    'show_aircraft' => 'Aircraft',
-                    'show_booking_class' => 'Show booking class',
-                    'show_cabin' => 'Show cabin',
-                    'show_booking_reference' => 'Show booking reference',
-                    'show_ticket_numbers' => 'Show ticket numbers',
-                    'show_seat_numbers' => 'Show seat numbers',
+                $optionGroups = [
+                    'Branding' => [
+                        'show_agency_header' => 'Agency header',
+                        'show_agency_footer' => 'Footer/contact',
+                        'show_disclaimer' => 'Disclaimer',
+                    ],
+                    'Flight Details' => [
+                        'show_airline_name' => 'Airline name',
+                        'show_airline_logo' => 'Airline logo',
+                        'show_transit_time' => 'Transit time',
+                        'use_12_hour_clock' => '12 hour clock',
+                        'show_operated_by' => 'Operated by',
+                        'show_aircraft' => 'Aircraft',
+                    ],
+                    'Passenger Safe Data' => [
+                        'show_booking_class' => 'Booking class',
+                        'show_cabin' => 'Cabin',
+                        'show_booking_reference' => 'Booking reference',
+                        'show_ticket_numbers' => 'Ticket numbers',
+                        'show_seat_numbers' => 'Seat numbers',
+                    ],
                 ];
-                foreach ($optionLabels as $key => $label):
+                foreach ($optionGroups as $groupTitle => $optionLabels):
                     ?>
-                    <label class="check">
-                        <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                        <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                        <span><?= Html::e($label) ?></span>
-                    </label>
+                    <div class="option-group">
+                        <h3><?= Html::e($groupTitle) ?></h3>
+                        <div class="option-list">
+                            <?php foreach ($optionLabels as $key => $label): ?>
+                                <label class="check">
+                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                    <span><?= Html::e($label) ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 <?php endforeach; ?>
 
-                <div class="control-group control-wide option-section">
+                <div class="option-group">
                     <span class="control-title">Show distance</span>
                     <div class="segmented" role="radiogroup" aria-label="Show distance">
                         <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Miles'] as $value => $label): ?>
@@ -154,7 +167,7 @@ $formatTime = static function (string $time, bool $use24): string {
                     </div>
                 </div>
 
-                <div class="control-group control-wide option-section">
+                <div class="option-group option-group-wide">
                     <span class="control-title">Results format</span>
                     <div class="format-options" role="radiogroup" aria-label="Results format">
                         <?php

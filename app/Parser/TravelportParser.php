@@ -16,7 +16,7 @@ final class TravelportParser extends BaseParser
         if (preg_match('/\b(?:VENDOR LOCATOR|RECORD LOCATOR|RLOC)\b/i', $raw) === 1) {
             $score += 20;
         }
-        if (preg_match('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}/mi', $raw) === 1) {
+        if (preg_match('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}(?:[A-Z]|\s+[A-Z])?\s+\d{1,2}[A-Z]{3}/mi', $raw) === 1) {
             $score += 35;
         }
         if (preg_match('/^\s*\d+\s*\.\s*[A-Z0-9]{2}\s+\d{1,4}(?:\s+[A-Z])?\s+\d{1,2}[A-Z]{3}\s+[A-Z]{6}\s+[A-Z]{2}\d?\s+\d{3,4}\s+#?\d{3,4}/mi', $raw) === 1) {

@@ -11,6 +11,7 @@ Roaming-hosted web tool for converting pasted GDS itinerary text into a clean pa
 - Includes converter-style display controls for transit time, distance, 12-hour clock, operated-by notes, aircraft, airline logos, and multiple results formats.
 - Lets agencies hide the itinerary header, footer/contact block, and disclaimer when they need a neutral passenger copy.
 - Uses dedicated Amadeus, Travelport/Galileo/Smartpoint/Worldspan, and Sabre parsers first, then a flexible generic GDS air-segment fallback for unfamiliar but standard-looking segment lines.
+- Merges live `config/settings.php` with `config/settings.example.php`, so new feature defaults still work after code-only cPanel updates.
 - Runs as plain PHP 8.x files on normal cPanel hosting. No database, Composer, Node build, Docker, or external CDN is required.
 
 ## File Tree
@@ -111,7 +112,7 @@ Recommended flow:
 Local code -> GitHub private repo -> cPanel Git pull or ZIP upload
 ```
 
-Keep live `config/settings.php` and custom uploaded logos out of Git unless you intentionally want them versioned.
+Keep live `config/settings.php` out of Git. Custom uploaded airline logos can be committed when they are generic assets, or kept only on cPanel when they are agency-specific.
 
 ## Security Checklist
 

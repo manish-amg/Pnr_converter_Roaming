@@ -9,7 +9,7 @@ final class GenericAirSegmentParser extends BaseParser
 {
     public function detect(string $raw): int
     {
-        $matches = preg_match_all('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}[A-Z]?(?:\s+[A-Z])?\s+\d{1,2}[A-Z]{3}(?:\d{2,4})?\s+(?:[1-7]\*?)?[A-Z]{3}\s*[A-Z]{3}\s+[A-Z]{2}\d?\s+\d{3,4}\s+#?\d{3,4}/mi', $raw);
+        $matches = preg_match_all('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}[A-Z]?(?:\s+[A-Z])?\s+\d{1,2}[A-Z]{3}(?:\d{2,4})?\s+(?:[1-7]\*?\s*)?[A-Z]{3}\s*[A-Z]{3}\s+[A-Z]{2}\d?\s+\d{3,4}\s+#?\d{3,4}/mi', $raw);
         if ($matches === false || $matches === 0) {
             return 0;
         }
@@ -65,7 +65,7 @@ final class GenericAirSegmentParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
-        $pattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])?(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        $pattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])?(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?\s*)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?(.*)$/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;
         }
@@ -93,9 +93,23 @@ final class GenericAirSegmentParser extends BaseParser
             $this->extractOperatedBy($line),
             $ticket,
             $seat,
-            $this->extractAircraft($line),
+            $this->aircraftFromTail($m[12] ?? '') ?: $this->extractAircraft($line),
             $line
         );
+    }
+
+    private function aircraftFromTail(string $tail): ?string
+    {
+        $tail = strtoupper(trim($tail));
+        if ($tail === '') {
+            return null;
+        }
+
+        if (preg_match('/\b([A-Z0-9]{3})\b(?:\s+[A-Z])?$/', $tail, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
     }
 
     private function arrivalDate(string $departureDate, string $arrivalTimeRaw, ?string $explicitArrivalDate): ?string

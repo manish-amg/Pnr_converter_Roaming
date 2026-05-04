@@ -15,5 +15,6 @@ return [
     'MEL' => ['name' => 'Melbourne Airport', 'city' => 'Melbourne', 'country' => 'Australia', 'lat' => -37.6690, 'lon' => 144.8410],
     'HKG' => ['name' => 'Hong Kong International Airport', 'city' => 'Hong Kong', 'country' => 'Hong Kong', 'lat' => 22.3080, 'lon' => 113.9185],
     'SYD' => ['name' => 'Sydney Kingsford Smith Airport', 'city' => 'Sydney', 'country' => 'Australia', 'lat' => -33.9399, 'lon' => 151.1753],
+    'TFU' => ['name' => 'Chengdu Tianfu International Airport', 'city' => 'Chengdu', 'country' => 'China', 'lat' => 30.3190, 'lon' => 104.4450],
     'CMB' => ['name' => 'Bandaranaike International Airport', 'city' => 'Colombo', 'country' => 'Sri Lanka', 'lat' => 7.1808, 'lon' => 79.8841],
 ];
