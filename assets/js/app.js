@@ -51,9 +51,11 @@
   }
 
   if (form && presetButtons.length) {
+    updatePresetState();
     presetButtons.forEach((button) => {
       button.addEventListener('click', () => {
         applyPreset(button.getAttribute('data-preset'));
+        updatePresetState(button.getAttribute('data-preset'));
         if (card) {
           if (typeof form.requestSubmit === 'function') {
             form.requestSubmit();
@@ -149,6 +151,14 @@
     setChecked('show_agency_footer', true);
     setChecked('show_disclaimer', true);
     setRadio('result_format', 'detailed');
+  }
+
+  function updatePresetState(activePreset) {
+    presetButtons.forEach((button) => {
+      const isActive = activePreset && button.getAttribute('data-preset') === activePreset;
+      button.classList.toggle('is-active', Boolean(isActive));
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
   }
 
   async function renderCardToPng(element) {

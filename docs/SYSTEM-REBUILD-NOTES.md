@@ -45,6 +45,7 @@ This prevents a weak source-family guess from blocking valid segments.
 ## UI Principles
 
 - The first screen is the tool, not a landing page.
+- The v3 interface should feel like a finished workbench: strong primary action, hover states, modern toggles, mobile-first stacking, and visible deployment build label.
 - Keep controls grouped by user intent:
   - Branding
   - Flight Details
@@ -55,6 +56,7 @@ This prevents a weak source-family guess from blocking valid segments.
 - Clean Share View must hide input and admin controls.
 - Header, footer/contact, and disclaimer must be independently toggleable.
 - Presets should cover common workflows: Roaming Branded, Neutral, WhatsApp.
+- Unknown airline metadata must not break the UI. Show the airline code badge and a clear code-based name fallback.
 
 ## Deployment Principles
 

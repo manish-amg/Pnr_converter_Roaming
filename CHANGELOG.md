@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0 - 2026-05-04
+
+- Revamped the UI into a v3 agency-ready workbench with stronger spacing, mobile layout, hover states, sticky desktop actions, modern toggles, parser summary cards, and clearer privacy cues.
+- Added Roaming, Neutral, and WhatsApp preset cards for faster agency/client sharing workflows.
+- Added broader common airline metadata while preserving universal parsing for any valid airline code.
+- Added an unknown-airline parser fixture so the generic fallback is tested against codes that are not in local metadata.
+- Added cache-busted local CSS/JS/logo links and a visible build label so live cPanel deployments are easier to confirm.
+
 ## 1.2.0 - 2026-05-04
 
 - Changed parsing strategy so universal air segment extraction runs before source-specific parsing.

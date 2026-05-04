@@ -45,7 +45,8 @@ For each code update:
 1. Pull the latest code on cPanel, or upload a new ZIP from GitHub.
 2. Do not overwrite live `config/settings.php`.
 3. Built-in airline logos are added from Git without deleting cPanel-only custom logos in `assets/images/airlines/`.
-4. Test one Amadeus, one Travelport/Galileo/Smartpoint, and one Sabre sample.
+4. Confirm the page header shows the newest build label, for example `Build 3.0.0`.
+5. Test one Amadeus, one Travelport/Galileo/Smartpoint, one Sabre sample, and one generic airline-code sample.
 
 ## Important
 

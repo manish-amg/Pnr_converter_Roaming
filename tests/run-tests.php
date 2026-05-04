@@ -15,6 +15,7 @@ $cases = [
     'travelport-cx-ktm-hkg-syd.txt' => ['segments' => 2, 'locator' => null],
     'generic-3u-ktm-tfu-syd.txt' => ['segments' => 2, 'locator' => null],
     'generic-gds-air-segments.txt' => ['segments' => 4, 'locator' => null],
+    'generic-unknown-airline.txt' => ['segments' => 2, 'locator' => null],
     'sabre-oneway.txt' => ['segments' => 1, 'locator' => 'ABC123'],
     'sabre-overnight.txt' => ['segments' => 2, 'locator' => 'KL90MN'],
 ];

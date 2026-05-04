@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 return [
+    'app_version' => '3.0.0',
     'agency_name' => 'Roaming Nepal',
     'logo_path' => 'assets/images/roaming-nepal-logo.png',
     'contact_phone' => '+(977) 015905391, 015905392',

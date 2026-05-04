@@ -160,13 +160,15 @@ Simple cPanel protection:
 ## 8. Test After Deployment
 
 1. Open the protected HTTPS URL.
-2. Paste a sample fixture from `tests/fixtures/`.
-3. Press **Convert**.
-4. Confirm the detected source format is correct.
-5. Try **Clean Share View**.
-6. Try **Download PNG**.
-7. Try browser **Print** and choose **Save as PDF**.
-8. Press **Reset** and confirm pasted content is cleared.
+2. Confirm the header shows the newest build label, for example `Build 3.0.0`.
+3. Paste a sample fixture from `tests/fixtures/`.
+4. Press **Convert**.
+5. Confirm the itinerary card is generated for Amadeus, Travelport/Galileo/Smartpoint, Sabre, and generic GDS segment samples.
+6. Try the **Roaming**, **Neutral**, and **WhatsApp** presets.
+7. Try **Clean Share View**.
+8. Try **Download PNG**.
+9. Try browser **Print** and choose **Save as PDF**.
+10. Press **Reset** and confirm pasted content is cleared.
 
 ## 9. Updating Later
 

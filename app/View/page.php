@@ -12,10 +12,21 @@ use RoamingNepal\PnrConverter\Support\Metadata;
 /** @var ?ParseResult $result */
 
 $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
-$asset = static fn (string $path): string => ($basePath === '' ? '' : $basePath) . '/' . ltrim($path, '/');
+$projectRoot = dirname(__DIR__, 2);
+$asset = static function (string $path) use ($basePath, $projectRoot): string {
+    $relativePath = ltrim($path, '/');
+    $url = ($basePath === '' ? '' : $basePath) . '/' . $relativePath;
+    $absolutePath = $projectRoot . '/' . $relativePath;
+
+    if (is_file($absolutePath)) {
+        $url .= '?v=' . filemtime($absolutePath);
+    }
+
+    return $url;
+};
 $agencyName = (string) ($settings['agency_name'] ?? 'Roaming Nepal');
 $logoPath = (string) ($settings['logo_path'] ?? 'assets/images/logo.svg');
-$projectRoot = dirname(__DIR__, 2);
+$appVersion = (string) ($settings['app_version'] ?? '3.0.0');
 $distanceUnit = in_array((string) ($features['distance_unit'] ?? 'off'), ['off', 'km', 'miles'], true)
     ? (string) $features['distance_unit']
     : 'off';
@@ -36,6 +47,7 @@ $show = static fn (string $key): bool => (bool) ($features[$key] ?? false);
 $showAgencyHeader = $show('show_agency_header');
 $showAgencyFooter = $show('show_agency_footer');
 $showDisclaimer = $show('show_disclaimer');
+$airlineDisplayName = static fn (Segment $segment): string => $segment->airlineName ?: 'Airline code ' . $segment->airlineCode;
 $airlineLogo = static function (string $airlineCode) use ($projectRoot): ?string {
     $code = strtoupper(preg_replace('/[^A-Z0-9]/', '', $airlineCode) ?? '');
     if ($code === '') {
@@ -97,9 +109,13 @@ $formatTime = static function (string $time, bool $use24): string {
         <div>
             <p class="eyebrow">Hosted by Roaming Nepal</p>
             <h1>Flight PNR Converter</h1>
+            <p class="build-label">Build <?= Html::e($appVersion) ?></p>
         </div>
     </div>
-    <button class="button button-light" type="button" id="shareModeBtn">Clean Share View</button>
+    <div class="top-actions">
+        <span class="privacy-badge">No raw PNR storage</span>
+        <button class="button button-light" type="button" id="shareModeBtn">Clean Share View</button>
+    </div>
 </header>
 
 <main class="app-shell">
@@ -109,6 +125,7 @@ $formatTime = static function (string $time, bool $use24): string {
                 <div>
                     <p class="eyebrow">Step 1</p>
                     <h2 id="input-title">Paste and convert</h2>
+                    <p class="panel-copy">Paste the flight segment display from Amadeus, Galileo, Smartpoint, Worldspan, Sabre, or any standard GDS-style air segment list.</p>
                 </div>
                 <?php if ($result !== null): ?>
                     <span class="status-pill status-<?= Html::e($result->confidence) ?>">
@@ -117,19 +134,26 @@ $formatTime = static function (string $time, bool $use24): string {
                 <?php endif; ?>
             </div>
 
-            <label class="field-label" for="pnr_text">Raw PNR / itinerary text</label>
-            <textarea id="pnr_text" name="pnr_text" rows="16" spellcheck="false" placeholder="Paste Amadeus, Travelport/Galileo/Smartpoint/Worldspan, or Sabre itinerary text here."><?= Html::e($rawInput) ?></textarea>
+            <div class="input-shell">
+                <label class="field-label" for="pnr_text">Raw PNR / itinerary text</label>
+                <textarea id="pnr_text" name="pnr_text" rows="16" spellcheck="false" placeholder="Example: 1  QR 647  21MAY KTMDOH HS1 1910 2200"><?= Html::e($rawInput) ?></textarea>
+                <div class="paste-meta">
+                    <span>Processed only in memory</span>
+                    <span>Payment, passport, contact, and private remark lines are ignored</span>
+                </div>
+            </div>
 
             <section class="settings-panel" aria-labelledby="settings-title">
                 <div class="settings-title">
                     <div>
                         <p class="eyebrow">Step 2</p>
                         <h3 id="settings-title">Share and display</h3>
+                        <p>Choose how the passenger copy should look before download, print, or screenshot.</p>
                     </div>
                     <div class="preset-actions" aria-label="Display presets">
-                        <button type="button" class="preset-button" data-preset="branded">Roaming Branded</button>
-                        <button type="button" class="preset-button" data-preset="neutral">Neutral</button>
-                        <button type="button" class="preset-button" data-preset="whatsapp">WhatsApp</button>
+                        <button type="button" class="preset-button" data-preset="branded"><strong>Roaming</strong><span>Full branding</span></button>
+                        <button type="button" class="preset-button" data-preset="neutral"><strong>Neutral</strong><span>Agency safe</span></button>
+                        <button type="button" class="preset-button" data-preset="whatsapp"><strong>WhatsApp</strong><span>Compact copy</span></button>
                     </div>
                 </div>
                 <?php
@@ -164,6 +188,7 @@ $formatTime = static function (string $time, bool $use24): string {
                                 <label class="check">
                                     <input type="hidden" name="<?= Html::e($key) ?>" value="0">
                                     <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                    <span class="check-box" aria-hidden="true"></span>
                                     <span><?= Html::e($label) ?></span>
                                 </label>
                             <?php endforeach; ?>
@@ -206,11 +231,11 @@ $formatTime = static function (string $time, bool $use24): string {
 
             <div class="actions">
                 <button class="button button-primary" type="submit">Convert</button>
-                <button class="button" type="reset" id="resetBtn">Clear / Reset</button>
-                <button class="button" type="button" id="printBtn">Print / Save PDF</button>
-                <button class="button" type="button" id="downloadPngBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Download PNG</button>
-                <button class="button" type="button" id="copyTextBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Copy Text</button>
-                <button class="button" type="button" id="copyImageBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Copy Image</button>
+                <button class="button button-secondary" type="reset" id="resetBtn">Clear / Reset</button>
+                <button class="button button-secondary" type="button" id="printBtn">Print / Save PDF</button>
+                <button class="button button-secondary" type="button" id="downloadPngBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Download PNG</button>
+                <button class="button button-secondary" type="button" id="copyTextBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Copy Text</button>
+                <button class="button button-secondary" type="button" id="copyImageBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Copy Image</button>
             </div>
         </form>
     </section>
@@ -225,6 +250,23 @@ $formatTime = static function (string $time, bool $use24): string {
                 <span class="source-label">Detected: <?= Html::e($result->sourceFormat) ?></span>
             <?php endif; ?>
         </div>
+
+        <?php if ($result !== null): ?>
+            <div class="parser-summary no-share" aria-label="Parser summary">
+                <div>
+                    <span>Confidence</span>
+                    <strong><?= Html::e(ucfirst($result->confidence)) ?></strong>
+                </div>
+                <div>
+                    <span>Flights</span>
+                    <strong><?= Html::e((string) count($result->segments)) ?></strong>
+                </div>
+                <div>
+                    <span>Privacy</span>
+                    <strong>Not stored</strong>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <?php if ($result !== null && count($result->warnings) > 0): ?>
             <div class="warning no-share" role="alert">
@@ -317,7 +359,7 @@ $formatTime = static function (string $time, bool $use24): string {
                                             <?php else: ?>
                                                 <span class="airline-code-badge"><?= Html::e($segment->airlineCode) ?></span>
                                             <?php endif; ?>
-                                            <span><?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?><?php if ($show('show_airline_name') && $segment->airlineName): ?><small><?= Html::e($segment->airlineName) ?></small><?php endif; ?></span>
+                                            <span><?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?><?php if ($show('show_airline_name')): ?><small><?= Html::e($airlineDisplayName($segment)) ?></small><?php endif; ?></span>
                                         </strong>
                                     </td>
                                     <td><?= Html::e($segment->departureAirport) ?></td>
@@ -357,8 +399,8 @@ $formatTime = static function (string $time, bool $use24): string {
                                         <?php endif; ?>
                                         <span>
                                             <?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?>
-                                            <?php if ($show('show_airline_name') && $segment->airlineName): ?>
-                                                <small><?= Html::e($segment->airlineName) ?></small>
+                                            <?php if ($show('show_airline_name')): ?>
+                                                <small><?= Html::e($airlineDisplayName($segment)) ?></small>
                                             <?php endif; ?>
                                         </span>
                                     </strong>
@@ -368,9 +410,9 @@ $formatTime = static function (string $time, bool $use24): string {
                                     <div class="compact-lines">
                                         <?php if ($reorderedFormat): ?>
                                             <p><strong><?= Html::e($segment->departureAirport) ?> to <?= Html::e($segment->arrivalAirport) ?></strong> · <?= Html::e($segment->departureDate) ?> <?= Html::e($formatTime($segment->departureTime, $use24HourTime)) ?> - <?= Html::e($segment->arrivalDate ?: $segment->departureDate) ?> <?= Html::e($formatTime($segment->arrivalTime, $use24HourTime)) ?></p>
-                                            <p><?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?><?php if ($show('show_airline_name') && $segment->airlineName): ?> · <?= Html::e($segment->airlineName) ?><?php endif; ?></p>
+                                            <p><?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?><?php if ($show('show_airline_name')): ?> · <?= Html::e($airlineDisplayName($segment)) ?><?php endif; ?></p>
                                         <?php else: ?>
-                                            <p><strong><?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?></strong><?php if ($show('show_airline_name') && $segment->airlineName): ?> · <?= Html::e($segment->airlineName) ?><?php endif; ?></p>
+                                            <p><strong><?= Html::e($segment->airlineCode . ' ' . $segment->flightNumber) ?></strong><?php if ($show('show_airline_name')): ?> · <?= Html::e($airlineDisplayName($segment)) ?><?php endif; ?></p>
                                             <p><?= Html::e($segment->departureAirport) ?> <?= Html::e($segment->departureDate) ?> <?= Html::e($formatTime($segment->departureTime, $use24HourTime)) ?> to <?= Html::e($segment->arrivalAirport) ?> <?= Html::e($segment->arrivalDate ?: $segment->departureDate) ?> <?= Html::e($formatTime($segment->arrivalTime, $use24HourTime)) ?></p>
                                         <?php endif; ?>
                                     </div>
