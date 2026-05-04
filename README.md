@@ -10,6 +10,7 @@ Roaming-hosted web tool for converting pasted GDS itinerary text into a clean pa
 - Produces a branded itinerary card with print/PDF, PNG download, text copy, clean share view, and optional image clipboard support.
 - Includes converter-style display controls for transit time, distance, 12-hour clock, operated-by notes, aircraft, airline logos, and Detailed, Compact, Table, and WhatsApp layouts.
 - Lets agencies hide the itinerary header, footer/contact block, and disclaimer when they need a neutral passenger copy.
+- Includes quick presets for Roaming Branded, Neutral, and WhatsApp sharing.
 - Uses dedicated Amadeus, Travelport/Galileo/Smartpoint/Worldspan, and Sabre parsers first, then a flexible generic GDS air-segment fallback for unfamiliar but standard-looking segment lines.
 - Merges live `config/settings.php` with `config/settings.example.php`, so new feature defaults still work after code-only cPanel updates.
 - Runs as plain PHP 8.x files on normal cPanel hosting. No database, Composer, Node build, Docker, or external CDN is required.
@@ -135,3 +136,5 @@ For agencies that do not want Roaming branding on the passenger copy, turn off t
 - Show disclaimer
 
 The converter page is still hosted by Roaming Nepal, but the generated itinerary card can be neutral.
+
+Use the **Neutral** preset for this in one click. Use **Roaming Branded** to restore the full Roaming header/footer/disclaimer. Use **WhatsApp** for a compact share-friendly layout.

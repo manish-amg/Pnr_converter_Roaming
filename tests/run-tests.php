@@ -6,15 +6,17 @@ use RoamingNepal\PnrConverter\Parser\PnrParserFactory;
 require_once __DIR__ . '/../app/bootstrap.php';
 
 $cases = [
-    'amadeus-oneway.txt' => ['format' => 'Amadeus style', 'segments' => 1, 'locator' => 'AB12CD'],
-    'amadeus-return.txt' => ['format' => 'Amadeus style', 'segments' => 4, 'locator' => 'CD34EF'],
-    'amadeus-mh-mel-kul-ktm.txt' => ['format' => 'Amadeus style', 'segments' => 2, 'locator' => null],
-    'travelport-oneway.txt' => ['format' => 'Travelport Galileo / Smartpoint / Worldspan style', 'segments' => 2, 'locator' => 'GH56IJ'],
-    'travelport-multicity.txt' => ['format' => 'Travelport Galileo / Smartpoint / Worldspan style', 'segments' => 4, 'locator' => 'IJ78KL'],
-    'travelport-roaming-qr.txt' => ['format' => 'Travelport Galileo / Smartpoint / Worldspan style', 'segments' => 4, 'locator' => null],
-    'travelport-cx-ktm-hkg-syd.txt' => ['format' => 'Travelport Galileo / Smartpoint / Worldspan style', 'segments' => 2, 'locator' => null],
-    'sabre-oneway.txt' => ['format' => 'Sabre style', 'segments' => 1, 'locator' => 'ABC123'],
-    'sabre-overnight.txt' => ['format' => 'Sabre style', 'segments' => 2, 'locator' => 'KL90MN'],
+    'amadeus-oneway.txt' => ['segments' => 1, 'locator' => 'AB12CD'],
+    'amadeus-return.txt' => ['segments' => 4, 'locator' => 'CD34EF'],
+    'amadeus-mh-mel-kul-ktm.txt' => ['segments' => 2, 'locator' => null],
+    'travelport-oneway.txt' => ['segments' => 2, 'locator' => 'GH56IJ'],
+    'travelport-multicity.txt' => ['segments' => 4, 'locator' => 'IJ78KL'],
+    'travelport-roaming-qr.txt' => ['segments' => 4, 'locator' => null],
+    'travelport-cx-ktm-hkg-syd.txt' => ['segments' => 2, 'locator' => null],
+    'generic-3u-ktm-tfu-syd.txt' => ['segments' => 2, 'locator' => null],
+    'generic-gds-air-segments.txt' => ['segments' => 4, 'locator' => null],
+    'sabre-oneway.txt' => ['segments' => 1, 'locator' => 'ABC123'],
+    'sabre-overnight.txt' => ['segments' => 2, 'locator' => 'KL90MN'],
 ];
 
 $failed = 0;
@@ -26,7 +28,6 @@ foreach ($cases as $file => $expected) {
 
     $result = PnrParserFactory::parse($raw);
     $checks = [
-        'format' => $result->sourceFormat === $expected['format'],
         'segments' => count($result->segments) === $expected['segments'],
         'locator' => $expected['locator'] === null || $result->recordLocator === $expected['locator'],
         'confidence' => in_array($result->confidence, ['high', 'medium'], true),

@@ -11,6 +11,7 @@
   const resetBtn = byId('resetBtn');
   const form = document.querySelector('form');
   const settingsPanel = document.querySelector('.settings-panel');
+  const presetButtons = document.querySelectorAll('[data-preset]');
 
   if (shareModeBtn) {
     shareModeBtn.addEventListener('click', () => {
@@ -46,6 +47,21 @@
           form.submit();
         }
       }, 120);
+    });
+  }
+
+  if (form && presetButtons.length) {
+    presetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        applyPreset(button.getAttribute('data-preset'));
+        if (card) {
+          if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        }
+      });
     });
   }
 
@@ -99,6 +115,40 @@
     if (shareModeBtn) {
       shareModeBtn.textContent = shouldEnable ? 'Exit Share View' : 'Clean Share View';
     }
+  }
+
+  function applyPreset(preset) {
+    const checkbox = (name) => form.querySelector(`input[type="checkbox"][name="${name}"]`);
+    const radio = (name, value) => form.querySelector(`input[type="radio"][name="${name}"][value="${value}"]`);
+    const setChecked = (name, checked) => {
+      const input = checkbox(name);
+      if (input) input.checked = checked;
+    };
+    const setRadio = (name, value) => {
+      const input = radio(name, value);
+      if (input) input.checked = true;
+    };
+
+    if (preset === 'neutral') {
+      setChecked('show_agency_header', false);
+      setChecked('show_agency_footer', false);
+      setChecked('show_disclaimer', false);
+      setRadio('result_format', 'detailed');
+      return;
+    }
+
+    if (preset === 'whatsapp') {
+      setChecked('show_agency_header', false);
+      setChecked('show_agency_footer', false);
+      setChecked('show_disclaimer', true);
+      setRadio('result_format', 'whatsapp');
+      return;
+    }
+
+    setChecked('show_agency_header', true);
+    setChecked('show_agency_footer', true);
+    setChecked('show_disclaimer', true);
+    setRadio('result_format', 'detailed');
   }
 
   async function renderCardToPng(element) {

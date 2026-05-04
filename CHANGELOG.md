@@ -9,6 +9,8 @@
 - Added Sichuan Airlines, Chengdu Tianfu, and a local `3U` airline badge.
 - Reworked share/display controls into grouped sections.
 - Replaced internal two-line/three-line labels with agency-facing Detailed, Compact, Table, and WhatsApp layouts.
+- Added Roaming Branded, Neutral, and WhatsApp presets.
+- Updated cPanel deployment so built-in airline logos deploy without deleting custom cPanel-only airline logos.
 - Removed browser-native fieldset rendering from the control panel.
 - Added auto-refresh of the itinerary card when share/display settings are changed after conversion.
 

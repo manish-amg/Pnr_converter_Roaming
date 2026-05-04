@@ -134,12 +134,40 @@ input:focus-visible {
 }
 
 .settings-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   grid-column: 1 / -1;
 }
 
 .settings-title h3 {
   color: var(--ink);
   font-size: 18px;
+}
+
+.preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.preset-button {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.preset-button:hover {
+  border-color: var(--brand);
+  color: var(--brand-dark);
 }
 
 .option-group {
@@ -653,6 +681,8 @@ body.share-mode .share-hint {
   }
   .settings-panel,
   .option-list { grid-template-columns: 1fr; }
+  .settings-title { flex-direction: column; }
+  .preset-actions { justify-content: flex-start; }
   .format-options { grid-template-columns: 1fr; }
   .card-section { grid-template-columns: 1fr; }
   .route {

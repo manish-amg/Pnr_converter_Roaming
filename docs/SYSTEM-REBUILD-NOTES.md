@@ -54,6 +54,7 @@ This prevents a weak source-family guess from blocking valid segments.
 - Changing display controls after conversion should refresh the passenger card.
 - Clean Share View must hide input and admin controls.
 - Header, footer/contact, and disclaimer must be independently toggleable.
+- Presets should cover common workflows: Roaming Branded, Neutral, WhatsApp.
 
 ## Deployment Principles
 

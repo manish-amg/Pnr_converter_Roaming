@@ -122,8 +122,15 @@ $formatTime = static function (string $time, bool $use24): string {
 
             <section class="settings-panel" aria-labelledby="settings-title">
                 <div class="settings-title">
-                    <p class="eyebrow">Step 2</p>
-                    <h3 id="settings-title">Share and display</h3>
+                    <div>
+                        <p class="eyebrow">Step 2</p>
+                        <h3 id="settings-title">Share and display</h3>
+                    </div>
+                    <div class="preset-actions" aria-label="Display presets">
+                        <button type="button" class="preset-button" data-preset="branded">Roaming Branded</button>
+                        <button type="button" class="preset-button" data-preset="neutral">Neutral</button>
+                        <button type="button" class="preset-button" data-preset="whatsapp">WhatsApp</button>
+                    </div>
                 </div>
                 <?php
                 $optionGroups = [
