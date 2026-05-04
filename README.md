@@ -8,7 +8,7 @@ Roaming-hosted web tool for converting pasted GDS itinerary text into a clean pa
 - Parses passenger names, booking reference, flight segments, dates, times, airport codes, airline codes, booking class, cabin, layovers, operated-by text, ticket numbers, and seats when clearly detectable.
 - Redacts or ignores sensitive lines such as payment, FOID, DOCS, contact, phone, email, private remarks, and sensitive SSR/OSI content.
 - Produces a branded itinerary card with print/PDF, PNG download, text copy, clean share view, and optional image clipboard support.
-- Includes converter-style display controls for transit time, distance, 12-hour clock, operated-by notes, aircraft, airline logos, and multiple results formats.
+- Includes converter-style display controls for transit time, distance, 12-hour clock, operated-by notes, aircraft, airline logos, and Detailed, Compact, Table, and WhatsApp layouts.
 - Lets agencies hide the itinerary header, footer/contact block, and disclaimer when they need a neutral passenger copy.
 - Uses dedicated Amadeus, Travelport/Galileo/Smartpoint/Worldspan, and Sabre parsers first, then a flexible generic GDS air-segment fallback for unfamiliar but standard-looking segment lines.
 - Merges live `config/settings.php` with `config/settings.example.php`, so new feature defaults still work after code-only cPanel updates.

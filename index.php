@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($key === 'result_format') {
                 $posted = (string) $_POST[$key];
-                $allowed = ['two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered', 'table'];
-                $features[$key] = in_array($posted, $allowed, true) ? $posted : 'three_lines';
+                $allowed = ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'];
+                $features[$key] = in_array($posted, $allowed, true) ? $posted : 'detailed';
                 continue;
             }
 

@@ -8,6 +8,7 @@
 - Fixed low-confidence Amadeus/Travelport detections blocking the flexible GDS fallback.
 - Added Sichuan Airlines, Chengdu Tianfu, and a local `3U` airline badge.
 - Reworked share/display controls into grouped sections.
+- Replaced internal two-line/three-line labels with agency-facing Detailed, Compact, Table, and WhatsApp layouts.
 - Removed browser-native fieldset rendering from the control panel.
 - Added auto-refresh of the itinerary card when share/display settings are changed after conversion.
 

@@ -50,7 +50,7 @@ return [
         'use_12_hour_clock' => true,
         'show_operated_by' => false,
         'show_aircraft' => false,
-        'result_format' => 'three_lines',
+        'result_format' => 'detailed',
         'show_booking_class' => true,
         'show_cabin' => true,
         'show_layover' => true,

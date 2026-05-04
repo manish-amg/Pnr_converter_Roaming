@@ -7,7 +7,7 @@ The converter is a Roaming-hosted utility for travel agents and agencies. It sho
 - Paste raw GDS text.
 - Extract passenger-safe air itinerary data.
 - Let the user choose branded or neutral output.
-- Render a clean passenger copy.
+- Render a clean passenger copy in Detailed, Compact, Table, or WhatsApp layout.
 - Export by PNG, print/PDF, copied text, or clipboard image where supported.
 
 ## Competitive Research Summary
@@ -50,7 +50,7 @@ This prevents a weak source-family guess from blocking valid segments.
   - Flight Details
   - Passenger Safe Data
   - Distance
-  - Layout
+  - Layout: Detailed, Compact, Table, WhatsApp
 - Changing display controls after conversion should refresh the passenger card.
 - Clean Share View must hide input and admin controls.
 - Header, footer/contact, and disclaimer must be independently toggleable.

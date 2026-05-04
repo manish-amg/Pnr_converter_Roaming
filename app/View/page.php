@@ -19,9 +19,15 @@ $projectRoot = dirname(__DIR__, 2);
 $distanceUnit = in_array((string) ($features['distance_unit'] ?? 'off'), ['off', 'km', 'miles'], true)
     ? (string) $features['distance_unit']
     : 'off';
-$resultFormat = in_array((string) ($features['result_format'] ?? 'three_lines'), ['two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered', 'table'], true)
+$resultFormat = in_array((string) ($features['result_format'] ?? 'detailed'), ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'], true)
     ? (string) $features['result_format']
-    : 'three_lines';
+    : 'detailed';
+$layoutFormat = match ($resultFormat) {
+    'compact' => 'two_lines',
+    'whatsapp' => 'two_lines_reordered',
+    'detailed' => 'three_lines',
+    default => $resultFormat,
+};
 $use24HourTime = array_key_exists('use_12_hour_clock', $features)
     ? !(bool) $features['use_12_hour_clock']
     : (bool) ($features['use_24_hour_time'] ?? true);
@@ -175,11 +181,10 @@ $formatTime = static function (string $time, bool $use24): string {
                     <div class="format-options" role="radiogroup" aria-label="Results format">
                         <?php
                         $formats = [
-                            'two_lines' => 'Two Lines',
-                            'two_lines_reordered' => 'Two Lines Reordered',
-                            'three_lines' => 'Three Lines',
-                            'three_lines_reordered' => 'Three Lines Reordered',
+                            'detailed' => 'Detailed',
+                            'compact' => 'Compact',
                             'table' => 'Table',
+                            'whatsapp' => 'WhatsApp',
                         ];
                         foreach ($formats as $value => $label):
                             ?>
@@ -241,6 +246,10 @@ $formatTime = static function (string $time, bool $use24): string {
             </div>
         <?php else: ?>
             <article class="itinerary-card<?= !$showAgencyHeader ? ' itinerary-card-plain' : '' ?>" id="itineraryCard">
+                <?php
+                $firstSegment = $result->segments[0] ?? null;
+                $lastSegment = $result->segments[count($result->segments) - 1] ?? null;
+                ?>
                 <?php if ($showAgencyHeader): ?>
                     <header class="card-header">
                         <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?> logo">
@@ -264,9 +273,16 @@ $formatTime = static function (string $time, bool $use24): string {
                             <p class="value reference"><?= Html::e($result->recordLocator) ?></p>
                         </div>
                     <?php endif; ?>
+                    <?php if ($firstSegment instanceof Segment && $lastSegment instanceof Segment): ?>
+                        <div>
+                            <p class="label">Trip summary</p>
+                            <p class="value"><?= Html::e($firstSegment->departureAirport . ' to ' . $lastSegment->arrivalAirport) ?></p>
+                            <p class="summary-meta"><?= Html::e(count($result->segments) . ' flight' . (count($result->segments) === 1 ? '' : 's')) ?></p>
+                        </div>
+                    <?php endif; ?>
                 </section>
 
-                <?php if ($resultFormat === 'table'): ?>
+                <?php if ($layoutFormat === 'table'): ?>
                     <section class="segments-table-wrap" aria-label="Itinerary table">
                         <table class="segments-table">
                             <thead>
@@ -314,14 +330,14 @@ $formatTime = static function (string $time, bool $use24): string {
                         </table>
                     </section>
                 <?php else: ?>
-                    <section class="segments segments-format-<?= Html::e($resultFormat) ?>">
+                    <section class="segments segments-format-<?= Html::e($layoutFormat) ?><?= $resultFormat === 'whatsapp' ? ' segments-whatsapp' : '' ?>">
                         <?php foreach ($result->segments as $index => $segment): ?>
                             <?php
                             /** @var Segment $segment */
                             $airlineLogoPath = $show('show_airline_logo') ? $airlineLogo($segment->airlineCode) : null;
                             $distanceLabel = Metadata::distanceLabel($segment->departureAirport, $segment->arrivalAirport, $distanceUnit);
-                            $compactFormat = in_array($resultFormat, ['two_lines', 'two_lines_reordered'], true);
-                            $reorderedFormat = in_array($resultFormat, ['two_lines_reordered', 'three_lines_reordered'], true);
+                            $compactFormat = in_array($layoutFormat, ['two_lines', 'two_lines_reordered'], true);
+                            $reorderedFormat = in_array($layoutFormat, ['two_lines_reordered', 'three_lines_reordered'], true);
                             ?>
                             <div class="segment<?= $compactFormat ? ' segment-compact' : '' ?>">
                                 <div class="segment-title">
