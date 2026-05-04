@@ -1,6 +1,6 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/dnvk9le825kl/public_html/pnrconverter.roamingnepal.com/
-    - /bin/rsync -a --delete --exclude='.git' --exclude='config/settings.php' --exclude='assets/images/airlines/' ./ $DEPLOYPATH
-        - /bin/chmod 755 $DEPLOYPATH
+    - export DEPLOYPATH=/home/dnvk9le825kl/public_html/pnrconverter.roamingnepal.com
+    - /bin/rsync -a --delete --exclude='.git' --exclude='config/settings.php' --exclude='assets/images/airlines/' ./ $DEPLOYPATH/
+    - /bin/chmod 755 $DEPLOYPATH
