@@ -1,0 +1,13 @@
+.DS_Store
+*.zip
+*.log
+
+# Live deployment config. Keep real production values on cPanel only.
+config/settings.php
+
+# Optional runtime logs if privacy logging is ever enabled.
+storage/
+
+# Editor/OS noise.
+.idea/
+.vscode/

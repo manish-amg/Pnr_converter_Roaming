@@ -1,0 +1,149 @@
+# Deploying on GoDaddy cPanel
+
+These steps assume the preferred address is `pnrconverter.roamingnepal.com`.
+
+## 1. Create the Subdomain
+
+1. Log in to GoDaddy.
+2. Open your hosting product.
+3. Open cPanel.
+4. Find **Domains** or **Subdomains**.
+5. Create `pnrconverter` under `roamingnepal.com`.
+6. cPanel will show a document root folder. It may look like `public_html/pnrconverter` or `public_html/pnrconverter.roamingnepal.com`.
+
+If you prefer a path instead, upload the project to `public_html/pnr-converter`.
+
+## 2. Upload the Files
+
+1. Open **File Manager** in cPanel.
+2. Go to the subdomain document root folder.
+3. Upload the ZIP file for this project.
+4. Click the ZIP and choose **Extract**.
+5. Make sure `index.php` is directly inside the subdomain folder.
+
+Correct:
+
+```text
+public_html/pnrconverter/index.php
+public_html/pnrconverter/app/
+public_html/pnrconverter/assets/
+public_html/pnrconverter/config/
+```
+
+If everything extracted inside an extra folder, move the contents up one level.
+
+## 3. Edit the Settings
+
+Open `config/settings.php` in cPanel File Manager and edit:
+
+- `agency_name`
+- `contact_phone`
+- `contact_email`
+- `whatsapp`
+- `footer_note`
+- `base_url`
+
+Leave `privacy_logging_enabled` as `false` for normal use.
+
+## 4. Replace the Logo
+
+1. Upload the new logo to `assets/images/`.
+2. Edit `config/settings.php`.
+3. Change `logo_path`, for example:
+
+```php
+'logo_path' => 'assets/images/roaming-nepal-logo.png',
+```
+
+Use a local file only. Do not use a remote logo URL.
+
+## 4A. Add Airline Logos
+
+Airline logos are read from local files only, so no passenger itinerary data is leaked to an outside logo service.
+
+1. Upload airline logo files into `assets/images/airlines/`.
+2. Name each file by the airline IATA code, for example:
+
+```text
+QR.svg
+EK.png
+RA.webp
+```
+
+3. Turn on **Show airline logo** in the converter.
+
+If a logo is missing, the app safely shows the airline code badge instead.
+
+## 4B. Agency-Neutral Sharing
+
+Other agencies can use the converter without showing Roaming branding on the exported itinerary card.
+
+Before pressing **Convert**, turn off:
+
+- Show agency header
+- Show footer/contact
+- Show disclaimer
+
+The tool remains hosted on Roaming Nepal's website, but the itinerary card becomes neutral for client sharing.
+
+## 5. Set File Permissions
+
+Most cPanel hosting works with:
+
+- Folders: `755`
+- Files: `644`
+
+If optional technical logging is enabled, the app may create `storage/logs/technical.log`. Keep that folder outside public access if your hosting setup allows it, or leave logging disabled.
+
+## 6. Enable HTTPS
+
+1. In cPanel, open **SSL/TLS Status** or **SSL Manager**.
+2. Run AutoSSL for the subdomain if needed.
+3. Confirm the tool opens at `https://pnrconverter.roamingnepal.com`.
+
+## 7. Protect the Tool
+
+Use this step if the converter should be private for Roaming staff or approved agency users.
+
+Simple cPanel protection:
+
+1. Open **Directory Privacy** in cPanel.
+2. Select the subdomain folder.
+3. Enable password protection.
+4. Create usernames and passwords for the people who should use it.
+5. Test in a private browser window.
+
+## 8. Test After Deployment
+
+1. Open the protected HTTPS URL.
+2. Paste a sample fixture from `tests/fixtures/`.
+3. Press **Convert**.
+4. Confirm the detected source format is correct.
+5. Try **Clean Share View**.
+6. Try **Download PNG**.
+7. Try browser **Print** and choose **Save as PDF**.
+8. Press **Reset** and confirm pasted content is cleared.
+
+## 9. Updating Later
+
+1. Keep a backup copy of `config/settings.php` and any custom logo.
+2. Upload the new ZIP.
+3. Extract and replace app files.
+4. Restore your `config/settings.php` if needed.
+5. Test again with the fixtures.
+
+## Optional SSH Path
+
+If SSH is enabled:
+
+```bash
+cd ~/public_html/pnrconverter
+unzip pnr-converter.zip
+php tests/run-tests.php
+```
+
+No Composer or Node commands are required.
+
+## Appendix: Node Alternative
+
+cPanel Application Manager can run Node apps on some hosting plans, but this project intentionally avoids that path. The primary deployment is plain PHP uploaded through cPanel File Manager.

@@ -1,0 +1,2 @@
+ 1 . CX  640 N  20JUN KTMHKG HS1  2300  #0600  O         E SA/SU 1
+ 2 . CX  139 N  21JUN HKGSYD HS1  0910   2010  O         E SU    1

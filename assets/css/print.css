@@ -1,0 +1,31 @@
+body {
+  background: #ffffff !important;
+}
+
+.no-share,
+.topbar,
+.workspace,
+.preview-header,
+.warning,
+.empty-state,
+.no-print {
+  display: none !important;
+}
+
+.app-shell {
+  display: block !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+
+.itinerary-card {
+  max-width: none !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  break-inside: avoid;
+}
+
+.segment {
+  break-inside: avoid;
+}
