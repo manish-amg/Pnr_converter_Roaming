@@ -74,7 +74,51 @@ RA.webp
 
 If a logo is missing, the app safely shows the airline code badge instead.
 
-## 4B. Agency-Neutral Sharing
+## 4B. Live Footer Details
+
+The GitHub repo does not overwrite `config/settings.php` because that file contains live branding and contact details. Make sure the live cPanel `config/settings.php` contains this footer block:
+
+```php
+'footer' => [
+    'head_office' => [
+        'title' => 'ROAMING NEPAL TRAVEL & TOURS PVT. LTD.',
+        'lines' => [
+            'A: Gairidhara-02, Nil Saraswoti Marg, Kathmandu, Nepal',
+            'P: +(977) 015905391, 015905392',
+            'M: +(977) 9851075316, 9841093086, 9851193482',
+            'W: www.roamingnepal.com',
+        ],
+    ],
+    'branches_title' => 'YOU CAN ALSO FIND US AT:',
+    'branches' => [
+        [
+            'title' => 'POKHARA',
+            'lines' => [
+                '#Pokhara-06, Lakeside (Khahare), Kaski, Nepal',
+                '+977-61-591401, 591402',
+            ],
+        ],
+        [
+            'title' => 'AUSTRALIA',
+            'lines' => [
+                '#15 Crossing Road, Mernda, VIC, 3754, Australia',
+                '+(61) 0452055393',
+            ],
+        ],
+    ],
+],
+```
+
+Also confirm these feature defaults are enabled when Roaming branding should appear:
+
+```php
+'show_agency_header' => true,
+'show_agency_footer' => true,
+'show_disclaimer' => true,
+'show_airline_logo' => true,
+```
+
+## 4C. Agency-Neutral Sharing
 
 Other agencies can use the converter without showing Roaming branding on the exported itinerary card.
 

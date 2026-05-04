@@ -82,6 +82,8 @@ If metadata is removed or incomplete, the app falls back to IATA airline and air
 
 Airline logos are optional and local. Add files named by airline code in `assets/images/airlines/`, for example `QR.svg`, `RA.png`, or `EK.webp`. The app never fetches airline logos from a remote website during conversion.
 
+The itinerary card displays the airline logo beside the airline code and flight number when a matching local logo exists. If no logo file exists, it shows a clean airline-code badge and still displays the airline name when metadata is available.
+
 ## Running Tests
 
 From the project folder:
