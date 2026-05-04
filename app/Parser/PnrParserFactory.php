@@ -33,13 +33,16 @@ final class PnrParserFactory
             return count($genericResult->segments) > 0 ? $genericResult : (new UnknownParser())->parse($raw);
         }
 
-        $result = $bestParser->parse($raw);
-        if ($result->isRenderable()) {
-            return $result;
-        }
-
         $genericResult = (new GenericAirSegmentParser())->parse($raw);
-        if (count($genericResult->segments) > count($result->segments) || $genericResult->isRenderable()) {
+        $result = $bestParser->parse($raw);
+        if (
+            count($genericResult->segments) > 0
+            && (
+                !$result->isRenderable()
+                || $genericResult->isRenderable()
+                || count($genericResult->segments) >= count($result->segments)
+            )
+        ) {
             return $genericResult;
         }
 

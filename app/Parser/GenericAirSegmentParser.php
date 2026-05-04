@@ -43,11 +43,12 @@ final class GenericAirSegmentParser extends BaseParser
 
         $segments = $this->withLayovers($segments);
         [$confidence, $score] = $this->confidence($segments, $unparsed, $this->detect($raw));
-        $warnings = [];
-        if ($confidence === 'medium') {
-            $warnings[] = 'The itinerary was parsed with the flexible GDS fallback. Please review before sending.';
+        if (count($segments) > 0 && $confidence === 'low') {
+            $confidence = 'medium';
+            $score = max(50, $score);
         }
-        if ($confidence === 'low') {
+        $warnings = count($segments) > 0 ? ['Parsed with the flexible GDS fallback. Please review before sending.'] : [];
+        if (count($segments) === 0) {
             $warnings[] = 'The parser could not safely create a passenger-ready itinerary.';
         }
 
