@@ -369,19 +369,19 @@ Example:
                     </div>
                 </div>
 
-                <!-- Options panel (pnrexpert-style) -->
-                <div class="options-card no-share">
+            </div><!-- /app-sidebar -->
 
-                    <!-- Row 1: Layout Themes -->
-                    <div class="opt-section">
-                        <div class="opt-section-head">
-                            <span class="opt-section-title">Layout Themes</span>
-                            <div class="preset-pills">
-                                <button type="button" class="pill-btn" data-preset="branded">Branded</button>
-                                <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
-                                <button type="button" class="pill-btn" data-preset="whatsapp">WA</button>
-                            </div>
-                        </div>
+            <!-- ══════════════════════════════════════
+                 MAIN — Options strip + Result
+            ══════════════════════════════════════ -->
+            <div class="app-main">
+
+                <!-- ── Options strip (always visible, auto-submits on change) ── -->
+                <div class="options-strip settings-panel no-share">
+
+                    <!-- Row 1: Layout format + presets -->
+                    <div class="ostrip-row">
+                        <span class="ostrip-label">Layout</span>
                         <div class="theme-pills" role="radiogroup">
                             <?php foreach ([
                                 'detailed'    => 'Graphic',
@@ -397,77 +397,68 @@ Example:
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    </div>
-
-                    <!-- Row 2: Core Display Options -->
-                    <div class="opt-section">
-                        <div class="opt-section-head">
-                            <span class="opt-section-title">Flight Details</span>
-                            <div class="dist-pills" role="radiogroup" title="Show flight distance">
-                                <?php foreach (['off' => 'Dist: Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
-                                    <label class="pill-radio-sm">
-                                        <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
-                                        <span><?= Html::e($lbl) ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
+                        <div class="ostrip-sep"></div>
+                        <div class="preset-pills">
+                            <button type="button" class="pill-btn" data-preset="branded">Branded</button>
+                            <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
+                            <button type="button" class="pill-btn" data-preset="whatsapp">WA</button>
                         </div>
-                        <div class="toggle-grid">
-                            <?php foreach ([
-                                'show_airline_logo'      => 'Airline Logo',
-                                'show_airline_name'      => 'Airline Name',
-                                'show_flight_duration'   => 'Duration',
-                                'show_transit_time'      => 'Layover',
-                                'show_terminal'          => 'Terminal',
-                                'show_cabin'             => 'Cabin',
-                                'show_operated_by'       => 'Operated by',
-                                'show_aircraft'          => 'Aircraft',
-                                'use_12_hour_clock'      => '12h Clock',
-                                'show_booking_reference' => 'Booking Ref',
-                                'show_booking_class'     => 'Class Code',
-                                'show_ticket_numbers'    => 'Ticket No.',
-                                'show_seat_numbers'      => 'Seat No.',
-                            ] as $key => $label): ?>
-                                <label class="mini-toggle" title="<?= Html::e($label) ?>">
-                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                    <span class="mt-track" aria-hidden="true"></span>
-                                    <span class="mt-label"><?= Html::e($label) ?></span>
+                        <div class="ostrip-sep"></div>
+                        <div class="dist-pills" role="radiogroup">
+                            <?php foreach (['off' => 'Dist: Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
+                                <label class="pill-radio-sm">
+                                    <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
+                                    <span><?= Html::e($lbl) ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <!-- Row 3: Agency Branding (collapsible group) -->
-                    <div class="opt-section opt-section--agency">
-                        <div class="opt-section-head">
-                            <span class="opt-section-title">Agency Branding</span>
-                            <span class="opt-section-note">Optional</span>
-                        </div>
-                        <div class="toggle-grid">
-                            <?php foreach ([
-                                'show_agency_header' => 'Agency Header',
-                                'show_agency_footer' => 'Agency Footer',
-                                'show_disclaimer'    => 'Disclaimer',
-                            ] as $key => $label): ?>
-                                <label class="mini-toggle" title="<?= Html::e($label) ?>">
-                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                    <span class="mt-track" aria-hidden="true"></span>
-                                    <span class="mt-label"><?= Html::e($label) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
+                    <!-- Row 2: Flight detail toggles -->
+                    <div class="ostrip-row ostrip-row--toggles">
+                        <span class="ostrip-label">Show</span>
+                        <?php foreach ([
+                            'show_airline_logo'      => 'Logo',
+                            'show_airline_name'      => 'Airline',
+                            'show_flight_duration'   => 'Duration',
+                            'show_transit_time'      => 'Layover',
+                            'show_terminal'          => 'Terminal',
+                            'show_cabin'             => 'Cabin',
+                            'show_operated_by'       => 'Operated by',
+                            'show_aircraft'          => 'Aircraft',
+                            'use_12_hour_clock'      => '12h Clock',
+                            'show_booking_reference' => 'Booking Ref',
+                            'show_booking_class'     => 'Class Code',
+                            'show_ticket_numbers'    => 'Ticket No.',
+                            'show_seat_numbers'      => 'Seat No.',
+                        ] as $key => $label): ?>
+                            <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                                <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                <span class="mt-track" aria-hidden="true"></span>
+                                <span class="mt-label"><?= Html::e($label) ?></span>
+                            </label>
+                        <?php endforeach; ?>
                     </div>
 
-                </div><!-- /options-card -->
+                    <!-- Row 3: Agency branding (optional) -->
+                    <div class="ostrip-row ostrip-row--agency">
+                        <span class="ostrip-label">Agency <span class="ostrip-badge">Optional</span></span>
+                        <?php foreach ([
+                            'show_agency_header' => 'Header',
+                            'show_agency_footer' => 'Footer',
+                            'show_disclaimer'    => 'Disclaimer',
+                        ] as $key => $label): ?>
+                            <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                                <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                <span class="mt-track" aria-hidden="true"></span>
+                                <span class="mt-label"><?= Html::e($label) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
 
-            </div><!-- /app-sidebar -->
-
-            <!-- ══════════════════════════════════════
-                 MAIN — Result / Landing
-            ══════════════════════════════════════ -->
-            <div class="app-main">
+                </div><!-- /options-strip -->
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
@@ -505,7 +496,14 @@ Example:
                     </div>
                 <?php endif; ?>
 
-                <?php if ($result !== null && !$result->isRenderable()): ?>
+                <?php if ($result === null && !$rateLimited): ?>
+                    <div class="empty-hint">
+                        <svg class="empty-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+                        <p>Paste a GDS itinerary in the box and click <strong>Convert</strong></p>
+                        <span class="empty-sub">Amadeus · Galileo · Sabre · Worldspan · Smartpoint</span>
+                    </div>
+
+                <?php elseif ($result !== null && !$result->isRenderable()): ?>
                     <div class="alert alert-warn">
                         <strong>Manual review needed.</strong> Confidence too low to generate a card.
                         <?php if (count($result->unparsedLines) > 0): ?>
