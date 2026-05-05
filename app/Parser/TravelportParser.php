@@ -36,14 +36,35 @@ final class TravelportParser extends BaseParser
         $unparsed = [];
         $ticket = $this->extractTicketNumber($lines);
         $seat = $this->extractSeatNumber($lines);
+        $count = count($lines);
 
-        foreach ($lines as $line) {
+        for ($i = 0; $i < $count; $i++) {
+            $line = $lines[$i];
             if ($this->isSensitiveLine($line)) {
                 continue;
             }
 
             $segment = $this->parseSegmentLine($line, $ticket, $seat);
             if ($segment !== null) {
+                // Look ahead for "OPERATED BY ..." continuation lines
+                while (isset($lines[$i + 1]) && $this->isContinuationLine($lines[$i + 1])) {
+                    $i++;
+                    $cont = $lines[$i];
+                    if (preg_match('/^\s*OPERATED\s+BY\s+(.+)/i', $cont, $cm) === 1) {
+                        $operatedBy = trim($cm[1]);
+                        $segment = new Segment(
+                            $segment->airlineCode, $segment->flightNumber, $segment->airlineName,
+                            $segment->status, $segment->departureAirport, $segment->arrivalAirport,
+                            $segment->departureDate, $segment->departureTime,
+                            $segment->arrivalDate, $segment->arrivalTime,
+                            $segment->bookingClass, $segment->cabin,
+                            $segment->layoverDuration, $operatedBy,
+                            $segment->ticketNumber, $segment->seatNumber,
+                            $segment->aircraft, $segment->rawLine,
+                            $segment->departureTerminal
+                        );
+                    }
+                }
                 $segments[] = $segment;
                 continue;
             }
@@ -74,7 +95,7 @@ final class TravelportParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
-        $classicPattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        $classicPattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:\d\s+)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:+]{3,9})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($classicPattern, $line, $m) === 1) {
             $airlineCode = strtoupper($m[1]);
             $departureDate = $this->normalizeDate($m[4]);
@@ -145,6 +166,14 @@ final class TravelportParser extends BaseParser
             return $this->addOneDay($departureDate);
         }
 
+        if (preg_match('/\+(\d)$/', trim($arrivalTimeRaw), $m) === 1) {
+            $result = $departureDate;
+            for ($i = 0; $i < (int) $m[1]; $i++) {
+                $result = $this->addOneDay($result);
+            }
+            return $result;
+        }
+
         return null;
     }
 
@@ -176,6 +205,13 @@ final class TravelportParser extends BaseParser
             'Y', 'E' => 'Economy',
             default => null,
         };
+    }
+
+    private function isContinuationLine(string $line): bool
+    {
+        // Indented lines or lines starting with OPERATED/SEE/NOTE are continuations
+        return preg_match('/^(\s{2,}|\t)/', $line) === 1
+            || preg_match('/^\s*(?:OPERATED\s+BY|SEE\s+RTSVC|NOTE|CHANGE\s+OF\s+GAUGE|CODESHARE)/i', $line) === 1;
     }
 
     private function looksImportantButUnhandled(string $line): bool

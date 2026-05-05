@@ -1,31 +1,33 @@
-body {
-  background: #ffffff !important;
-}
+@media print {
+  body { background: #ffffff !important; }
 
-.no-share,
-.topbar,
-.workspace,
-.preview-header,
-.warning,
-.empty-state,
-.no-print {
-  display: none !important;
-}
+  .no-print,
+  .no-share,
+  .topbar,
+  .app-sidebar,
+  .result-bar,
+  .parse-bar,
+  .parse-badges,
+  .result-actions,
+  .options-card,
+  .input-card,
+  .sidebar-hero,
+  .share-hint,
+  .landing-panel { display: none !important; }
 
-.app-shell {
-  display: block !important;
-  padding: 0 !important;
-  max-width: none !important;
-}
+  .page-wrap  { padding: 0 !important; max-width: none !important; }
+  .app-layout { display: block !important; }
+  .app-main   { width: 100% !important; }
 
-.itinerary-card {
-  max-width: none !important;
-  margin: 0 !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  break-inside: avoid;
-}
+  .itin-card {
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
 
-.segment {
-  break-inside: avoid;
+  .flight-block,
+  .leg-head,
+  .lo-sep { break-inside: avoid; }
 }

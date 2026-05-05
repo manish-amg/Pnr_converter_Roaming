@@ -139,7 +139,7 @@ $visaHubs = [
     'MAD'=>'Schengen','BCN'=>'Schengen','FCO'=>'Schengen','CPH'=>'Schengen','ARN'=>'Schengen',
     'BRU'=>'Schengen','VIE'=>'Schengen','HEL'=>'Schengen','OSL'=>'Schengen',
 ];
-$transitVisa = static fn (string $ap) use ($visaHubs): ?string
+$transitVisa = static fn (string $ap): ?string
     => isset($visaHubs[$ap]) ? 'Check ' . $visaHubs[$ap] . ' transit visa' : null;
 
 // Layover label and CSS class
@@ -174,6 +174,19 @@ $buildLegs = static function (array $segments): array {
 
 $legs = $result !== null && $result->isRenderable() ? $buildLegs($result->segments) : [];
 
+// Full route display: KTM – PVG – PEK – KTM (all leg endpoints, no duplicates)
+$routeDisplay = static function (array $legs): string {
+    $ports = [];
+    foreach ($legs as $leg) {
+        $segs = $leg['segments'];
+        $dep  = $segs[0]->departureAirport ?? null;
+        $arr  = $segs[count($segs) - 1]->arrivalAirport ?? null;
+        if ($dep !== null && (empty($ports) || end($ports) !== $dep)) $ports[] = $dep;
+        if ($arr !== null && (empty($ports) || end($ports) !== $arr)) $ports[] = $arr;
+    }
+    return implode(' – ', $ports);
+};
+
 // Itinerary title with city names
 $itinTitle = static function (array $legs) use ($portCity): string {
     if (empty($legs)) return 'Flight Itinerary';
@@ -182,45 +195,88 @@ $itinTitle = static function (array $legs) use ($portCity): string {
         $first = $leg['segments'][0] ?? null;
         $last  = $leg['segments'][count($leg['segments']) - 1] ?? null;
         if ($first && $last) {
-            $parts[] = $portCity($first->departureAirport) . ' \u{2192} ' . $portCity($last->arrivalAirport);
+            $parts[] = $portCity($first->departureAirport) . ' → ' . $portCity($last->arrivalAirport);
         }
     }
     return 'Flight Itinerary: ' . implode(' // ', $parts);
 };
 
-// WhatsApp text builder
-$buildWaText = static function () use ($result, $show, $showDisclaimer, $showAgencyFooter, $settings,
-    $agencyName, $formatTime, $use24HourTime, $datePretty, $portDisplay): string {
+// WhatsApp text builder — rich visual structure
+$buildWaText = static function () use (
+    $result, $show, $showDisclaimer, $showAgencyFooter, $settings,
+    $agencyName, $formatTime, $use24HourTime, $datePretty, $portDisplay, $portCity, $buildLegs
+): string {
     if ($result === null || !$result->isRenderable()) return '';
-    $lines = ['*✈ FLIGHT ITINERARY*'];
-    if ($show('show_agency_header')) $lines[] = '📌 *' . $agencyName . '*';
-    $lines[] = '';
+    $legs = $buildLegs($result->segments);
+
+    $lines = [];
+    if ($show('show_agency_header')) {
+        $lines[] = '╔══════════════════════╗';
+        $lines[] = '  ✈  *' . strtoupper($agencyName) . '*';
+        $lines[] = '  *FLIGHT ITINERARY*';
+        $lines[] = '╚══════════════════════╝';
+    } else {
+        $lines[] = '✈ *FLIGHT ITINERARY*';
+        $lines[] = '━━━━━━━━━━━━━━━━━━━━━━';
+    }
+
     $pax = count($result->passengers) > 0
         ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
-        : 'Passenger not detected';
-    $lines[] = '👤 *Passenger:* ' . $pax;
+        : null;
+    if ($pax) $lines[] = '👤 *Passenger:* ' . $pax;
     if ($show('show_booking_reference') && $result->recordLocator !== null)
         $lines[] = '🔖 *Booking Ref:* ' . $result->recordLocator;
     $lines[] = '';
-    foreach ($result->segments as $i => $seg) {
-        $dep = $formatTime($seg->departureTime, $use24HourTime);
-        $arr = $formatTime($seg->arrivalTime, $use24HourTime);
-        $lines[] = '══════════════════════';
-        $lines[] = sprintf('✈ *%s%s*', $seg->airlineCode, $seg->flightNumber)
-            . ($seg->airlineName ? ' — ' . $seg->airlineName : '');
-        $lines[] = '📅 ' . $datePretty($seg->departureDate);
-        $lines[] = '🛫 Departs: ' . $dep . ' — ' . $portDisplay($seg->departureAirport);
-        $lines[] = '🛬 Arrives: ' . $arr . ' — ' . $portDisplay($seg->arrivalAirport);
-        if ($show('show_cabin') && $seg->cabin) $lines[] = '💺 ' . $seg->cabin;
-        if ($seg->layoverDuration) $lines[] = '⏱ *Connection at ' . $seg->arrivalAirport . ':* ' . $seg->layoverDuration;
+
+    foreach ($legs as $leg) {
+        $segs     = $leg['segments'];
+        $legLabel = $leg['label'];
+        $legFirst = $segs[0] ?? null;
+        $legLast  = $segs[count($segs) - 1] ?? null;
+
+        if ($legLabel && $legFirst && $legLast) {
+            $lines[] = '━━━━━━━━━━━━━━━━━━━━━━';
+            $lines[] = '🗺 *' . $legLabel . ': ' . $portCity($legFirst->departureAirport) . ' → ' . $portCity($legLast->arrivalAirport) . '*';
+            $lines[] = '━━━━━━━━━━━━━━━━━━━━━━';
+        }
+
+        foreach ($segs as $seg) {
+            $dep = $formatTime($seg->departureTime, $use24HourTime);
+            $arr = $formatTime($seg->arrivalTime, $use24HourTime);
+
+            $lines[] = '';
+            $lines[] = '✈ *' . $seg->airlineCode . $seg->flightNumber . '*'
+                . ($seg->airlineName ? '  _' . $seg->airlineName . '_' : '');
+            if ($seg->operatedBy) $lines[] = '   🤝 _Operated by: ' . $seg->operatedBy . '_';
+            $lines[] = '📅 *' . $datePretty($seg->departureDate) . '*';
+            $lines[] = '🛫 *Departs:* ' . $dep . ' · ' . $portDisplay($seg->departureAirport);
+            if ($seg->departureTerminal) $lines[] = '   🏢 Terminal ' . $seg->departureTerminal;
+            $lines[] = '🛬 *Arrives:* ' . $arr . ' · ' . $portDisplay($seg->arrivalAirport);
+            if ($show('show_cabin') && $seg->cabin) $lines[] = '💺 *Class:* ' . $seg->cabin;
+            if ($show('show_flight_duration') ?? true) {
+                // no duration in raw text; skip
+            }
+            if ($seg->layoverDuration) {
+                $lines[] = '';
+                $lines[] = '⏱ *Layover at ' . $portCity($seg->arrivalAirport) . ':* ' . $seg->layoverDuration;
+            }
+        }
     }
-    $lines[] = '══════════════════════';
+
+    $lines[] = '';
+    $lines[] = '━━━━━━━━━━━━━━━━━━━━━━';
+
     if ($showDisclaimer)
-        $lines[] = "\n⚠ " . ($settings['default_disclaimer'] ?? 'Please verify schedule with airline.');
+        $lines[] = '⚠ _' . ($settings['default_disclaimer'] ?? 'Please verify schedule with airline.') . '_';
+
     if ($showAgencyFooter) {
         $footer = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
         $ho     = is_array($footer['head_office'] ?? null) ? $footer['head_office'] : [];
-        if (!empty($ho['lines'])) { $lines[] = ''; foreach ((array) $ho['lines'] as $ln) $lines[] = (string) $ln; }
+        if (!empty($ho['lines'])) {
+            $lines[] = '';
+            if (!empty($ho['title'])) $lines[] = '*' . $ho['title'] . '*';
+            foreach ((array) $ho['lines'] as $ln) $lines[] = (string) $ln;
+        }
     }
     return implode("\n", $lines);
 };
@@ -257,8 +313,9 @@ $renderable = $result !== null && $result->isRenderable();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="robots" content="noindex, nofollow">
-    <title>PNR Converter — <?= Html::e($agencyName) ?></title>
+    <meta name="description" content="Free PNR converter by Roaming Nepal — turn raw GDS flight itineraries into beautiful, branded, customer-ready formats. Supports Amadeus, Galileo, Sabre, Worldspan & more. No sign-up needed.">
+    <meta name="keywords" content="PNR converter, GDS itinerary converter, Amadeus, Galileo, Sabre, flight itinerary, travel agency tool">
+    <title>PNR Converter — <?= Html::e($agencyName) ?> | Free GDS Flight Itinerary Tool</title>
     <link rel="stylesheet" href="<?= Html::e($asset('assets/css/styles.css')) ?>">
     <link rel="stylesheet" href="<?= Html::e($asset('assets/css/print.css')) ?>" media="print">
 </head>
@@ -280,146 +337,253 @@ $renderable = $result !== null && $result->isRenderable();
 
 <main class="page-wrap">
     <form method="post" id="converterForm" autocomplete="off">
+        <div class="app-layout<?= $renderable ? ' app-layout--split' : '' ?>">
 
-        <!-- ── Textarea hero ──────────────────────── -->
-        <div class="input-hero">
-            <textarea
-                id="pnr_text"
-                name="pnr_text"
-                rows="10"
-                spellcheck="false"
-                placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
+            <!-- ══════════════════════════════════════
+                 SIDEBAR — Input + Options
+            ══════════════════════════════════════ -->
+            <div class="app-sidebar">
+
+                <?php if (!$renderable): ?>
+                <div class="sidebar-hero">
+                    <h1 class="sidebar-hero-title">PNR → Instant Itinerary</h1>
+                    <p class="sidebar-hero-sub">Paste any GDS itinerary code and get a professional, ready-to-share flight itinerary in seconds. 100% free — no account required.</p>
+                </div>
+                <?php endif; ?>
+
+                <!-- Input card -->
+                <div class="input-card">
+                    <textarea
+                        id="pnr_text"
+                        name="pnr_text"
+                        rows="<?= $renderable ? '8' : '11' ?>"
+                        spellcheck="false"
+                        placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
 
 Example:
 1  QR 647  21MAY KTMDOH HK1 1910 2200
 2  QR 007  21MAY DOHLHR HK1 2355 0545+1"><?= Html::e($rawInput) ?></textarea>
 
-            <div class="input-foot">
-                <div class="input-chips">
-                    <span>Processed in memory only</span>
-                    <span>Payment &amp; passport lines ignored</span>
-                </div>
-                <div class="convert-btns">
-                    <button type="submit" class="btn btn-convert">✈&nbsp; Convert</button>
-                    <button type="reset" id="resetBtn" class="btn btn-ghost">Clear</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ── Options bar ────────────────────────── -->
-        <div class="options-bar no-share">
-            <div class="options-left">
-                <div class="opt-group">
-                    <span class="opt-label">Format</span>
-                    <div class="format-pills" role="radiogroup">
-                        <?php foreach (['detailed' => 'Detailed', 'compact' => 'Compact', 'table' => 'Table', 'whatsapp' => 'WhatsApp'] as $val => $lbl): ?>
-                            <label class="pill-radio">
-                                <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
-                                <span><?= Html::e($lbl) ?></span>
-                            </label>
-                        <?php endforeach; ?>
+                    <div class="input-foot">
+                        <div class="input-chips">
+                            <span title="Your PNR is never saved or logged">🔒 Memory only</span>
+                            <span title="Sensitive lines are automatically ignored">🚫 Passport/payment ignored</span>
+                        </div>
+                        <div class="convert-btns">
+                            <button type="submit" class="btn btn-convert">✈&nbsp; Convert</button>
+                            <button type="reset" id="resetBtn" class="btn btn-ghost">Clear</button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="opt-group">
-                    <span class="opt-label">Preset</span>
-                    <div class="preset-pills">
-                        <button type="button" class="pill-btn" data-preset="branded">Branded</button>
-                        <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
-                        <button type="button" class="pill-btn" data-preset="whatsapp">WhatsApp</button>
+                <!-- Options panel (pnrexpert-style) -->
+                <div class="options-card no-share">
+
+                    <!-- Row 1: Layout Themes -->
+                    <div class="opt-section">
+                        <div class="opt-section-head">
+                            <span class="opt-section-title">Layout Themes</span>
+                            <div class="preset-pills">
+                                <button type="button" class="pill-btn" data-preset="branded">Branded</button>
+                                <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
+                                <button type="button" class="pill-btn" data-preset="whatsapp">WA</button>
+                            </div>
+                        </div>
+                        <div class="theme-pills" role="radiogroup">
+                            <?php foreach ([
+                                'detailed'    => 'Graphic',
+                                'table'       => 'Table',
+                                'three_lines' => '3 Lines',
+                                'two_lines'   => '2 Lines',
+                                'compact'     => 'Compact',
+                                'whatsapp'    => 'WhatsApp',
+                            ] as $val => $lbl): ?>
+                                <label class="theme-pill">
+                                    <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
+                                    <span><?= Html::e($lbl) ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
 
-                <div class="opt-group">
-                    <span class="opt-label">Distance</span>
-                    <div class="format-pills" role="radiogroup">
-                        <?php foreach (['off' => 'Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
-                            <label class="pill-radio">
-                                <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
-                                <span><?= Html::e($lbl) ?></span>
-                            </label>
-                        <?php endforeach; ?>
+                    <!-- Row 2: Core Display Options -->
+                    <div class="opt-section">
+                        <div class="opt-section-head">
+                            <span class="opt-section-title">Flight Details</span>
+                            <div class="dist-pills" role="radiogroup" title="Show flight distance">
+                                <?php foreach (['off' => 'Dist: Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
+                                    <label class="pill-radio-sm">
+                                        <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
+                                        <span><?= Html::e($lbl) ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <div class="toggle-grid">
+                            <?php foreach ([
+                                'show_airline_logo'      => 'Airline Logo',
+                                'show_airline_name'      => 'Airline Name',
+                                'show_flight_duration'   => 'Duration',
+                                'show_transit_time'      => 'Layover',
+                                'show_terminal'          => 'Terminal',
+                                'show_cabin'             => 'Cabin',
+                                'show_operated_by'       => 'Operated by',
+                                'show_aircraft'          => 'Aircraft',
+                                'use_12_hour_clock'      => '12h Clock',
+                                'show_booking_reference' => 'Booking Ref',
+                                'show_booking_class'     => 'Class Code',
+                                'show_ticket_numbers'    => 'Ticket No.',
+                                'show_seat_numbers'      => 'Seat No.',
+                            ] as $key => $label): ?>
+                                <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                    <span class="mt-track" aria-hidden="true"></span>
+                                    <span class="mt-label"><?= Html::e($label) ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div class="toggle-grid">
-                <?php
-                $toggleDefs = [
-                    'show_agency_header' => 'Header',   'show_agency_footer' => 'Footer',
-                    'show_disclaimer'    => 'Disclaimer','show_airline_name'  => 'Airline',
-                    'show_airline_logo'  => 'Logo',     'show_transit_time'  => 'Layover',
-                    'use_12_hour_clock'  => '12h clock','show_cabin'         => 'Cabin',
-                    'show_booking_class' => 'Class',    'show_booking_reference' => 'Ref',
-                    'show_ticket_numbers'=> 'Ticket',   'show_seat_numbers'  => 'Seat',
-                    'show_operated_by'   => 'Op. by',   'show_aircraft'      => 'Aircraft',
-                ];
-                foreach ($toggleDefs as $key => $label): ?>
-                    <label class="mini-toggle" title="<?= Html::e($label) ?>">
-                        <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                        <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                        <span class="mt-track" aria-hidden="true"></span>
-                        <span class="mt-label"><?= Html::e($label) ?></span>
-                    </label>
-                <?php endforeach; ?>
-            </div>
-        </div>
+                    <!-- Row 3: Agency Branding (collapsible group) -->
+                    <div class="opt-section opt-section--agency">
+                        <div class="opt-section-head">
+                            <span class="opt-section-title">Agency Branding</span>
+                            <span class="opt-section-note">Optional</span>
+                        </div>
+                        <div class="toggle-grid">
+                            <?php foreach ([
+                                'show_agency_header' => 'Agency Header',
+                                'show_agency_footer' => 'Agency Footer',
+                                'show_disclaimer'    => 'Disclaimer',
+                            ] as $key => $label): ?>
+                                <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                    <span class="mt-track" aria-hidden="true"></span>
+                                    <span class="mt-label"><?= Html::e($label) ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
 
-        <!-- ── Parser feedback (only when result exists) ── -->
-        <?php if ($result !== null): ?>
-            <div class="parse-bar no-share">
-                <div class="parse-badges">
-                    <span class="pbadge pbadge-fmt"><?= Html::e($result->sourceFormat) ?></span>
-                    <span class="pbadge pbadge-<?= Html::e($result->confidence) ?>"><?= Html::e(strtoupper($result->confidence)) ?> confidence</span>
-                    <span class="pbadge"><?= Html::e((string) count($result->segments)) ?> flight<?= count($result->segments) !== 1 ? 's' : '' ?></span>
-                    <?php if (count($result->passengers) > 0): ?>
-                        <span class="pbadge"><?= Html::e((string) count($result->passengers)) ?> pax</span>
+                </div><!-- /options-card -->
+
+            </div><!-- /app-sidebar -->
+
+            <!-- ══════════════════════════════════════
+                 MAIN — Result / Landing
+            ══════════════════════════════════════ -->
+            <div class="app-main">
+
+                <!-- Result action bar -->
+                <?php if ($result !== null): ?>
+                <div class="result-bar no-share">
+                    <div class="parse-badges">
+                        <span class="pbadge pbadge-fmt"><?= Html::e($result->sourceFormat) ?></span>
+                        <span class="pbadge pbadge-<?= Html::e($result->confidence) ?>"><?= Html::e(strtoupper($result->confidence)) ?></span>
+                        <span class="pbadge"><?= Html::e((string) count($result->segments)) ?> flight<?= count($result->segments) !== 1 ? 's' : '' ?></span>
+                        <?php if (count($result->passengers) > 0): ?>
+                            <span class="pbadge"><?= Html::e((string) count($result->passengers)) ?> pax</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($renderable): ?>
+                        <div class="result-actions">
+                            <button type="button" class="btn btn-wa btn-sm" id="waBtn">📱 WhatsApp</button>
+                            <button type="button" class="btn btn-sm" id="copyTextBtn">📋 Copy Text</button>
+                            <button type="button" class="btn btn-sm" id="copyImageBtn">🖼 Copy Image</button>
+                            <button type="button" class="btn btn-sm" id="downloadPngBtn">💾 Save PNG</button>
+                            <button type="button" class="btn btn-sm" id="printBtn">🖨 Print</button>
+                        </div>
                     <?php endif; ?>
                 </div>
-                <?php if ($renderable): ?>
-                    <div class="result-actions">
-                        <button type="button" class="btn btn-wa" id="waBtn">WhatsApp copy</button>
-                        <button type="button" class="btn btn-sm" id="copyTextBtn">Copy text</button>
-                        <button type="button" class="btn btn-sm" id="copyImageBtn">Copy image</button>
-                        <button type="button" class="btn btn-sm" id="downloadPngBtn">Save PNG</button>
-                        <button type="button" class="btn btn-sm" id="printBtn">Print</button>
+                <?php endif; ?>
+
+                <!-- Alerts -->
+                <?php if ($rateLimited): ?>
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Rate limit reached.</strong> You have exceeded 40 conversions per hour. Please wait and try again.
                     </div>
                 <?php endif; ?>
-            </div>
-        <?php endif; ?>
 
-        <!-- ── Alerts ─────────────────────────────── -->
-        <?php if ($rateLimited): ?>
-            <div class="alert alert-danger" role="alert">
-                <strong>Rate limit reached.</strong> You have exceeded 40 conversions per hour. Please wait and try again.
-            </div>
-        <?php endif; ?>
-
-        <?php if ($result !== null && count($result->warnings) > 0): ?>
-            <div class="alert alert-warn" role="alert">
-                <?php foreach ($result->warnings as $w): ?><p><?= Html::e($w) ?></p><?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- ── Empty state ────────────────────────── -->
-        <?php if ($result === null && !$rateLimited): ?>
-            <div class="empty-state no-share">
-                <svg class="empty-plane" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M10 50L35 30L30 10L40 15L45 32L65 20L68 26L50 40L55 62L48 65L38 48L10 50Z" stroke="currentColor" stroke-width="2" fill="none"/>
-                </svg>
-                <p>Paste your GDS itinerary above and press <strong>Convert</strong></p>
-                <p class="empty-sub">Supports Amadeus, Galileo, Sabre, Worldspan, Smartpoint and generic formats</p>
-            </div>
-
-        <?php elseif ($result !== null && !$result->isRenderable()): ?>
-            <div class="alert alert-warn">
-                <strong>Manual review needed.</strong> Confidence too low to generate a card.
-                <?php if (count($result->unparsedLines) > 0): ?>
-                    <ul><?php foreach ($result->unparsedLines as $ul): ?><li><code><?= Html::e($ul) ?></code></li><?php endforeach; ?></ul>
+                <?php if ($result !== null && count($result->warnings) > 0): ?>
+                    <div class="alert alert-warn" role="alert">
+                        <?php foreach ($result->warnings as $w): ?><p><?= Html::e($w) ?></p><?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
-            </div>
 
-        <?php elseif ($renderable): ?>
+                <!-- Landing page (shown when no result yet) -->
+                <?php if ($result === null && !$rateLimited): ?>
+                <div class="landing-panel">
+
+                    <div class="landing-hero">
+                        <h2 class="landing-hero-title">Convert raw PNRs into branded,<br>customer-friendly itineraries</h2>
+                        <p class="landing-hero-sub">Supports Amadeus · Galileo · Sabre · Worldspan · Smartpoint · and more</p>
+                    </div>
+
+                    <div class="feature-grid">
+                        <div class="feat-card">
+                            <div class="feat-icon">✈</div>
+                            <h3>All Major GDS</h3>
+                            <p>Parses Amadeus, Galileo (Travelport), Sabre, Worldspan, Smartpoint and generic airline formats automatically.</p>
+                        </div>
+                        <div class="feat-card">
+                            <div class="feat-icon">🎨</div>
+                            <h3>Multiple Layouts</h3>
+                            <p>Choose Graphic cards, Table view, 2 Lines, 3 Lines, Compact or WhatsApp-ready text — all in one click.</p>
+                        </div>
+                        <div class="feat-card">
+                            <div class="feat-icon">🏢</div>
+                            <h3>Agency Branding</h3>
+                            <p>Add your agency logo, header, footer and contact details. Present itineraries professionally to your clients.</p>
+                        </div>
+                        <div class="feat-card">
+                            <div class="feat-icon">📱</div>
+                            <h3>WhatsApp Ready</h3>
+                            <p>One click to copy a beautifully formatted itinerary with emojis, flight details and layover info for WhatsApp.</p>
+                        </div>
+                        <div class="feat-card">
+                            <div class="feat-icon">🖼</div>
+                            <h3>PNG &amp; PDF Export</h3>
+                            <p>Download the itinerary as a high-quality PNG image or print to PDF — ready to attach to any email or message.</p>
+                        </div>
+                        <div class="feat-card">
+                            <div class="feat-icon">🔒</div>
+                            <h3>100% Private</h3>
+                            <p>PNR data is processed in memory only — never stored, never logged. Passenger and payment lines are automatically ignored.</p>
+                        </div>
+                    </div>
+
+                    <div class="gds-support-row">
+                        <span class="gds-label">Supported GDS:</span>
+                        <?php foreach (['Amadeus', 'Galileo', 'Sabre', 'Worldspan', 'Smartpoint', 'Generic'] as $gds): ?>
+                            <span class="gds-pill"><?= Html::e($gds) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="why-rn">
+                        <h3 class="why-rn-title">Why Roaming Nepal PNR Converter?</h3>
+                        <ul class="why-rn-list">
+                            <li>✅ Completely free — no subscription, no sign-up, no limitations</li>
+                            <li>✅ Built by travel professionals who understand GDS formats</li>
+                            <li>✅ Handles Amadeus, Galileo, Sabre &amp; mixed formats in a single paste</li>
+                            <li>✅ Outbound + Return leg grouping for multi-city itineraries</li>
+                            <li>✅ Overnight badges, transit visa warnings, layover time calculations</li>
+                            <li>✅ Customisable branding, layouts and display options</li>
+                        </ul>
+                    </div>
+
+                </div><!-- /landing-panel -->
+
+                <?php elseif ($result !== null && !$result->isRenderable()): ?>
+                    <div class="alert alert-warn">
+                        <strong>Manual review needed.</strong> Confidence too low to generate a card.
+                        <?php if (count($result->unparsedLines) > 0): ?>
+                            <ul><?php foreach ($result->unparsedLines as $ul): ?><li><code><?= Html::e($ul) ?></code></li><?php endforeach; ?></ul>
+                        <?php endif; ?>
+                    </div>
+
+                <?php elseif ($renderable): ?>
 
         <!-- ══════════════════════════════════════
              ITINERARY CARD
@@ -459,7 +623,7 @@ Example:
                 <?php if ($firstSeg instanceof Segment && $lastSeg instanceof Segment): ?>
                     <div class="pax-item">
                         <span class="pax-key">Route</span>
-                        <span class="pax-val"><?= Html::e($firstSeg->departureAirport . ' – ' . $lastSeg->arrivalAirport) ?></span>
+                        <span class="pax-val"><?= Html::e($routeDisplay($legs)) ?></span>
                     </div>
                 <?php endif; ?>
             </div>
@@ -726,6 +890,8 @@ Example:
 
         <?php endif; /* renderable */ ?>
 
+            </div><!-- /app-main -->
+        </div><!-- /app-layout -->
     </form>
 </main>
 

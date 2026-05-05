@@ -35,6 +35,8 @@ abstract class BaseParser implements ParserInterface
     protected function normalizeTime(string $time): string
     {
         $time = strtoupper(trim($time));
+        $time = preg_replace('/\+\d+$/', '', $time) ?? $time;
+        $time = ltrim($time, '#');
         $time = preg_replace('/[^0-9APM]/', '', $time) ?? $time;
 
         if (preg_match('/^(\d{1,2})(\d{2})(A|P|AM|PM)$/', $time, $m) === 1) {
