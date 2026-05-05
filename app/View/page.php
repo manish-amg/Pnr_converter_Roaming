@@ -40,14 +40,23 @@ $showAgencyHeader = $show('show_agency_header');
 $showAgencyFooter = $show('show_agency_footer');
 $showDisclaimer   = $show('show_disclaimer');
 
-$airlineLogo = static function (string $code) use ($projectRoot): ?string {
+$airlineLogo = static function (string $code) use ($projectRoot, $asset): array {
     $code = strtoupper(preg_replace('/[^A-Z0-9]/', '', $code) ?? '');
-    if ($code === '') return null;
+    if ($code === '') return ['src' => '', 'local' => false];
     foreach (['svg', 'png', 'webp'] as $ext) {
         $p = 'assets/images/airlines/' . $code . '.' . $ext;
-        if (is_file($projectRoot . '/' . $p)) return $p;
+        if (is_file($projectRoot . '/' . $p)) return ['src' => $asset($p), 'local' => true];
     }
-    return null;
+    // CDN fallback — Aviasales logo API (free, CORS-enabled)
+    return ['src' => 'https://pics.avs.io/100/40/' . $code . '.png', 'local' => false];
+};
+
+$logoImg = static function (array $logo, string $cls, string $alt): string {
+    if ($logo['src'] === '') return '';
+    $cors = $logo['local'] ? '' : ' crossorigin="anonymous"';
+    $err  = ' onerror="this.style.visibility=\'hidden\'"';
+    return '<img src="' . htmlspecialchars($logo['src'], ENT_QUOTES) . '"'
+        . $cors . $err . ' class="' . $cls . '" alt="' . htmlspecialchars($alt, ENT_QUOTES) . '" loading="lazy">';
 };
 
 $maskTicket = static function (?string $t, bool $mask): ?string {
@@ -592,7 +601,7 @@ Example:
                             <tr>
                                 <td>
                                     <div class="tbl-flight">
-                                        <?php if ($logo): ?><img src="<?= Html::e($asset($logo)) ?>" class="tbl-logo" alt=""><?php else: ?><span class="tbl-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
+                                        <?php if ($logo): ?><?= $logoImg($logo, 'tbl-logo', $seg->airlineCode) ?><?php else: ?><span class="tbl-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
                                         <div>
                                             <strong><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></strong>
                                             <?php if ($show('show_airline_name') && $seg->airlineName): ?><em><?= Html::e($seg->airlineName) ?></em><?php endif; ?>
@@ -658,7 +667,7 @@ Example:
                         ?>
                         <div class="cpt-flight">
                             <div class="cpt-head">
-                                <?php if ($logo): ?><img src="<?= Html::e($asset($logo)) ?>" class="cpt-logo" alt=""><?php else: ?><span class="cpt-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
+                                <?php if ($logo): ?><?= $logoImg($logo, 'cpt-logo', $seg->airlineCode) ?><?php else: ?><span class="cpt-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
                                 <strong><?= Html::e($datePretty($seg->departureDate)) ?></strong>
                                 <span class="cpt-fn"><?= Html::e($seg->airlineCode . $seg->flightNumber) ?><?php if ($show('show_airline_name') && $seg->airlineName): ?> · <?= Html::e($seg->airlineName) ?><?php endif; ?></span>
                                 <?php if ($dur): ?><span class="cpt-dur"><?= Html::e($dur) ?></span><?php endif; ?>
@@ -731,7 +740,7 @@ Example:
                             <div class="fb-body">
                                 <div class="fb-logo-col">
                                     <?php if ($logo !== null): ?>
-                                        <img src="<?= Html::e($asset($logo)) ?>" alt="" class="fb-logo">
+                                        <?= $logoImg($logo, 'fb-logo', $seg->airlineCode) ?>
                                     <?php else: ?>
                                         <span class="fb-code-badge"><?= Html::e($seg->airlineCode) ?></span>
                                     <?php endif; ?>
@@ -823,6 +832,7 @@ Example:
     </form>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="<?= Html::e($asset('assets/js/app.js')) ?>"></script>
 </body>
 </html>

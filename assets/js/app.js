@@ -2,18 +2,19 @@
   'use strict';
 
   const byId = (id) => document.getElementById(id);
-  const card          = byId('itineraryCard');
-  const shareModeBtn  = byId('shareModeBtn');
-  const printBtn      = byId('printBtn');
+  const card           = byId('itineraryCard');
+  const shareModeBtn   = byId('shareModeBtn');
+  const printBtn       = byId('printBtn');
   const downloadPngBtn = byId('downloadPngBtn');
-  const copyTextBtn   = byId('copyTextBtn');
-  const copyImageBtn  = byId('copyImageBtn');
-  const waBtn         = byId('waBtn');
-  const resetBtn      = byId('resetBtn');
-  const form          = document.querySelector('form');
-  const settingsPanel = document.querySelector('.settings-panel');
-  const presetBtns    = document.querySelectorAll('[data-preset]');
+  const copyTextBtn    = byId('copyTextBtn');
+  const copyImageBtn   = byId('copyImageBtn');
+  const waBtn          = byId('waBtn');
+  const resetBtn       = byId('resetBtn');
+  const form           = document.querySelector('form');
+  const settingsPanel  = document.querySelector('.settings-panel');
+  const presetBtns     = document.querySelectorAll('[data-preset]');
 
+  /* ── Share mode ─────────────────────────────────── */
   if (shareModeBtn) {
     shareModeBtn.addEventListener('click', () => toggleShareMode());
   }
@@ -24,17 +25,19 @@
     }
   });
 
+  /* ── Print ──────────────────────────────────────── */
   if (printBtn) {
     printBtn.addEventListener('click', () => window.print());
   }
 
+  /* ── Clear — navigate to fresh page ─────────────── */
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      const ta = byId('pnr_text');
-      if (ta) ta.value = '';
+      window.location.href = window.location.pathname;
     });
   }
 
+  /* ── Auto-submit on options change ──────────────── */
   if (form && settingsPanel && card) {
     let timer;
     settingsPanel.addEventListener('change', () => {
@@ -46,6 +49,7 @@
     });
   }
 
+  /* ── Preset buttons ─────────────────────────────── */
   if (form && presetBtns.length) {
     updatePresetState();
     presetBtns.forEach((btn) => {
@@ -61,69 +65,83 @@
     });
   }
 
+  /* ── WhatsApp copy ──────────────────────────────── */
   if (waBtn) {
     waBtn.addEventListener('click', async () => {
       const ta = byId('waVersion');
       if (!ta) return;
       try {
         await navigator.clipboard.writeText(ta.value);
-        temporaryLabel(waBtn, 'Copied!');
+        temporaryLabel(waBtn, '✓ Copied!');
       } catch {
-        ta.select();
-        document.execCommand('copy');
-        temporaryLabel(waBtn, 'Copied!');
+        ta.select(); document.execCommand('copy');
+        temporaryLabel(waBtn, '✓ Copied!');
       }
     });
   }
 
+  /* ── Copy text ──────────────────────────────────── */
   if (copyTextBtn) {
     copyTextBtn.addEventListener('click', async () => {
       const ta = byId('textVersion');
       if (!ta) return;
       try {
         await navigator.clipboard.writeText(ta.value);
-        temporaryLabel(copyTextBtn, 'Copied!');
+        temporaryLabel(copyTextBtn, '✓ Copied!');
       } catch {
-        ta.select();
-        document.execCommand('copy');
-        temporaryLabel(copyTextBtn, 'Copied!');
+        ta.select(); document.execCommand('copy');
+        temporaryLabel(copyTextBtn, '✓ Copied!');
       }
     });
   }
 
+  /* ── Save PNG ───────────────────────────────────── */
   if (downloadPngBtn) {
     downloadPngBtn.addEventListener('click', async () => {
       if (!card) return;
-      temporaryLabel(downloadPngBtn, 'Rendering...');
-      const blob = await renderCardToPng(card);
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url; a.download = 'roaming-nepal-itinerary.png';
-      a.click();
-      URL.revokeObjectURL(url);
-      temporaryLabel(downloadPngBtn, 'Download PNG');
+      temporaryLabel(downloadPngBtn, '⏳ Rendering…');
+      try {
+        const blob = await renderCardToPng(card);
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = 'itinerary-roamingnepal.png';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        temporaryLabel(downloadPngBtn, '💾 Save PNG');
+      } catch (err) {
+        console.error('PNG render error:', err);
+        temporaryLabel(downloadPngBtn, '❌ Failed');
+      }
     });
   }
 
+  /* ── Copy image ─────────────────────────────────── */
   if (copyImageBtn) {
     if (!navigator.clipboard || !window.ClipboardItem) {
       copyImageBtn.disabled = true;
-      copyImageBtn.title = 'Image clipboard not supported by this browser';
+      copyImageBtn.title = 'Image clipboard not supported in this browser';
     } else {
       copyImageBtn.addEventListener('click', async () => {
         if (!card) return;
-        temporaryLabel(copyImageBtn, 'Rendering...');
-        const blob = await renderCardToPng(card);
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        temporaryLabel(copyImageBtn, 'Copied!');
+        temporaryLabel(copyImageBtn, '⏳ Rendering…');
+        try {
+          const blob = await renderCardToPng(card);
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          temporaryLabel(copyImageBtn, '✓ Copied!');
+        } catch (err) {
+          console.error('Copy image error:', err);
+          temporaryLabel(copyImageBtn, '❌ Failed');
+        }
       });
     }
   }
 
+  /* ── Helpers ─────────────────────────────────────── */
   function temporaryLabel(btn, label) {
     const orig = btn.textContent;
     btn.textContent = label;
-    setTimeout(() => { btn.textContent = orig; }, 1500);
+    setTimeout(() => { btn.textContent = orig; }, 1800);
   }
 
   function toggleShareMode(force) {
@@ -145,7 +163,6 @@
       radio('result_format', 'detailed');
       return;
     }
-
     if (preset === 'whatsapp') {
       check('show_agency_header', false);
       check('show_agency_footer', false);
@@ -153,7 +170,6 @@
       radio('result_format', 'whatsapp');
       return;
     }
-
     // branded
     check('show_agency_header', true);
     check('show_agency_footer', true);
@@ -169,57 +185,25 @@
     });
   }
 
+  /* ── PNG render via html2canvas ──────────────────── */
   async function renderCardToPng(element) {
-    const clone  = element.cloneNode(true);
-    const rect   = element.getBoundingClientRect();
-    const width  = Math.ceil(rect.width);
-    const height = Math.ceil(rect.height);
-    clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-    clone.style.width     = width + 'px';
-    clone.style.margin    = '0';
-    clone.style.boxShadow = 'none';
-
-    const styles = Array.from(document.styleSheets)
-      .map((sheet) => {
-        try {
-          return Array.from(sheet.cssRules).map((r) => r.cssText).join('\n');
-        } catch { return ''; }
-      }).join('\n');
-
-    const html = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <foreignObject width="100%" height="100%">
-        <div xmlns="http://www.w3.org/1999/xhtml">
-          <style>${styles}</style>
-          ${clone.outerHTML}
-        </div>
-      </foreignObject>
-    </svg>`;
-
-    const svgBlob = new Blob([html], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl  = URL.createObjectURL(svgBlob);
-    try {
-      const img    = await loadImage(svgUrl);
-      const canvas = document.createElement('canvas');
-      const scale  = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width  = width  * scale;
-      canvas.height = height * scale;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scale, scale);
-      ctx.drawImage(img, 0, 0);
-      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
-    } finally {
-      URL.revokeObjectURL(svgUrl);
+    if (typeof window.html2canvas !== 'function') {
+      throw new Error('html2canvas not loaded');
     }
+    const canvas = await window.html2canvas(element, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      width:  element.offsetWidth,
+      height: element.scrollHeight,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth:  document.documentElement.offsetWidth,
+      windowHeight: document.documentElement.offsetHeight,
+    });
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
   }
 
-  function loadImage(url) {
-    return new Promise((res, rej) => {
-      const img = new Image();
-      img.onload  = () => res(img);
-      img.onerror = rej;
-      img.src = url;
-    });
-  }
 })();

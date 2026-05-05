@@ -1,33 +1,57 @@
 @media print {
-  body { background: #ffffff !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
-  .no-print,
-  .no-share,
-  .topbar,
-  .app-sidebar,
-  .result-bar,
-  .parse-bar,
-  .parse-badges,
-  .result-actions,
-  .options-card,
-  .input-card,
-  .sidebar-hero,
-  .share-hint,
-  .landing-panel { display: none !important; }
+  body { background: #fff !important; margin: 0; }
 
-  .page-wrap  { padding: 0 !important; max-width: none !important; }
-  .app-layout { display: block !important; }
-  .app-main   { width: 100% !important; }
+  /* ── Hide all UI chrome ── */
+  .no-print, .no-share,
+  .topbar, .app-sidebar,
+  .result-bar, .parse-bar,
+  .options-strip, .options-card,
+  .input-card, .share-hint,
+  .empty-hint, .empty-state,
+  .alert, .result-actions { display: none !important; }
 
+  /* ── Layout ── */
+  .page-wrap {
+    padding: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .app-layout, .app-layout--split {
+    display: block !important;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-main {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* ── Card ── */
   .itin-card {
     max-width: none !important;
+    width: 100% !important;
     margin: 0 !important;
     border: none !important;
     box-shadow: none !important;
+    overflow: visible !important;
+    page-break-inside: avoid;
     break-inside: avoid;
   }
 
-  .flight-block,
-  .leg-head,
-  .lo-sep { break-inside: avoid; }
+  .flight-block, .leg-head, .lo-sep, .fb-body {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* ── Keep colors ── */
+  .card-agency { -webkit-print-color-adjust: exact !important; }
+  .leg-head    { -webkit-print-color-adjust: exact !important; }
+  .lo-sep      { -webkit-print-color-adjust: exact !important; }
 }
