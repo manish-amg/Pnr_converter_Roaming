@@ -17,9 +17,7 @@ $projectRoot = dirname(__DIR__, 2);
 $asset = static function (string $path) use ($basePath, $projectRoot): string {
     $rel = ltrim($path, '/');
     $url = ($basePath === '' ? '' : $basePath) . '/' . $rel;
-    if (is_file($projectRoot . '/' . $rel)) {
-        $url .= '?v=' . filemtime($projectRoot . '/' . $rel);
-    }
+    if (is_file($projectRoot . '/' . $rel)) $url .= '?v=' . filemtime($projectRoot . '/' . $rel);
     return $url;
 };
 
@@ -33,12 +31,6 @@ $distanceUnit = in_array((string) ($features['distance_unit'] ?? 'off'), ['off',
 $resultFormat = in_array((string) ($features['result_format'] ?? 'detailed'),
     ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'], true)
     ? (string) $features['result_format'] : 'detailed';
-$layoutFormat = match ($resultFormat) {
-    'compact'  => 'two_lines',
-    'whatsapp' => 'two_lines_reordered',
-    'detailed' => 'three_lines',
-    default    => $resultFormat,
-};
 $use24HourTime = array_key_exists('use_12_hour_clock', $features)
     ? !(bool) $features['use_12_hour_clock']
     : (bool) ($features['use_24_hour_time'] ?? true);
@@ -47,8 +39,6 @@ $show             = static fn (string $key): bool => (bool) ($features[$key] ?? 
 $showAgencyHeader = $show('show_agency_header');
 $showAgencyFooter = $show('show_agency_footer');
 $showDisclaimer   = $show('show_disclaimer');
-
-$airlineDisplayName = static fn (Segment $seg): string => $seg->airlineName ?: 'Airline ' . $seg->airlineCode;
 
 $airlineLogo = static function (string $code) use ($projectRoot): ?string {
     $code = strtoupper(preg_replace('/[^A-Z0-9]/', '', $code) ?? '');
@@ -73,9 +63,7 @@ $maskSeat = static function (?string $s, bool $mask): ?string {
 
 $formatTime = static function (string $time, bool $use24): string {
     if ($use24 || preg_match('/^(\d{2}):(\d{2})$/', $time, $m) !== 1) return $time;
-    $h = (int) $m[1];
-    $p = $h >= 12 ? 'PM' : 'AM';
-    $h = $h % 12 ?: 12;
+    $h = (int) $m[1]; $p = $h >= 12 ? 'PM' : 'AM'; $h = $h % 12 ?: 12;
     return sprintf('%d:%s %s', $h, $m[2], $p);
 };
 
@@ -89,6 +77,13 @@ $gdsDateTime = static function (string $date, string $time): ?\DateTimeImmutable
     return new \DateTimeImmutable(sprintf('%04d-%02d-%02d %02d:%02d:00', $y, $mn, (int) $d[1], (int) $t[1], (int) $t[2]));
 };
 
+// "Sat 30 May" display
+$datePretty = static function (string $date) use ($gdsDateTime): string {
+    $dt = $gdsDateTime($date, '00:00');
+    return $dt !== null ? $dt->format('D j M') : $date;
+};
+
+// Flight duration "3h 50m"
 $flightDuration = static function (Segment $seg) use ($gdsDateTime): ?string {
     $dep = $gdsDateTime($seg->departureDate, $seg->departureTime);
     $arr = $gdsDateTime($seg->arrivalDate ?: $seg->departureDate, $seg->arrivalTime);
@@ -99,15 +94,43 @@ $flightDuration = static function (Segment $seg) use ($gdsDateTime): ?string {
     return sprintf('%dh %02dm', intdiv($mins, 60), $mins % 60);
 };
 
+// Leg total duration (first dep → last arr including layovers)
+$legDuration = static function (array $segs) use ($gdsDateTime): ?string {
+    if (empty($segs)) return null;
+    $first = $segs[0]; $last = $segs[count($segs) - 1];
+    $dep = $gdsDateTime($first->departureDate, $first->departureTime);
+    $arr = $gdsDateTime($last->arrivalDate ?: $last->departureDate, $last->arrivalTime);
+    if ($dep === null || $arr === null) return null;
+    if ($arr < $dep) $arr = $arr->modify('+1 day');
+    $mins = (int) round(($arr->getTimestamp() - $dep->getTimestamp()) / 60);
+    if ($mins <= 0 || $mins > 96 * 60) return null;
+    return sprintf('%dh %02dm', intdiv($mins, 60), $mins % 60);
+};
+
+// Arrival day offset +1/+2
 $arrivalOffset = static function (Segment $seg) use ($gdsDateTime): int {
     if (!$seg->arrivalDate) return 0;
     $dep = $gdsDateTime($seg->departureDate, $seg->departureTime);
     $arr = $gdsDateTime($seg->arrivalDate, $seg->arrivalTime);
-    if ($dep === null || $arr === null) return 0;
-    if ($arr <= $dep) return 0;
+    if ($dep === null || $arr === null || $arr <= $dep) return 0;
     return min(2, (int) $dep->diff($arr)->days);
 };
 
+// Full airport display: "Tribhuvan International Airport, Kathmandu (KTM)"
+$portDisplay = static function (string $code): string {
+    $meta = Metadata::airport($code);
+    if ($meta === null) return strtoupper($code);
+    $parts = array_filter([$meta['name'] ?? null, $meta['city'] ?? null]);
+    return (!empty($parts) ? implode(', ', $parts) . ' ' : '') . '(' . strtoupper($code) . ')';
+};
+
+// City name only
+$portCity = static function (string $code): string {
+    $meta = Metadata::airport($code);
+    return $meta['city'] ?? strtoupper($code);
+};
+
+// Transit visa hubs
 $visaHubs = [
     'JFK'=>'US','LAX'=>'US','ORD'=>'US','MIA'=>'US','SFO'=>'US','DFW'=>'US',
     'EWR'=>'US','ATL'=>'US','IAH'=>'US','DEN'=>'US','BOS'=>'US','SEA'=>'US','IAD'=>'US','DTW'=>'US',
@@ -117,27 +140,27 @@ $visaHubs = [
     'BRU'=>'Schengen','VIE'=>'Schengen','HEL'=>'Schengen','OSL'=>'Schengen',
 ];
 $transitVisa = static fn (string $ap) use ($visaHubs): ?string
-    => isset($visaHubs[$ap]) ? 'Check ' . $visaHubs[$ap] . ' requirements' : null;
+    => isset($visaHubs[$ap]) ? 'Check ' . $visaHubs[$ap] . ' transit visa' : null;
 
+// Layover label and CSS class
 $layoverMeta = static function (?string $dur): array {
-    if ($dur === null) return ['', ''];
-    if (preg_match('/^(\d+)h\s*(\d+)m$/', $dur, $m) !== 1) return ['lo-normal', 'Layover'];
+    if ($dur === null) return ['lo-normal', 'Connection'];
+    if (preg_match('/^(\d+)h\s*(\d+)m$/', $dur, $m) !== 1) return ['lo-normal', 'Connection'];
     $mins = ((int) $m[1]) * 60 + (int) $m[2];
-    if ($mins < 90)       return ['lo-tight', 'Short layover'];
+    if ($mins < 90)       return ['lo-tight',    'Short connection'];
     if ($mins >= 10 * 60) return ['lo-overnight', 'Overnight layover'];
-    if ($mins >= 6 * 60)  return ['lo-long', 'Long layover'];
-    return ['lo-normal', 'Layover'];
+    if ($mins >= 6 * 60)  return ['lo-long',      'Long connection'];
+    return ['lo-normal', 'Connection'];
 };
 
+// Group segments into journey legs
 $buildLegs = static function (array $segments): array {
     if (empty($segments)) return [];
     $legs = []; $cur = [$segments[0]];
     for ($i = 1; $i < count($segments); $i++) {
         if ($segments[$i - 1]->arrivalAirport === $segments[$i]->departureAirport) {
             $cur[] = $segments[$i];
-        } else {
-            $legs[] = $cur; $cur = [$segments[$i]];
-        }
+        } else { $legs[] = $cur; $cur = [$segments[$i]]; }
     }
     $legs[] = $cur;
     $isRound = count($legs) === 2
@@ -151,104 +174,83 @@ $buildLegs = static function (array $segments): array {
 
 $legs = $result !== null && $result->isRenderable() ? $buildLegs($result->segments) : [];
 
-$optionGroups = [
-    'Branding' => [
-        'show_agency_header' => 'Agency header',
-        'show_agency_footer' => 'Footer/contact',
-        'show_disclaimer'    => 'Disclaimer',
-    ],
-    'Flight Details' => [
-        'show_airline_name'  => 'Airline name',
-        'show_airline_logo'  => 'Airline logo',
-        'show_transit_time'  => 'Layover time',
-        'use_12_hour_clock'  => '12-hour clock',
-        'show_operated_by'   => 'Operated by',
-        'show_aircraft'      => 'Aircraft type',
-    ],
-    'Booking Data' => [
-        'show_booking_class'     => 'Booking class',
-        'show_cabin'             => 'Cabin',
-        'show_booking_reference' => 'Booking ref',
-        'show_ticket_numbers'    => 'Ticket numbers',
-        'show_seat_numbers'      => 'Seat numbers',
-    ],
-];
-
-// Build plain-text version
-$buildTextVersion = static function () use ($result, $show, $showDisclaimer, $settings, $agencyName, $formatTime, $use24HourTime): string {
-    if ($result === null || !$result->isRenderable()) return '';
-    $lines   = [];
-    $lines[] = $agencyName . ' — Flight Itinerary';
-    $lines[] = str_repeat('-', 44);
-    if ($show('show_booking_reference') && $result->recordLocator !== null) {
-        $lines[] = 'Booking Ref: ' . $result->recordLocator;
-    }
-    $pax = count($result->passengers) > 0
-        ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
-        : 'Passenger not detected';
-    $lines[] = 'Passenger: ' . $pax;
-    $lines[] = '';
-    foreach ($result->segments as $i => $seg) {
-        $dep = $formatTime($seg->departureTime, $use24HourTime);
-        $arr = $formatTime($seg->arrivalTime, $use24HourTime);
-        $lines[] = 'Flight ' . ($i + 1) . ': ' . $seg->airlineCode . ' ' . $seg->flightNumber
-            . ($seg->airlineName ? ' (' . $seg->airlineName . ')' : '');
-        $lines[] = '  ' . $seg->departureAirport . '  ' . $seg->departureDate . ' ' . $dep
-            . '  →  ' . $seg->arrivalAirport . '  ' . ($seg->arrivalDate ?: $seg->departureDate) . ' ' . $arr;
-        if ($seg->layoverDuration) {
-            $lines[] = '  Layover at ' . $seg->arrivalAirport . ': ' . $seg->layoverDuration;
+// Itinerary title with city names
+$itinTitle = static function (array $legs) use ($portCity): string {
+    if (empty($legs)) return 'Flight Itinerary';
+    $parts = [];
+    foreach ($legs as $leg) {
+        $first = $leg['segments'][0] ?? null;
+        $last  = $leg['segments'][count($leg['segments']) - 1] ?? null;
+        if ($first && $last) {
+            $parts[] = $portCity($first->departureAirport) . ' \u{2192} ' . $portCity($last->arrivalAirport);
         }
     }
-    if ($showDisclaimer) {
-        $lines[] = '';
-        $lines[] = $settings['default_disclaimer'] ?? 'Please verify schedule with airline.';
-    }
-    return implode("\n", $lines);
+    return 'Flight Itinerary: ' . implode(' // ', $parts);
 };
 
-// Build WhatsApp-formatted version
-$buildWaVersion = static function () use ($result, $show, $showDisclaimer, $showAgencyFooter, $settings, $agencyName, $formatTime, $use24HourTime): string {
+// WhatsApp text builder
+$buildWaText = static function () use ($result, $show, $showDisclaimer, $showAgencyFooter, $settings,
+    $agencyName, $formatTime, $use24HourTime, $datePretty, $portDisplay): string {
     if ($result === null || !$result->isRenderable()) return '';
-    $lines   = [];
-    $lines[] = '✈️ *FLIGHT ITINERARY*';
+    $lines = ['*✈ FLIGHT ITINERARY*'];
     if ($show('show_agency_header')) $lines[] = '📌 *' . $agencyName . '*';
     $lines[] = '';
     $pax = count($result->passengers) > 0
         ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
         : 'Passenger not detected';
     $lines[] = '👤 *Passenger:* ' . $pax;
-    if ($show('show_booking_reference') && $result->recordLocator !== null) {
+    if ($show('show_booking_reference') && $result->recordLocator !== null)
         $lines[] = '🔖 *Booking Ref:* ' . $result->recordLocator;
-    }
     $lines[] = '';
     foreach ($result->segments as $i => $seg) {
         $dep = $formatTime($seg->departureTime, $use24HourTime);
         $arr = $formatTime($seg->arrivalTime, $use24HourTime);
         $lines[] = '══════════════════════';
-        $lines[] = '✈️ *Flight ' . ($i + 1) . ':* ' . $seg->airlineCode . ' ' . $seg->flightNumber
+        $lines[] = sprintf('✈ *%s%s*', $seg->airlineCode, $seg->flightNumber)
             . ($seg->airlineName ? ' — ' . $seg->airlineName : '');
-        $lines[] = '📍 *Departs:* ' . $seg->departureAirport . '  ' . $seg->departureDate . '  ' . $dep;
-        $lines[] = '🏁 *Arrives:*  ' . $seg->arrivalAirport . '  ' . ($seg->arrivalDate ?: $seg->departureDate) . '  ' . $arr;
-        if ($show('show_cabin') && $seg->cabin) $lines[] = '💺 *Cabin:* ' . $seg->cabin;
-        if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration) {
-            $lines[] = '⏱️ *Layover at ' . $seg->arrivalAirport . ':* ' . $seg->layoverDuration;
-        }
+        $lines[] = '📅 ' . $datePretty($seg->departureDate);
+        $lines[] = '🛫 Departs: ' . $dep . ' — ' . $portDisplay($seg->departureAirport);
+        $lines[] = '🛬 Arrives: ' . $arr . ' — ' . $portDisplay($seg->arrivalAirport);
+        if ($show('show_cabin') && $seg->cabin) $lines[] = '💺 ' . $seg->cabin;
+        if ($seg->layoverDuration) $lines[] = '⏱ *Connection at ' . $seg->arrivalAirport . ':* ' . $seg->layoverDuration;
     }
     $lines[] = '══════════════════════';
-    if ($showDisclaimer) {
-        $lines[] = '';
-        $lines[] = '⚠️ ' . ($settings['default_disclaimer'] ?? 'Please verify schedule with airline before travel.');
-    }
+    if ($showDisclaimer)
+        $lines[] = "\n⚠ " . ($settings['default_disclaimer'] ?? 'Please verify schedule with airline.');
     if ($showAgencyFooter) {
-        $lines[] = '';
         $footer = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
         $ho     = is_array($footer['head_office'] ?? null) ? $footer['head_office'] : [];
-        if (!empty($ho['lines'])) {
-            foreach ((array) $ho['lines'] as $ln) $lines[] = (string) $ln;
-        }
+        if (!empty($ho['lines'])) { $lines[] = ''; foreach ((array) $ho['lines'] as $ln) $lines[] = (string) $ln; }
     }
     return implode("\n", $lines);
 };
+
+// Plain text builder
+$buildTextVersion = static function () use ($result, $show, $showDisclaimer, $settings,
+    $agencyName, $formatTime, $use24HourTime, $portDisplay, $datePretty): string {
+    if ($result === null || !$result->isRenderable()) return '';
+    $lines = [$agencyName . ' — Flight Itinerary', str_repeat('-', 50)];
+    $pax = count($result->passengers) > 0
+        ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
+        : 'Not detected';
+    $lines[] = 'Passenger: ' . $pax;
+    if ($show('show_booking_reference') && $result->recordLocator !== null)
+        $lines[] = 'Booking Ref: ' . $result->recordLocator;
+    $lines[] = '';
+    foreach ($result->segments as $i => $seg) {
+        $dep = $formatTime($seg->departureTime, $use24HourTime);
+        $arr = $formatTime($seg->arrivalTime, $use24HourTime);
+        $lines[] = $datePretty($seg->departureDate) . ' — ' . $seg->airlineCode . $seg->flightNumber;
+        $lines[] = '  Departs: ' . $dep . '  ' . $portDisplay($seg->departureAirport);
+        $lines[] = '  Arrives: ' . $arr . '  ' . $portDisplay($seg->arrivalAirport);
+        if ($seg->layoverDuration) $lines[] = '  Connection at ' . $seg->arrivalAirport . ': ' . $seg->layoverDuration;
+        $lines[] = '';
+    }
+    if ($showDisclaimer) $lines[] = $settings['default_disclaimer'] ?? '';
+    return trim(implode("\n", $lines));
+};
+
+$renderable = $result !== null && $result->isRenderable();
 ?>
 <!doctype html>
 <html lang="en">
@@ -260,478 +262,471 @@ $buildWaVersion = static function () use ($result, $show, $showDisclaimer, $show
     <link rel="stylesheet" href="<?= Html::e($asset('assets/css/styles.css')) ?>">
     <link rel="stylesheet" href="<?= Html::e($asset('assets/css/print.css')) ?>" media="print">
 </head>
-<body>
+<body<?= $renderable ? ' class="has-result"' : '' ?>>
+
 <div class="share-hint no-print" aria-hidden="true">Press Esc to exit share view</div>
 
 <header class="topbar no-share">
-    <div class="brand">
-        <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?> logo" class="brand-logo">
-        <div class="brand-meta">
-            <h1>PNR Converter</h1>
-            <p class="build-label">v<?= Html::e($appVersion) ?></p>
-        </div>
-    </div>
-    <div class="top-actions">
-        <span class="privacy-badge" title="Raw PNR text is never stored or logged">No PNR storage</span>
-        <button class="button button-outline" type="button" id="shareModeBtn">Share view</button>
+    <a class="brand-link" href="/">
+        <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?>" class="brand-logo">
+    </a>
+    <div class="topbar-right">
+        <span class="privacy-tag">No PNR storage · v<?= Html::e($appVersion) ?></span>
+        <?php if ($renderable): ?>
+            <button class="btn btn-outline-sm" type="button" id="shareModeBtn">Share view</button>
+        <?php endif; ?>
     </div>
 </header>
 
-<main class="app-shell">
-    <section class="workspace no-share" aria-labelledby="input-heading">
-        <form method="post" class="panel" autocomplete="off">
+<main class="page-wrap">
+    <form method="post" id="converterForm" autocomplete="off">
 
-            <div class="panel-head">
-                <div>
-                    <span class="step-label">Step 1</span>
-                    <h2 id="input-heading">Paste PNR</h2>
-                    <p class="panel-sub">Amadeus, Galileo, Sabre, Worldspan — paste the segment display as-is.</p>
-                </div>
-                <?php if ($result !== null): ?>
-                    <span class="badge badge-<?= Html::e($result->confidence) ?>">
-                        <?= Html::e($result->sourceFormat) ?> &middot; <?= Html::e(strtoupper($result->confidence)) ?>
-                    </span>
-                <?php endif; ?>
-            </div>
+        <!-- ── Textarea hero ──────────────────────── -->
+        <div class="input-hero">
+            <textarea
+                id="pnr_text"
+                name="pnr_text"
+                rows="10"
+                spellcheck="false"
+                placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
 
-            <div class="input-shell">
-                <label class="field-label" for="pnr_text">GDS itinerary text</label>
-                <textarea id="pnr_text" name="pnr_text" rows="14" spellcheck="false"
-                    placeholder="Example:&#10;1  QR 647  21MAY KTMDOH HK1 1910 2200&#10;2  QR 007  21MAY DOHLHR HK1 2355 0545+1"><?= Html::e($rawInput) ?></textarea>
+Example:
+1  QR 647  21MAY KTMDOH HK1 1910 2200
+2  QR 007  21MAY DOHLHR HK1 2355 0545+1"><?= Html::e($rawInput) ?></textarea>
+
+            <div class="input-foot">
                 <div class="input-chips">
-                    <span>In-memory only</span>
+                    <span>Processed in memory only</span>
                     <span>Payment &amp; passport lines ignored</span>
                 </div>
+                <div class="convert-btns">
+                    <button type="submit" class="btn btn-convert">✈&nbsp; Convert</button>
+                    <button type="reset" id="resetBtn" class="btn btn-ghost">Clear</button>
+                </div>
             </div>
+        </div>
 
-            <div class="settings-panel">
-                <div class="settings-header">
-                    <div>
-                        <span class="step-label">Step 2</span>
-                        <h3>Display options</h3>
-                    </div>
-                    <div class="preset-row" aria-label="Presets">
-                        <button type="button" class="preset-btn" data-preset="branded">
-                            <strong>Roaming</strong><span>Full brand</span>
-                        </button>
-                        <button type="button" class="preset-btn" data-preset="neutral">
-                            <strong>Neutral</strong><span>No branding</span>
-                        </button>
-                        <button type="button" class="preset-btn" data-preset="whatsapp">
-                            <strong>WhatsApp</strong><span>Compact</span>
-                        </button>
-                    </div>
-                </div>
-
-                <?php foreach ($optionGroups as $groupTitle => $optionLabels): ?>
-                    <div class="option-group">
-                        <h4><?= Html::e($groupTitle) ?></h4>
-                        <div class="option-list">
-                            <?php foreach ($optionLabels as $key => $label): ?>
-                                <label class="toggle">
-                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                    <span class="toggle-track" aria-hidden="true"></span>
-                                    <span><?= Html::e($label) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-
-                <div class="option-group">
-                    <h4>Distance</h4>
-                    <div class="seg-control" role="radiogroup" aria-label="Distance unit">
-                        <?php foreach (['off' => 'Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
-                            <label>
-                                <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked($distanceUnit === $val) ?>>
-                                <span><?= Html::e($lbl) ?></span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <div class="option-group option-wide">
-                    <h4>Format</h4>
-                    <div class="format-grid" role="radiogroup" aria-label="Output format">
+        <!-- ── Options bar ────────────────────────── -->
+        <div class="options-bar no-share">
+            <div class="options-left">
+                <div class="opt-group">
+                    <span class="opt-label">Format</span>
+                    <div class="format-pills" role="radiogroup">
                         <?php foreach (['detailed' => 'Detailed', 'compact' => 'Compact', 'table' => 'Table', 'whatsapp' => 'WhatsApp'] as $val => $lbl): ?>
-                            <label class="radio-tile">
+                            <label class="pill-radio">
                                 <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
                                 <span><?= Html::e($lbl) ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
                 </div>
+
+                <div class="opt-group">
+                    <span class="opt-label">Preset</span>
+                    <div class="preset-pills">
+                        <button type="button" class="pill-btn" data-preset="branded">Branded</button>
+                        <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
+                        <button type="button" class="pill-btn" data-preset="whatsapp">WhatsApp</button>
+                    </div>
+                </div>
+
+                <div class="opt-group">
+                    <span class="opt-label">Distance</span>
+                    <div class="format-pills" role="radiogroup">
+                        <?php foreach (['off' => 'Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
+                            <label class="pill-radio">
+                                <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
+                                <span><?= Html::e($lbl) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
 
-            <div class="actions">
-                <button class="button button-primary" type="submit">Convert</button>
-                <button class="button" type="reset" id="resetBtn">Clear</button>
-                <button class="button" type="button" id="waBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>WhatsApp copy</button>
-                <button class="button" type="button" id="copyTextBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Copy text</button>
-                <button class="button" type="button" id="copyImageBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Copy image</button>
-                <button class="button" type="button" id="downloadPngBtn"<?= $result === null || !$result->isRenderable() ? ' disabled' : '' ?>>Download PNG</button>
-                <button class="button" type="button" id="printBtn">Print</button>
+            <div class="toggle-grid">
+                <?php
+                $toggleDefs = [
+                    'show_agency_header' => 'Header',   'show_agency_footer' => 'Footer',
+                    'show_disclaimer'    => 'Disclaimer','show_airline_name'  => 'Airline',
+                    'show_airline_logo'  => 'Logo',     'show_transit_time'  => 'Layover',
+                    'use_12_hour_clock'  => '12h clock','show_cabin'         => 'Cabin',
+                    'show_booking_class' => 'Class',    'show_booking_reference' => 'Ref',
+                    'show_ticket_numbers'=> 'Ticket',   'show_seat_numbers'  => 'Seat',
+                    'show_operated_by'   => 'Op. by',   'show_aircraft'      => 'Aircraft',
+                ];
+                foreach ($toggleDefs as $key => $label): ?>
+                    <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                        <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                        <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                        <span class="mt-track" aria-hidden="true"></span>
+                        <span class="mt-label"><?= Html::e($label) ?></span>
+                    </label>
+                <?php endforeach; ?>
             </div>
-        </form>
-    </section>
-
-    <section class="preview-area" aria-labelledby="preview-heading">
-        <div class="preview-head no-share">
-            <div>
-                <span class="step-label">Step 3</span>
-                <h2 id="preview-heading">Passenger copy</h2>
-            </div>
-            <?php if ($result !== null): ?>
-                <span class="source-tag">Detected: <?= Html::e($result->sourceFormat) ?></span>
-            <?php endif; ?>
         </div>
 
+        <!-- ── Parser feedback (only when result exists) ── -->
         <?php if ($result !== null): ?>
-            <div class="parse-stats no-share">
-                <div><span>Confidence</span><strong class="conf-<?= Html::e($result->confidence) ?>"><?= Html::e(ucfirst($result->confidence)) ?></strong></div>
-                <div><span>Flights</span><strong><?= Html::e((string) count($result->segments)) ?></strong></div>
-                <div><span>Passengers</span><strong><?= Html::e((string) count($result->passengers)) ?></strong></div>
-                <div><span>Privacy</span><strong>Not stored</strong></div>
+            <div class="parse-bar no-share">
+                <div class="parse-badges">
+                    <span class="pbadge pbadge-fmt"><?= Html::e($result->sourceFormat) ?></span>
+                    <span class="pbadge pbadge-<?= Html::e($result->confidence) ?>"><?= Html::e(strtoupper($result->confidence)) ?> confidence</span>
+                    <span class="pbadge"><?= Html::e((string) count($result->segments)) ?> flight<?= count($result->segments) !== 1 ? 's' : '' ?></span>
+                    <?php if (count($result->passengers) > 0): ?>
+                        <span class="pbadge"><?= Html::e((string) count($result->passengers)) ?> pax</span>
+                    <?php endif; ?>
+                </div>
+                <?php if ($renderable): ?>
+                    <div class="result-actions">
+                        <button type="button" class="btn btn-wa" id="waBtn">WhatsApp copy</button>
+                        <button type="button" class="btn btn-sm" id="copyTextBtn">Copy text</button>
+                        <button type="button" class="btn btn-sm" id="copyImageBtn">Copy image</button>
+                        <button type="button" class="btn btn-sm" id="downloadPngBtn">Save PNG</button>
+                        <button type="button" class="btn btn-sm" id="printBtn">Print</button>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
+        <!-- ── Alerts ─────────────────────────────── -->
         <?php if ($rateLimited): ?>
-            <div class="alert alert-danger no-share" role="alert">
-                <strong>Rate limit reached.</strong> You have exceeded 40 conversions per hour. Please try again later.
+            <div class="alert alert-danger" role="alert">
+                <strong>Rate limit reached.</strong> You have exceeded 40 conversions per hour. Please wait and try again.
             </div>
         <?php endif; ?>
 
         <?php if ($result !== null && count($result->warnings) > 0): ?>
-            <div class="alert alert-warn no-share" role="alert">
-                <?php foreach ($result->warnings as $w): ?>
-                    <p><?= Html::e($w) ?></p>
-                <?php endforeach; ?>
+            <div class="alert alert-warn" role="alert">
+                <?php foreach ($result->warnings as $w): ?><p><?= Html::e($w) ?></p><?php endforeach; ?>
             </div>
         <?php endif; ?>
 
+        <!-- ── Empty state ────────────────────────── -->
         <?php if ($result === null && !$rateLimited): ?>
             <div class="empty-state no-share">
-                <div class="empty-icon" aria-hidden="true">✈</div>
-                <h3>No itinerary yet</h3>
-                <p>Paste your GDS itinerary in the left panel and press <strong>Convert</strong>.</p>
+                <svg class="empty-plane" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M10 50L35 30L30 10L40 15L45 32L65 20L68 26L50 40L55 62L48 65L38 48L10 50Z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                <p>Paste your GDS itinerary above and press <strong>Convert</strong></p>
+                <p class="empty-sub">Supports Amadeus, Galileo, Sabre, Worldspan, Smartpoint and generic formats</p>
             </div>
 
         <?php elseif ($result !== null && !$result->isRenderable()): ?>
-            <div class="alert alert-warn no-share">
-                <strong>Manual review needed</strong>
-                <p>Confidence is too low to produce a passenger-ready card.</p>
+            <div class="alert alert-warn">
+                <strong>Manual review needed.</strong> Confidence too low to generate a card.
                 <?php if (count($result->unparsedLines) > 0): ?>
                     <ul><?php foreach ($result->unparsedLines as $ul): ?><li><code><?= Html::e($ul) ?></code></li><?php endforeach; ?></ul>
                 <?php endif; ?>
             </div>
 
-        <?php elseif ($result !== null && $result->isRenderable()): ?>
+        <?php elseif ($renderable): ?>
+
+        <!-- ══════════════════════════════════════
+             ITINERARY CARD
+        ══════════════════════════════════════ -->
+        <article class="itin-card" id="itineraryCard">
+
+            <?php if ($showAgencyHeader): ?>
+                <div class="card-agency">
+                    <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?>" class="agency-logo">
+                    <span class="agency-label">Flight Itinerary</span>
+                </div>
+            <?php endif; ?>
+
             <?php
             $firstSeg = $result->segments[0] ?? null;
             $lastSeg  = $result->segments[count($result->segments) - 1] ?? null;
             ?>
-            <article class="itinerary-card" id="itineraryCard">
+            <div class="card-title-row">
+                <h2 class="card-title"><?= Html::e($itinTitle($legs)) ?></h2>
+            </div>
 
-                <?php if ($showAgencyHeader): ?>
-                    <header class="card-header">
-                        <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?> logo" class="card-logo">
-                        <p class="card-header-label">Flight Itinerary</p>
-                    </header>
-                <?php endif; ?>
-
-                <div class="pax-row">
-                    <div class="pax-cell">
-                        <p class="cell-label">Passenger<?= count($result->passengers) !== 1 ? 's' : '' ?></p>
-                        <p class="cell-value">
-                            <?= Html::e(count($result->passengers) > 0
-                                ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
-                                : 'Not detected') ?>
-                        </p>
-                    </div>
-                    <?php if ($show('show_booking_reference') && $result->recordLocator !== null): ?>
-                        <div class="pax-cell">
-                            <p class="cell-label">Booking ref</p>
-                            <p class="cell-value"><span class="ref-badge"><?= Html::e($result->recordLocator) ?></span></p>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($firstSeg instanceof Segment && $lastSeg instanceof Segment): ?>
-                        <div class="pax-cell">
-                            <p class="cell-label">Trip</p>
-                            <p class="cell-value"><?= Html::e($firstSeg->departureAirport . ' — ' . $lastSeg->arrivalAirport) ?></p>
-                            <p class="cell-sub"><?= Html::e(count($result->segments) . ' flight' . (count($result->segments) === 1 ? '' : 's')) ?></p>
-                        </div>
-                    <?php endif; ?>
+            <div class="card-pax">
+                <div class="pax-item">
+                    <span class="pax-key">Passenger<?= count($result->passengers) !== 1 ? 's' : '' ?></span>
+                    <span class="pax-val">
+                        <?= Html::e(count($result->passengers) > 0
+                            ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
+                            : 'Not detected') ?>
+                    </span>
                 </div>
+                <?php if ($show('show_booking_reference') && $result->recordLocator !== null): ?>
+                    <div class="pax-item">
+                        <span class="pax-key">Booking ref</span>
+                        <span class="pax-val"><span class="ref-code"><?= Html::e($result->recordLocator) ?></span></span>
+                    </div>
+                <?php endif; ?>
+                <?php if ($firstSeg instanceof Segment && $lastSeg instanceof Segment): ?>
+                    <div class="pax-item">
+                        <span class="pax-key">Route</span>
+                        <span class="pax-val"><?= Html::e($firstSeg->departureAirport . ' – ' . $lastSeg->arrivalAirport) ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
 
-                <?php if ($layoutFormat === 'table'): ?>
-                    <?php foreach ($legs as $leg):
-                        /** @var array{label:?string,segments:Segment[]} $leg */
-                        $legSegs = $leg['segments'];
-                        $legLabel = $leg['label'];
-                        $legFirst = $legSegs[0] ?? null;
-                        $legLast  = $legSegs[count($legSegs) - 1] ?? null;
-                    ?>
-                    <div class="leg-block">
-                        <?php if ($legLabel !== null && $legFirst instanceof Segment && $legLast instanceof Segment): ?>
-                            <div class="leg-header">
-                                <span class="leg-label"><?= Html::e($legLabel) ?></span>
-                                <span class="leg-route"><?= Html::e($legFirst->departureAirport . ' → ' . $legLast->arrivalAirport) ?></span>
+            <?php if ($resultFormat === 'table'): ?>
+                <!-- ── TABLE FORMAT ──────────────────── -->
+                <?php foreach ($legs as $leg):
+                    /** @var array{label:?string,segments:Segment[]} $leg */
+                    $legSegs  = $leg['segments'];
+                    $legLabel = $leg['label'];
+                    $legFirst = $legSegs[0] ?? null;
+                    $legLast  = $legSegs[count($legSegs) - 1] ?? null;
+                    $legDur   = $legDuration($legSegs);
+                ?>
+                <?php if ($legLabel !== null && $legFirst && $legLast): ?>
+                    <div class="leg-head">
+                        <span><?= Html::e($legLabel) ?>: <?= Html::e($portCity($legFirst->departureAirport)) ?> &rarr; <?= Html::e($portCity($legLast->arrivalAirport)) ?></span>
+                        <?php if ($legDur): ?><span class="leg-dur"><?= Html::e($legDur) ?></span><?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                <div class="table-scroll">
+                    <table class="seg-table">
+                        <thead><tr>
+                            <th>Flight</th><th>Date</th>
+                            <th>Departs</th><th>From</th>
+                            <th>Arrives</th><th>To</th>
+                            <th>Info</th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ($legSegs as $seg): ?>
+                            <?php
+                            /** @var Segment $seg */
+                            $logo   = $show('show_airline_logo') ? $airlineLogo($seg->airlineCode) : null;
+                            $dur    = $flightDuration($seg);
+                            $offset = $arrivalOffset($seg);
+                            $dist   = Metadata::distanceLabel($seg->departureAirport, $seg->arrivalAirport, $distanceUnit);
+                            ?>
+                            <tr>
+                                <td>
+                                    <div class="tbl-flight">
+                                        <?php if ($logo): ?><img src="<?= Html::e($asset($logo)) ?>" class="tbl-logo" alt=""><?php else: ?><span class="tbl-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
+                                        <div>
+                                            <strong><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></strong>
+                                            <?php if ($show('show_airline_name') && $seg->airlineName): ?><em><?= Html::e($seg->airlineName) ?></em><?php endif; ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><?= Html::e($datePretty($seg->departureDate)) ?></td>
+                                <td><strong><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></strong><?php if ($seg->departureTerminal): ?><br><span class="tbl-term"><?= Html::e($seg->departureTerminal) ?></span><?php endif; ?></td>
+                                <td><?= Html::e($portDisplay($seg->departureAirport)) ?></td>
+                                <td>
+                                    <strong><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></strong>
+                                    <?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?>
+                                </td>
+                                <td><?= Html::e($portDisplay($seg->arrivalAirport)) ?></td>
+                                <td class="td-chips">
+                                    <?php if ($dur): ?><span><?= Html::e($dur) ?></span><?php endif; ?>
+                                    <?php if ($show('show_cabin') && $seg->cabin): ?><span><?= Html::e($seg->cabin) ?></span><?php endif; ?>
+                                    <?php if ($show('show_booking_class') && $seg->bookingClass): ?><span><?= Html::e($seg->bookingClass) ?></span><?php endif; ?>
+                                    <?php if ($dist): ?><span><?= Html::e($dist) ?></span><?php endif; ?>
+                                    <?php if ($show('show_aircraft') && $seg->aircraft): ?><span><?= Html::e($seg->aircraft) ?></span><?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
+                                <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); $visa = $transitVisa($seg->arrivalAirport); ?>
+                                <tr class="tbl-layover-row <?= Html::e($loClass) ?>">
+                                    <td colspan="7">
+                                        <span class="lo-sep-inner">
+                                            &mdash;&mdash; <?= Html::e($loLabel) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>): <strong><?= Html::e($seg->layoverDuration) ?></strong>
+                                            <?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?>
+                                            &mdash;&mdash;
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endforeach; ?>
+
+            <?php elseif (in_array($resultFormat, ['compact', 'whatsapp'], true)): ?>
+                <!-- ── COMPACT FORMAT ────────────────── -->
+                <?php foreach ($legs as $leg):
+                    $legSegs  = $leg['segments'];
+                    $legLabel = $leg['label'];
+                    $legFirst = $legSegs[0] ?? null;
+                    $legLast  = $legSegs[count($legSegs) - 1] ?? null;
+                    $legDur   = $legDuration($legSegs);
+                ?>
+                <?php if ($legLabel !== null && $legFirst && $legLast): ?>
+                    <div class="leg-head">
+                        <span><?= Html::e($legLabel) ?>: <?= Html::e($portCity($legFirst->departureAirport)) ?> &rarr; <?= Html::e($portCity($legLast->arrivalAirport)) ?></span>
+                        <?php if ($legDur): ?><span class="leg-dur"><?= Html::e($legDur) ?></span><?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                <div class="compact-flights">
+                    <?php foreach ($legSegs as $seg): ?>
+                        <?php
+                        /** @var Segment $seg */
+                        $logo   = $show('show_airline_logo') ? $airlineLogo($seg->airlineCode) : null;
+                        $dur    = $flightDuration($seg);
+                        $offset = $arrivalOffset($seg);
+                        ?>
+                        <div class="cpt-flight">
+                            <div class="cpt-head">
+                                <?php if ($logo): ?><img src="<?= Html::e($asset($logo)) ?>" class="cpt-logo" alt=""><?php else: ?><span class="cpt-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
+                                <strong><?= Html::e($datePretty($seg->departureDate)) ?></strong>
+                                <span class="cpt-fn"><?= Html::e($seg->airlineCode . $seg->flightNumber) ?><?php if ($show('show_airline_name') && $seg->airlineName): ?> · <?= Html::e($seg->airlineName) ?><?php endif; ?></span>
+                                <?php if ($dur): ?><span class="cpt-dur"><?= Html::e($dur) ?></span><?php endif; ?>
+                            </div>
+                            <div class="cpt-route">
+                                <div class="cpt-port">
+                                    <span class="cpt-code-big"><?= Html::e($seg->departureAirport) ?></span>
+                                    <span class="cpt-time"><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></span>
+                                    <span class="cpt-city"><?= Html::e($portCity($seg->departureAirport)) ?></span>
+                                </div>
+                                <div class="cpt-arrow">&#x2192;</div>
+                                <div class="cpt-port cpt-port-r">
+                                    <span class="cpt-code-big"><?= Html::e($seg->arrivalAirport) ?><?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?></span>
+                                    <span class="cpt-time"><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></span>
+                                    <span class="cpt-city"><?= Html::e($portCity($seg->arrivalAirport)) ?></span>
+                                </div>
+                            </div>
+                            <?php if ($show('show_cabin') && $seg->cabin): ?><div class="cpt-meta"><span><?= Html::e($seg->cabin) ?></span><?php if ($show('show_booking_class') && $seg->bookingClass): ?><span><?= Html::e($seg->bookingClass) ?></span><?php endif; ?></div><?php endif; ?>
+                        </div>
+                        <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
+                            <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); $visa = $transitVisa($seg->arrivalAirport); ?>
+                            <div class="lo-sep <?= Html::e($loClass) ?>">
+                                &mdash;&mdash; <?= Html::e($loLabel) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>): <strong><?= Html::e($seg->layoverDuration) ?></strong><?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?> &mdash;&mdash;
                             </div>
                         <?php endif; ?>
-                        <div class="table-wrap">
-                            <table class="seg-table">
-                                <thead>
-                                    <tr>
-                                        <th>Flight</th>
-                                        <th>From</th>
-                                        <th>Departure</th>
-                                        <th>To</th>
-                                        <th>Arrival</th>
-                                        <th>Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                <?php foreach ($legSegs as $si => $seg): ?>
-                                    <?php
-                                    /** @var Segment $seg */
-                                    $logo   = $show('show_airline_logo') ? $airlineLogo($seg->airlineCode) : null;
-                                    $dist   = Metadata::distanceLabel($seg->departureAirport, $seg->arrivalAirport, $distanceUnit);
-                                    $dur    = $flightDuration($seg);
-                                    $offset = $arrivalOffset($seg);
-                                    ?>
-                                    <tr>
-                                        <td>
-                                            <div class="flight-brand">
-                                                <?php if ($logo !== null): ?>
-                                                    <img src="<?= Html::e($asset($logo)) ?>" alt="" class="al-logo">
-                                                <?php else: ?>
-                                                    <span class="al-code"><?= Html::e($seg->airlineCode) ?></span>
-                                                <?php endif; ?>
-                                                <span class="al-num"><?= Html::e($seg->airlineCode . ' ' . $seg->flightNumber) ?><?php if ($show('show_airline_name')): ?><em><?= Html::e($airlineDisplayName($seg)) ?></em><?php endif; ?></span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <strong><?= Html::e($seg->departureAirport) ?></strong>
-                                            <?php if ($seg->departureTerminal): ?>
-                                                <span class="terminal-badge"><?= Html::e($seg->departureTerminal) ?></span>
-                                            <?php endif; ?>
-                                            <small><?= Html::e(Metadata::airportLabel($seg->departureAirport)) ?></small>
-                                        </td>
-                                        <td><?= Html::e($seg->departureDate) ?><br><strong><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></strong></td>
-                                        <td>
-                                            <strong><?= Html::e($seg->arrivalAirport) ?></strong>
-                                            <small><?= Html::e(Metadata::airportLabel($seg->arrivalAirport)) ?></small>
-                                        </td>
-                                        <td>
-                                            <?= Html::e($seg->arrivalDate ?: $seg->departureDate) ?><br>
-                                            <strong><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></strong>
-                                            <?php if ($offset > 0): ?>
-                                                <span class="day-badge">+<?= $offset ?>d</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="td-details">
-                                            <?php if ($dur): ?><span class="detail-chip"><?= Html::e($dur) ?></span><?php endif; ?>
-                                            <?php if ($seg->status): ?><span class="detail-chip"><?= Html::e($seg->status) ?></span><?php endif; ?>
-                                            <?php if ($show('show_booking_class') && $seg->bookingClass): ?><span class="detail-chip"><?= Html::e($seg->bookingClass) ?></span><?php endif; ?>
-                                            <?php if ($show('show_cabin') && $seg->cabin): ?><span class="detail-chip"><?= Html::e($seg->cabin) ?></span><?php endif; ?>
-                                            <?php if ($dist !== null): ?><span class="detail-chip"><?= Html::e($dist) ?></span><?php endif; ?>
-                                            <?php if ($show('show_aircraft') && $seg->aircraft): ?><span class="detail-chip"><?= Html::e($seg->aircraft) ?></span><?php endif; ?>
-                                        </td>
-                                    </tr>
-                                    <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
-                                        <?php
-                                        [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration);
-                                        $visa = $transitVisa($seg->arrivalAirport);
-                                        ?>
-                                        <tr class="layover-row <?= Html::e($loClass) ?>">
-                                            <td colspan="6">
-                                                <div class="layover-row-inner">
-                                                    <span class="lo-icon" aria-hidden="true">⏱</span>
-                                                    <span><?= Html::e($loLabel) ?> at <?= Html::e($seg->arrivalAirport) ?>: <strong><?= Html::e($seg->layoverDuration) ?></strong></span>
-                                                    <?php if ($visa): ?>
-                                                        <span class="visa-flag"><?= Html::e($visa) ?></span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                     <?php endforeach; ?>
+                </div>
+                <?php endforeach; ?>
 
-                <?php else: ?>
-                    <div class="segments-wrap segments-<?= Html::e($layoutFormat) ?>">
-                        <?php foreach ($legs as $leg):
-                            /** @var array{label:?string,segments:Segment[]} $leg */
-                            $legSegs  = $leg['segments'];
-                            $legLabel = $leg['label'];
-                            $legFirst = $legSegs[0] ?? null;
-                            $legLast  = $legSegs[count($legSegs) - 1] ?? null;
-                        ?>
-                        <div class="leg-block">
-                            <?php if ($legLabel !== null && $legFirst instanceof Segment && $legLast instanceof Segment): ?>
-                                <div class="leg-header">
-                                    <span class="leg-label"><?= Html::e($legLabel) ?></span>
-                                    <span class="leg-route"><?= Html::e($legFirst->departureAirport . ' → ' . $legLast->arrivalAirport) ?></span>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php foreach ($legSegs as $seg): ?>
-                                <?php
-                                /** @var Segment $seg */
-                                $logo    = $show('show_airline_logo') ? $airlineLogo($seg->airlineCode) : null;
-                                $dist    = Metadata::distanceLabel($seg->departureAirport, $seg->arrivalAirport, $distanceUnit);
-                                $dur     = $flightDuration($seg);
-                                $offset  = $arrivalOffset($seg);
-                                $compact = in_array($layoutFormat, ['two_lines', 'two_lines_reordered'], true);
-                                $reorder = in_array($layoutFormat, ['two_lines_reordered', 'three_lines_reordered'], true);
-                                ?>
-                                <div class="seg-card<?= $compact ? ' seg-compact' : '' ?>">
-                                    <div class="seg-airline">
-                                        <?php if ($logo !== null): ?>
-                                            <img src="<?= Html::e($asset($logo)) ?>" alt="" class="al-logo">
-                                        <?php else: ?>
-                                            <span class="al-code"><?= Html::e($seg->airlineCode) ?></span>
-                                        <?php endif; ?>
-                                        <div class="al-info">
-                                            <strong><?= Html::e($seg->airlineCode . ' ' . $seg->flightNumber) ?></strong>
-                                            <?php if ($show('show_airline_name')): ?><span><?= Html::e($airlineDisplayName($seg)) ?></span><?php endif; ?>
-                                        </div>
-                                        <?php if ($dur !== null): ?>
-                                            <span class="dur-badge"><?= Html::e($dur) ?></span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <?php if ($compact): ?>
-                                        <div class="compact-row">
-                                            <?php if (!$reorder): ?>
-                                                <p><strong><?= Html::e($seg->airlineCode . ' ' . $seg->flightNumber) ?></strong></p>
-                                                <p>
-                                                    <?= Html::e($seg->departureAirport) ?> <?= Html::e($seg->departureDate) ?> <?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?>
-                                                    &rarr;
-                                                    <?= Html::e($seg->arrivalAirport) ?> <?= Html::e($seg->arrivalDate ?: $seg->departureDate) ?> <?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?>
-                                                    <?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?>
-                                                </p>
-                                            <?php else: ?>
-                                                <p><strong><?= Html::e($seg->departureAirport) ?> &rarr; <?= Html::e($seg->arrivalAirport) ?></strong> &middot; <?= Html::e($seg->departureDate) ?> <?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?> &rarr; <?= Html::e($seg->arrivalDate ?: $seg->departureDate) ?> <?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?><?php if ($offset > 0): ?> <span class="day-badge">+<?= $offset ?>d</span><?php endif; ?></p>
-                                                <p><?= Html::e($seg->airlineCode . ' ' . $seg->flightNumber) ?><?php if ($show('show_airline_name')): ?> &middot; <?= Html::e($airlineDisplayName($seg)) ?><?php endif; ?></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="route-row">
-                                            <div class="port">
-                                                <?php if (!$reorder): ?>
-                                                    <p class="port-name"><?= Html::e(Metadata::airportLabel($seg->departureAirport)) ?></p>
-                                                <?php else: ?>
-                                                    <p class="port-name">Departure</p>
-                                                <?php endif; ?>
-                                                <p class="port-code"><?= Html::e($seg->departureAirport) ?></p>
-                                                <p class="port-time"><?= Html::e($seg->departureDate) ?> &middot; <?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></p>
-                                                <?php if ($seg->departureTerminal): ?>
-                                                    <span class="terminal-badge">T<?= Html::e(ltrim($seg->departureTerminal, 'T')) ?></span>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div class="route-arrow" aria-hidden="true">
-                                                <?php if ($dur): ?><span class="arrow-dur"><?= Html::e($dur) ?></span><?php endif; ?>
-                                                <span class="arrow-line"></span>
-                                                <span class="arrow-head"></span>
-                                            </div>
-                                            <div class="port port-arr">
-                                                <?php if (!$reorder): ?>
-                                                    <p class="port-name"><?= Html::e(Metadata::airportLabel($seg->arrivalAirport)) ?></p>
-                                                <?php else: ?>
-                                                    <p class="port-name">Arrival</p>
-                                                <?php endif; ?>
-                                                <p class="port-code">
-                                                    <?= Html::e($seg->arrivalAirport) ?>
-                                                    <?php if ($offset > 0): ?>
-                                                        <span class="day-badge">+<?= $offset ?>d</span>
-                                                    <?php endif; ?>
-                                                </p>
-                                                <p class="port-time"><?= Html::e($seg->arrivalDate ?: $seg->departureDate) ?> &middot; <?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></p>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <div class="seg-details">
-                                        <?php if ($seg->status): ?><span><?= Html::e($seg->status) ?></span><?php endif; ?>
-                                        <?php if ($show('show_booking_class') && $seg->bookingClass): ?><span><?= Html::e($seg->bookingClass) ?></span><?php endif; ?>
-                                        <?php if ($show('show_cabin') && $seg->cabin): ?><span><?= Html::e($seg->cabin) ?></span><?php endif; ?>
-                                        <?php if ($dist !== null): ?><span><?= Html::e($dist) ?></span><?php endif; ?>
-                                        <?php if ($show('show_aircraft') && $seg->aircraft): ?><span><?= Html::e($seg->aircraft) ?></span><?php endif; ?>
-                                        <?php if ($show('show_operated_by') && $seg->operatedBy): ?><span>Op: <?= Html::e($seg->operatedBy) ?></span><?php endif; ?>
-                                        <?php if ($show('show_ticket_numbers') && $seg->ticketNumber): ?><span>TKT <?= Html::e($maskTicket($seg->ticketNumber, (bool) ($features['mask_ticket_numbers'] ?? true))) ?></span><?php endif; ?>
-                                        <?php if ($show('show_seat_numbers') && $seg->seatNumber): ?><span>Seat <?= Html::e($maskSeat($seg->seatNumber, (bool) ($features['mask_seat_numbers'] ?? false))) ?></span><?php endif; ?>
-                                    </div>
-
-                                    <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
-                                        <?php
-                                        [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration);
-                                        $visa = $transitVisa($seg->arrivalAirport);
-                                        ?>
-                                        <div class="layover-strip <?= Html::e($loClass) ?>">
-                                            <span class="lo-dot" aria-hidden="true"></span>
-                                            <div class="lo-body">
-                                                <span class="lo-title"><?= Html::e($loLabel) ?> at <?= Html::e($seg->arrivalAirport) ?></span>
-                                                <span class="lo-dur"><?= Html::e($seg->layoverDuration) ?></span>
-                                                <?php if ($visa): ?>
-                                                    <span class="visa-flag"><?= Html::e($visa) ?></span>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
+            <?php else: ?>
+                <!-- ── DETAILED FORMAT (default, pnrexpert-style) ── -->
+                <?php foreach ($legs as $leg):
+                    /** @var array{label:?string,segments:Segment[]} $leg */
+                    $legSegs  = $leg['segments'];
+                    $legLabel = $leg['label'];
+                    $legFirst = $legSegs[0] ?? null;
+                    $legLast  = $legSegs[count($legSegs) - 1] ?? null;
+                    $legDur   = $legDuration($legSegs);
+                ?>
+                <div class="leg-section">
+                    <?php if ($legLabel !== null && $legFirst && $legLast): ?>
+                        <div class="leg-head">
+                            <span><?= Html::e($legLabel) ?>: <?= Html::e($portCity($legFirst->departureAirport)) ?> &rarr; <?= Html::e($portCity($legLast->arrivalAirport)) ?></span>
+                            <?php if ($legDur): ?><span class="leg-dur"><?= Html::e($legDur) ?></span><?php endif; ?>
                         </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                    <?php endif; ?>
 
-                <?php if ($showDisclaimer || $showAgencyFooter): ?>
-                    <footer class="card-footer">
-                        <?php if ($showDisclaimer): ?>
-                            <p class="disclaimer"><?= Html::e((string) ($settings['default_disclaimer'] ?? 'Please verify schedule, terminal and check-in details with the airline before travel.')) ?></p>
+                    <?php foreach ($legSegs as $si => $seg): ?>
+                        <?php
+                        /** @var Segment $seg */
+                        $logo   = $show('show_airline_logo') ? $airlineLogo($seg->airlineCode) : null;
+                        $dur    = $flightDuration($seg);
+                        $offset = $arrivalOffset($seg);
+                        $dist   = Metadata::distanceLabel($seg->departureAirport, $seg->arrivalAirport, $distanceUnit);
+                        $visa   = $transitVisa($seg->arrivalAirport);
+                        ?>
+
+                        <div class="flight-block">
+                            <div class="fb-headline">
+                                <span><?= Html::e($datePretty($seg->departureDate)) ?></span>
+                                <span class="fb-sep">·</span>
+                                <strong><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></strong>
+                                <?php if ($show('show_airline_name') && $seg->airlineName): ?>
+                                    <span class="fb-alname"><?= Html::e($seg->airlineName) ?></span>
+                                <?php endif; ?>
+                                <?php if ($dur): ?><span class="fb-dur"><?= Html::e($dur) ?></span><?php endif; ?>
+                                <?php if ($seg->status): ?><span class="fb-status"><?= Html::e($seg->status) ?></span><?php endif; ?>
+                            </div>
+
+                            <div class="fb-body">
+                                <div class="fb-logo-col">
+                                    <?php if ($logo !== null): ?>
+                                        <img src="<?= Html::e($asset($logo)) ?>" alt="" class="fb-logo">
+                                    <?php else: ?>
+                                        <span class="fb-code-badge"><?= Html::e($seg->airlineCode) ?></span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="fb-routes">
+                                    <p class="fb-route-line">
+                                        <span class="fb-dir">Departs:</span>
+                                        <span class="fb-time"><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></span>
+                                        <span class="fb-port"><?= Html::e($portDisplay($seg->departureAirport)) ?></span>
+                                        <?php if ($seg->departureTerminal): ?>
+                                            <span class="fb-term"><?= Html::e($seg->departureTerminal) ?></span>
+                                        <?php endif; ?>
+                                    </p>
+                                    <p class="fb-route-line">
+                                        <span class="fb-dir">Arrives:</span>
+                                        <span class="fb-time"><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></span>
+                                        <?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?>
+                                        <span class="fb-port"><?= Html::e($portDisplay($seg->arrivalAirport)) ?></span>
+                                    </p>
+
+                                    <?php if ($show('show_cabin') && $seg->cabin || $show('show_booking_class') && $seg->bookingClass || $dist || $show('show_aircraft') && $seg->aircraft || $show('show_operated_by') && $seg->operatedBy || $show('show_ticket_numbers') && $seg->ticketNumber || $show('show_seat_numbers') && $seg->seatNumber): ?>
+                                        <div class="fb-chips">
+                                            <?php if ($show('show_cabin') && $seg->cabin): ?><span><?= Html::e($seg->cabin) ?></span><?php endif; ?>
+                                            <?php if ($show('show_booking_class') && $seg->bookingClass): ?><span>Class <?= Html::e($seg->bookingClass) ?></span><?php endif; ?>
+                                            <?php if ($dist): ?><span><?= Html::e($dist) ?></span><?php endif; ?>
+                                            <?php if ($show('show_aircraft') && $seg->aircraft): ?><span><?= Html::e($seg->aircraft) ?></span><?php endif; ?>
+                                            <?php if ($show('show_operated_by') && $seg->operatedBy): ?><span>Op: <?= Html::e($seg->operatedBy) ?></span><?php endif; ?>
+                                            <?php if ($show('show_ticket_numbers') && $seg->ticketNumber): ?><span>TKT <?= Html::e($maskTicket($seg->ticketNumber, (bool) ($features['mask_ticket_numbers'] ?? true))) ?></span><?php endif; ?>
+                                            <?php if ($show('show_seat_numbers') && $seg->seatNumber): ?><span>Seat <?= Html::e($maskSeat($seg->seatNumber, (bool) ($features['mask_seat_numbers'] ?? false))) ?></span><?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
+                            <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); ?>
+                            <div class="lo-sep <?= Html::e($loClass) ?>">
+                                &mdash;&mdash;&mdash; <?= Html::e($loLabel) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>): <strong><?= Html::e($seg->layoverDuration) ?></strong><?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?> &mdash;&mdash;&mdash;
+                            </div>
                         <?php endif; ?>
-                        <?php if ($showAgencyFooter): ?>
-                            <?php
-                            $footer    = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
-                            $headOffice = is_array($footer['head_office'] ?? null) ? $footer['head_office'] : [];
-                            ?>
+
+                    <?php endforeach; ?>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- ── Card footer ────────────────────── -->
+            <?php if ($showDisclaimer || $showAgencyFooter): ?>
+                <div class="card-footer">
+                    <?php if ($showDisclaimer): ?>
+                        <p class="disclaimer"><?= Html::e((string) ($settings['default_disclaimer'] ?? 'Please verify final schedule, terminal and check-in details with the airline before travel.')) ?></p>
+                    <?php endif; ?>
+                    <?php if ($showAgencyFooter):
+                        $footer     = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
+                        $headOffice = is_array($footer['head_office'] ?? null) ? $footer['head_office'] : [];
+                        $branches   = is_array($footer['branches'] ?? null) ? $footer['branches'] : [];
+                    ?>
+                        <div class="footer-grid">
                             <?php if (!empty($headOffice)): ?>
-                                <div class="footer-office">
+                                <div class="footer-col">
                                     <?php if (!empty($headOffice['title'])): ?><strong><?= Html::e((string) $headOffice['title']) ?></strong><?php endif; ?>
                                     <?php foreach ((array) ($headOffice['lines'] ?? []) as $ln): ?><span><?= Html::e((string) $ln) ?></span><?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
-                            <?php $branches = is_array($footer['branches'] ?? null) ? $footer['branches'] : []; ?>
-                            <?php if (count($branches) > 0): ?>
-                                <div class="footer-branches">
-                                    <?php if (!empty($footer['branches_title'])): ?><strong class="branches-title"><?= Html::e((string) $footer['branches_title']) ?></strong><?php endif; ?>
-                                    <div class="branch-grid">
-                                        <?php foreach ($branches as $branch): ?>
-                                            <?php if (!is_array($branch)) continue; ?>
-                                            <div class="footer-office">
-                                                <?php if (!empty($branch['title'])): ?><strong><?= Html::e((string) $branch['title']) ?></strong><?php endif; ?>
-                                                <?php foreach ((array) ($branch['lines'] ?? []) as $ln): ?><span><?= Html::e((string) $ln) ?></span><?php endforeach; ?>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
+                            <?php foreach ($branches as $branch): ?>
+                                <?php if (!is_array($branch)) continue; ?>
+                                <div class="footer-col">
+                                    <?php if (!empty($branch['title'])): ?><strong><?= Html::e((string) $branch['title']) ?></strong><?php endif; ?>
+                                    <?php foreach ((array) ($branch['lines'] ?? []) as $ln): ?><span><?= Html::e((string) $ln) ?></span><?php endforeach; ?>
                                 </div>
-                            <?php endif; ?>
-                            <?php if (!empty($settings['footer_note'])): ?><p><?= Html::e((string) $settings['footer_note']) ?></p><?php endif; ?>
-                        <?php endif; ?>
-                    </footer>
-                <?php endif; ?>
-            </article>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if (!empty($settings['footer_note'])): ?><p class="footer-note"><?= Html::e((string) $settings['footer_note']) ?></p><?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
-            <textarea class="sr-only" id="textVersion" readonly><?= Html::e($buildTextVersion()) ?></textarea>
-            <textarea class="sr-only" id="waVersion" readonly><?= Html::e($buildWaVersion()) ?></textarea>
-        <?php endif; ?>
-    </section>
+        </article><!-- /itin-card -->
+
+        <textarea class="sr-only" id="textVersion" readonly><?= Html::e($buildTextVersion()) ?></textarea>
+        <textarea class="sr-only" id="waVersion"   readonly><?= Html::e($buildWaText()) ?></textarea>
+
+        <?php endif; /* renderable */ ?>
+
+    </form>
 </main>
 
 <script src="<?= Html::e($asset('assets/js/app.js')) ?>"></script>
