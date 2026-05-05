@@ -344,13 +344,6 @@ $renderable = $result !== null && $result->isRenderable();
             ══════════════════════════════════════ -->
             <div class="app-sidebar">
 
-                <?php if (!$renderable): ?>
-                <div class="sidebar-hero">
-                    <h1 class="sidebar-hero-title">PNR → Instant Itinerary</h1>
-                    <p class="sidebar-hero-sub">Paste any GDS itinerary code and get a professional, ready-to-share flight itinerary in seconds. 100% free — no account required.</p>
-                </div>
-                <?php endif; ?>
-
                 <!-- Input card -->
                 <div class="input-card">
                     <textarea
@@ -512,70 +505,7 @@ Example:
                     </div>
                 <?php endif; ?>
 
-                <!-- Landing page (shown when no result yet) -->
-                <?php if ($result === null && !$rateLimited): ?>
-                <div class="landing-panel">
-
-                    <div class="landing-hero">
-                        <h2 class="landing-hero-title">Convert raw PNRs into branded,<br>customer-friendly itineraries</h2>
-                        <p class="landing-hero-sub">Supports Amadeus · Galileo · Sabre · Worldspan · Smartpoint · and more</p>
-                    </div>
-
-                    <div class="feature-grid">
-                        <div class="feat-card">
-                            <div class="feat-icon">✈</div>
-                            <h3>All Major GDS</h3>
-                            <p>Parses Amadeus, Galileo (Travelport), Sabre, Worldspan, Smartpoint and generic airline formats automatically.</p>
-                        </div>
-                        <div class="feat-card">
-                            <div class="feat-icon">🎨</div>
-                            <h3>Multiple Layouts</h3>
-                            <p>Choose Graphic cards, Table view, 2 Lines, 3 Lines, Compact or WhatsApp-ready text — all in one click.</p>
-                        </div>
-                        <div class="feat-card">
-                            <div class="feat-icon">🏢</div>
-                            <h3>Agency Branding</h3>
-                            <p>Add your agency logo, header, footer and contact details. Present itineraries professionally to your clients.</p>
-                        </div>
-                        <div class="feat-card">
-                            <div class="feat-icon">📱</div>
-                            <h3>WhatsApp Ready</h3>
-                            <p>One click to copy a beautifully formatted itinerary with emojis, flight details and layover info for WhatsApp.</p>
-                        </div>
-                        <div class="feat-card">
-                            <div class="feat-icon">🖼</div>
-                            <h3>PNG &amp; PDF Export</h3>
-                            <p>Download the itinerary as a high-quality PNG image or print to PDF — ready to attach to any email or message.</p>
-                        </div>
-                        <div class="feat-card">
-                            <div class="feat-icon">🔒</div>
-                            <h3>100% Private</h3>
-                            <p>PNR data is processed in memory only — never stored, never logged. Passenger and payment lines are automatically ignored.</p>
-                        </div>
-                    </div>
-
-                    <div class="gds-support-row">
-                        <span class="gds-label">Supported GDS:</span>
-                        <?php foreach (['Amadeus', 'Galileo', 'Sabre', 'Worldspan', 'Smartpoint', 'Generic'] as $gds): ?>
-                            <span class="gds-pill"><?= Html::e($gds) ?></span>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <div class="why-rn">
-                        <h3 class="why-rn-title">Why Roaming Nepal PNR Converter?</h3>
-                        <ul class="why-rn-list">
-                            <li>✅ Completely free — no subscription, no sign-up, no limitations</li>
-                            <li>✅ Built by travel professionals who understand GDS formats</li>
-                            <li>✅ Handles Amadeus, Galileo, Sabre &amp; mixed formats in a single paste</li>
-                            <li>✅ Outbound + Return leg grouping for multi-city itineraries</li>
-                            <li>✅ Overnight badges, transit visa warnings, layover time calculations</li>
-                            <li>✅ Customisable branding, layouts and display options</li>
-                        </ul>
-                    </div>
-
-                </div><!-- /landing-panel -->
-
-                <?php elseif ($result !== null && !$result->isRenderable()): ?>
+                <?php if ($result !== null && !$result->isRenderable()): ?>
                     <div class="alert alert-warn">
                         <strong>Manual review needed.</strong> Confidence too low to generate a card.
                         <?php if (count($result->unparsedLines) > 0): ?>

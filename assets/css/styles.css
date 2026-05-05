@@ -82,15 +82,40 @@ a { color: inherit; text-decoration: none; }
   padding: 24px 20px 60px;
 }
 
-/* ── Two-column app layout ─────────────────────────── */
+/* ── App layout ────────────────────────────────────── */
+
+/* Default (no result): single-column, centered */
 .app-layout {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* No result: sidebar is full-width, not sticky */
+.app-layout .app-sidebar {
+  position: static;
+  max-height: none;
+  overflow-y: visible;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* No result: hide the empty right column */
+.app-layout .app-main {
+  display: none;
+}
+
+/* With result: two-column grid */
+.app-layout--split {
+  max-width: none;
   display: grid;
   grid-template-columns: 400px 1fr;
   gap: 20px;
   align-items: start;
 }
 
-.app-sidebar {
+.app-layout--split .app-sidebar {
   position: sticky;
   top: 70px;
   max-height: calc(100vh - 80px);
@@ -99,7 +124,10 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column; gap: 14px;
 }
 
-.app-main { min-width: 0; }
+.app-layout--split .app-main {
+  display: block;
+  min-width: 0;
+}
 
 /* Sidebar hero intro */
 .sidebar-hero {
@@ -212,6 +240,29 @@ textarea::placeholder { color: #94a3b8; white-space: pre-wrap; }
 }
 
 .convert-btns { display: flex; gap: 8px; align-items: center; }
+
+/* Single-column: full-width prominent convert button */
+.app-layout:not(.app-layout--split) .input-foot {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px 18px;
+  gap: 12px;
+}
+
+.app-layout:not(.app-layout--split) .convert-btns {
+  display: flex; gap: 8px;
+}
+
+.app-layout:not(.app-layout--split) .btn-convert {
+  flex: 1;
+  min-height: 52px;
+  font-size: 16px;
+  border-radius: var(--radius);
+}
+
+.app-layout:not(.app-layout--split) textarea {
+  min-height: 200px;
+}
 
 /* ── Options card (pnrexpert-style) ────────────────── */
 .options-card {
