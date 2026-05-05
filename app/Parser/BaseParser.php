@@ -228,7 +228,8 @@ abstract class BaseParser implements ParserInterface
                 $segment->ticketNumber,
                 $segment->seatNumber,
                 $segment->aircraft,
-                $segment->rawLine
+                $segment->rawLine,
+                $segment->departureTerminal,
             );
         }
 

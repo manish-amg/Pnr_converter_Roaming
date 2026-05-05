@@ -74,7 +74,7 @@ final class TravelportParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
-        $classicPattern = '/^\s*\d+\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        $classicPattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($classicPattern, $line, $m) === 1) {
             $airlineCode = strtoupper($m[1]);
             $departureDate = $this->normalizeDate($m[4]);

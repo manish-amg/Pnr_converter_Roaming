@@ -24,6 +24,7 @@ final class Segment
         public readonly ?string $seatNumber = null,
         public readonly ?string $aircraft = null,
         public readonly string $rawLine = '',
+        public readonly ?string $departureTerminal = null,
     ) {
     }
 }

@@ -2,25 +2,24 @@
   'use strict';
 
   const byId = (id) => document.getElementById(id);
-  const card = byId('itineraryCard');
-  const shareModeBtn = byId('shareModeBtn');
-  const printBtn = byId('printBtn');
+  const card          = byId('itineraryCard');
+  const shareModeBtn  = byId('shareModeBtn');
+  const printBtn      = byId('printBtn');
   const downloadPngBtn = byId('downloadPngBtn');
-  const copyTextBtn = byId('copyTextBtn');
-  const copyImageBtn = byId('copyImageBtn');
-  const resetBtn = byId('resetBtn');
-  const form = document.querySelector('form');
+  const copyTextBtn   = byId('copyTextBtn');
+  const copyImageBtn  = byId('copyImageBtn');
+  const waBtn         = byId('waBtn');
+  const resetBtn      = byId('resetBtn');
+  const form          = document.querySelector('form');
   const settingsPanel = document.querySelector('.settings-panel');
-  const presetButtons = document.querySelectorAll('[data-preset]');
+  const presetBtns    = document.querySelectorAll('[data-preset]');
 
   if (shareModeBtn) {
-    shareModeBtn.addEventListener('click', () => {
-      toggleShareMode();
-    });
+    shareModeBtn.addEventListener('click', () => toggleShareMode());
   }
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && document.body.classList.contains('share-mode')) {
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('share-mode')) {
       toggleShareMode(false);
     }
   });
@@ -31,179 +30,184 @@
 
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
-      const textarea = byId('pnr_text');
-      if (textarea) textarea.value = '';
+      const ta = byId('pnr_text');
+      if (ta) ta.value = '';
     });
   }
 
   if (form && settingsPanel && card) {
-    let refreshTimer;
+    let timer;
     settingsPanel.addEventListener('change', () => {
-      clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        if (typeof form.requestSubmit === 'function') {
-          form.requestSubmit();
-        } else {
-          form.submit();
-        }
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.submit();
       }, 120);
     });
   }
 
-  if (form && presetButtons.length) {
+  if (form && presetBtns.length) {
     updatePresetState();
-    presetButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        applyPreset(button.getAttribute('data-preset'));
-        updatePresetState(button.getAttribute('data-preset'));
+    presetBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const preset = btn.getAttribute('data-preset');
+        applyPreset(preset);
+        updatePresetState(preset);
         if (card) {
-          if (typeof form.requestSubmit === 'function') {
-            form.requestSubmit();
-          } else {
-            form.submit();
-          }
+          if (typeof form.requestSubmit === 'function') form.requestSubmit();
+          else form.submit();
         }
       });
     });
   }
 
+  if (waBtn) {
+    waBtn.addEventListener('click', async () => {
+      const ta = byId('waVersion');
+      if (!ta) return;
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        temporaryLabel(waBtn, 'Copied!');
+      } catch {
+        ta.select();
+        document.execCommand('copy');
+        temporaryLabel(waBtn, 'Copied!');
+      }
+    });
+  }
+
   if (copyTextBtn) {
     copyTextBtn.addEventListener('click', async () => {
-      const textVersion = byId('textVersion');
-      if (!textVersion) return;
-      await navigator.clipboard.writeText(textVersion.value);
-      temporaryLabel(copyTextBtn, 'Copied');
+      const ta = byId('textVersion');
+      if (!ta) return;
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        temporaryLabel(copyTextBtn, 'Copied!');
+      } catch {
+        ta.select();
+        document.execCommand('copy');
+        temporaryLabel(copyTextBtn, 'Copied!');
+      }
     });
   }
 
   if (downloadPngBtn) {
     downloadPngBtn.addEventListener('click', async () => {
       if (!card) return;
+      temporaryLabel(downloadPngBtn, 'Rendering...');
       const blob = await renderCardToPng(card);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'roaming-nepal-itinerary.png';
-      link.click();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'roaming-nepal-itinerary.png';
+      a.click();
       URL.revokeObjectURL(url);
+      temporaryLabel(downloadPngBtn, 'Download PNG');
     });
   }
 
   if (copyImageBtn) {
     if (!navigator.clipboard || !window.ClipboardItem) {
       copyImageBtn.disabled = true;
-      copyImageBtn.title = 'Image clipboard is not supported by this browser';
+      copyImageBtn.title = 'Image clipboard not supported by this browser';
     } else {
       copyImageBtn.addEventListener('click', async () => {
         if (!card) return;
+        temporaryLabel(copyImageBtn, 'Rendering...');
         const blob = await renderCardToPng(card);
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        temporaryLabel(copyImageBtn, 'Copied');
+        temporaryLabel(copyImageBtn, 'Copied!');
       });
     }
   }
 
-  function temporaryLabel(button, label) {
-    const old = button.textContent;
-    button.textContent = label;
-    setTimeout(() => {
-      button.textContent = old;
-    }, 1400);
+  function temporaryLabel(btn, label) {
+    const orig = btn.textContent;
+    btn.textContent = label;
+    setTimeout(() => { btn.textContent = orig; }, 1500);
   }
 
   function toggleShareMode(force) {
-    const shouldEnable = typeof force === 'boolean' ? force : !document.body.classList.contains('share-mode');
-    document.body.classList.toggle('share-mode', shouldEnable);
-    if (shareModeBtn) {
-      shareModeBtn.textContent = shouldEnable ? 'Exit Share View' : 'Clean Share View';
-    }
+    const on = typeof force === 'boolean' ? force : !document.body.classList.contains('share-mode');
+    document.body.classList.toggle('share-mode', on);
+    if (shareModeBtn) shareModeBtn.textContent = on ? 'Exit share view' : 'Share view';
   }
 
   function applyPreset(preset) {
-    const checkbox = (name) => form.querySelector(`input[type="checkbox"][name="${name}"]`);
-    const radio = (name, value) => form.querySelector(`input[type="radio"][name="${name}"][value="${value}"]`);
-    const setChecked = (name, checked) => {
-      const input = checkbox(name);
-      if (input) input.checked = checked;
-    };
-    const setRadio = (name, value) => {
-      const input = radio(name, value);
-      if (input) input.checked = true;
-    };
+    const cb    = (n) => form.querySelector(`input[type="checkbox"][name="${n}"]`);
+    const rd    = (n, v) => form.querySelector(`input[type="radio"][name="${n}"][value="${v}"]`);
+    const check = (n, v) => { const el = cb(n); if (el) el.checked = v; };
+    const radio = (n, v) => { const el = rd(n, v); if (el) el.checked = true; };
 
     if (preset === 'neutral') {
-      setChecked('show_agency_header', false);
-      setChecked('show_agency_footer', false);
-      setChecked('show_disclaimer', false);
-      setRadio('result_format', 'detailed');
+      check('show_agency_header', false);
+      check('show_agency_footer', false);
+      check('show_disclaimer',    false);
+      radio('result_format', 'detailed');
       return;
     }
 
     if (preset === 'whatsapp') {
-      setChecked('show_agency_header', false);
-      setChecked('show_agency_footer', false);
-      setChecked('show_disclaimer', true);
-      setRadio('result_format', 'whatsapp');
+      check('show_agency_header', false);
+      check('show_agency_footer', false);
+      check('show_disclaimer',    true);
+      radio('result_format', 'whatsapp');
       return;
     }
 
-    setChecked('show_agency_header', true);
-    setChecked('show_agency_footer', true);
-    setChecked('show_disclaimer', true);
-    setRadio('result_format', 'detailed');
+    // branded
+    check('show_agency_header', true);
+    check('show_agency_footer', true);
+    check('show_disclaimer',    true);
+    radio('result_format', 'detailed');
   }
 
-  function updatePresetState(activePreset) {
-    presetButtons.forEach((button) => {
-      const isActive = activePreset && button.getAttribute('data-preset') === activePreset;
-      button.classList.toggle('is-active', Boolean(isActive));
-      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  function updatePresetState(active) {
+    presetBtns.forEach((btn) => {
+      const isActive = Boolean(active && btn.getAttribute('data-preset') === active);
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
   }
 
   async function renderCardToPng(element) {
-    const clone = element.cloneNode(true);
-    const rect = element.getBoundingClientRect();
-    const width = Math.ceil(rect.width);
+    const clone  = element.cloneNode(true);
+    const rect   = element.getBoundingClientRect();
+    const width  = Math.ceil(rect.width);
     const height = Math.ceil(rect.height);
     clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-    clone.style.width = width + 'px';
-    clone.style.margin = '0';
+    clone.style.width     = width + 'px';
+    clone.style.margin    = '0';
     clone.style.boxShadow = 'none';
 
     const styles = Array.from(document.styleSheets)
       .map((sheet) => {
         try {
-          return Array.from(sheet.cssRules).map((rule) => rule.cssText).join('\n');
-        } catch (error) {
-          return '';
-        }
-      })
-      .join('\n');
+          return Array.from(sheet.cssRules).map((r) => r.cssText).join('\n');
+        } catch { return ''; }
+      }).join('\n');
 
-    const html = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-        <foreignObject width="100%" height="100%">
-          <div xmlns="http://www.w3.org/1999/xhtml">
-            <style>${styles}</style>
-            ${clone.outerHTML}
-          </div>
-        </foreignObject>
-      </svg>`;
+    const html = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+          <style>${styles}</style>
+          ${clone.outerHTML}
+        </div>
+      </foreignObject>
+    </svg>`;
 
     const svgBlob = new Blob([html], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
+    const svgUrl  = URL.createObjectURL(svgBlob);
     try {
-      const image = await loadImage(svgUrl);
+      const img    = await loadImage(svgUrl);
       const canvas = document.createElement('canvas');
-      const scale = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = width * scale;
+      const scale  = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width  = width  * scale;
       canvas.height = height * scale;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.scale(scale, scale);
-      ctx.drawImage(image, 0, 0);
+      ctx.drawImage(img, 0, 0);
       return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
     } finally {
       URL.revokeObjectURL(svgUrl);
@@ -211,11 +215,11 @@
   }
 
   function loadImage(url) {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = reject;
-      image.src = url;
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload  = () => res(img);
+      img.onerror = rej;
+      img.src = url;
     });
   }
 })();

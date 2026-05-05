@@ -7,14 +7,46 @@ use RoamingNepal\PnrConverter\Support\PrivacyLogger;
 
 require_once __DIR__ . '/app/bootstrap.php';
 
+function checkRateLimit(): bool
+{
+    $ip = hash('sha256', (string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+    $file = sys_get_temp_dir() . '/pnr_rl_' . $ip . '.json';
+    $now = time();
+    $window = 3600;
+    $limit = 40;
+
+    $data = ['count' => 0, 'reset' => $now + $window];
+    if (is_readable($file)) {
+        $raw = @file_get_contents($file);
+        if ($raw !== false) {
+            $loaded = @json_decode($raw, true);
+            if (is_array($loaded) && isset($loaded['count'], $loaded['reset']) && (int) $loaded['reset'] > $now) {
+                $data = ['count' => (int) $loaded['count'], 'reset' => (int) $loaded['reset']];
+            }
+        }
+    }
+
+    if ($data['count'] >= $limit) {
+        return false;
+    }
+
+    $data['count']++;
+    @file_put_contents($file, json_encode($data), LOCK_EX);
+    return true;
+}
+
 $settings = load_settings();
 $features = $settings['features'] ?? [];
 $rawInput = '';
 $result = null;
 
+$rateLimited = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = isset($_POST['pnr_text']) ? (string) $_POST['pnr_text'] : '';
-    if (trim($rawInput) !== '') {
+    if (trim($rawInput) !== '' && !checkRateLimit()) {
+        $rateLimited = true;
+    }
+    if (trim($rawInput) !== '' && !$rateLimited) {
         $result = PnrParserFactory::parse($rawInput);
         PrivacyLogger::log($result, (bool) ($settings['privacy_logging_enabled'] ?? false));
     }

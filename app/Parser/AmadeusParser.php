@@ -13,10 +13,13 @@ final class AmadeusParser extends BaseParser
         if (preg_match('/\bRP\/[A-Z0-9]+\/(?:[A-Z0-9]+)?\/?/i', $raw) === 1) {
             $score += 35;
         }
+        if (preg_match('/^\s*---\s*[A-Z0-9]+\s*---/mi', $raw) === 1) {
+            $score += 15;
+        }
         if (preg_match('/\bNM\d+[A-Z]+\/[A-Z]+/i', $raw) === 1) {
             $score += 25;
         }
-        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}\s+(?:[1-7]\*?\s*)?[A-Z]{6}\s+[A-Z]{2}\d?/mi', $raw) === 1) {
+        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}\s+(?:\d\*)?[A-Z]{6}\s+[A-Z]{2}\d?/mi', $raw) === 1) {
             $score += 35;
         }
         if (preg_match('/\bAPIS|FA PAX|TK OK|SSR DOCS\b/i', $raw) === 1) {
@@ -72,7 +75,8 @@ final class AmadeusParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
-        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?\s*)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        // Pattern handles optional Amadeus terminal prefix: e.g. 7*MELKUL (Terminal 7 at MEL)
+        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:\d\*\s*)?([A-Z]{3})\s*(?:\d\*\s*)?([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;
         }
@@ -96,8 +100,17 @@ final class AmadeusParser extends BaseParser
             $ticket,
             $seat,
             $this->extractAircraft($line),
-            $line
+            $line,
+            $this->extractAmadeusTerminal($line),
         );
+    }
+
+    private function extractAmadeusTerminal(string $line): ?string
+    {
+        if (preg_match('/\b(\d)\*[A-Z]{3}/i', $line, $m) === 1) {
+            return 'T' . $m[1];
+        }
+        return null;
     }
 
     private function withContinuationAircraft(Segment $segment, ?string $nextLine): Segment
@@ -128,12 +141,17 @@ final class AmadeusParser extends BaseParser
             $segment->ticketNumber,
             $segment->seatNumber,
             strtoupper($m[1]),
-            $segment->rawLine
+            $segment->rawLine,
+            $segment->departureTerminal,
         );
     }
 
     private function looksImportantButUnhandled(string $line): bool
     {
+        // Skip known Amadeus continuation / status lines
+        if (preg_match('/^\s*(?:SEE\s|SI\.|OS\s|FA\s|TK\s|---\s*[A-Z]|RP\/)/i', $line) === 1) {
+            return false;
+        }
         return preg_match('/^\s*\d+\s+[A-Z0-9]{2}|\b(?:FLT|FLIGHT|ARR|DEP|HK|HL|HX|UC)\b/i', $line) === 1;
     }
 }

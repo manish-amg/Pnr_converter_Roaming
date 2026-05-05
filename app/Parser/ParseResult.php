@@ -20,6 +20,6 @@ final class ParseResult
 
     public function isRenderable(): bool
     {
-        return $this->confidence !== 'low' && count($this->segments) > 0;
+        return count($this->segments) > 0;
     }
 }
