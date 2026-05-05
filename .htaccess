@@ -14,6 +14,7 @@ DirectoryIndex index.php
     RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
-# PHP settings
-php_value upload_max_filesize 10M
-php_value post_max_size 10M
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+</IfModule>
