@@ -157,7 +157,17 @@ abstract class BaseParser implements ParserInterface
         }
 
         [$last, $rest] = array_pad(explode('/', $name, 2), 2, '');
-        return trim($rest . ' ' . $last);
+        $rest = trim($rest);
+        $last = trim($last);
+
+        // Move salutation to front: KARKI/RUSHMIT MR → MR RUSHMIT KARKI
+        $salutation = '';
+        if (preg_match('/^(.*?)\s+(MR|MRS|MS|MISS|MSTR|MASTER|DR|PROF|CHD|INF)\.?\s*$/i', $rest, $m)) {
+            $salutation = strtoupper($m[2]) . ' ';
+            $rest = trim($m[1]);
+        }
+
+        return trim($salutation . $rest . ' ' . $last);
     }
 
     protected function extractOperatedBy(string $line): ?string

@@ -51,6 +51,7 @@ $featureDefaults = [
     'show_agency_header'     => false,
     'show_agency_footer'     => false,
     'show_disclaimer'        => false,
+    'show_must_read'         => false,
 ];
 
 $show             = static fn (string $key): bool
@@ -95,14 +96,21 @@ $formatTime = static function (string $time, bool $use24): string {
     return sprintf('%d:%s %s', $h, $m[2], $p);
 };
 
-$gdsDateTime = static function (string $date, string $time): ?\DateTimeImmutable {
+$gdsDateTime = static function (string $date, string $time, ?string $airportCode = null): ?\DateTimeImmutable {
     if (preg_match('/^(\d{2})([A-Z]{3})(\d{4})?$/i', strtoupper($date), $d) !== 1) return null;
     if (preg_match('/^(\d{2}):?(\d{2})$/', $time, $t) !== 1) return null;
     $mo = ['JAN'=>1,'FEB'=>2,'MAR'=>3,'APR'=>4,'MAY'=>5,'JUN'=>6,'JUL'=>7,'AUG'=>8,'SEP'=>9,'OCT'=>10,'NOV'=>11,'DEC'=>12];
     $mn = $mo[strtoupper($d[2])] ?? null;
     if ($mn === null) return null;
     $y = isset($d[3]) && $d[3] !== '' ? (int) $d[3] : (int) date('Y');
-    return new \DateTimeImmutable(sprintf('%04d-%02d-%02d %02d:%02d:00', $y, $mn, (int) $d[1], (int) $t[1], (int) $t[2]));
+    $dtStr = sprintf('%04d-%02d-%02d %02d:%02d:00', $y, $mn, (int) $d[1], (int) $t[1], (int) $t[2]);
+    if ($airportCode !== null) {
+        $tzId = Metadata::airportTimezone($airportCode);
+        if ($tzId !== null) {
+            try { return new \DateTimeImmutable($dtStr, new \DateTimeZone($tzId)); } catch (\Exception) {}
+        }
+    }
+    return new \DateTimeImmutable($dtStr);
 };
 
 // "Sat 30 May" display
@@ -111,25 +119,25 @@ $datePretty = static function (string $date) use ($gdsDateTime): string {
     return $dt !== null ? $dt->format('D j M') : $date;
 };
 
-// Flight duration "3h 50m"
+// Flight duration "3h 50m" — timezone-aware
 $flightDuration = static function (Segment $seg) use ($gdsDateTime): ?string {
-    $dep = $gdsDateTime($seg->departureDate, $seg->departureTime);
-    $arr = $gdsDateTime($seg->arrivalDate ?: $seg->departureDate, $seg->arrivalTime);
+    $dep = $gdsDateTime($seg->departureDate, $seg->departureTime, $seg->departureAirport);
+    $arr = $gdsDateTime($seg->arrivalDate ?: $seg->departureDate, $seg->arrivalTime, $seg->arrivalAirport);
     if ($dep === null || $arr === null) return null;
-    if ($arr < $dep) $arr = $arr->modify('+1 day');
+    if ($arr->getTimestamp() < $dep->getTimestamp()) $arr = $arr->modify('+1 day');
     $mins = (int) round(($arr->getTimestamp() - $dep->getTimestamp()) / 60);
     if ($mins <= 0 || $mins > 48 * 60) return null;
     return sprintf('%dh %02dm', intdiv($mins, 60), $mins % 60);
 };
 
-// Leg total duration (first dep → last arr including layovers)
+// Leg total duration (first dep → last arr including layovers) — timezone-aware
 $legDuration = static function (array $segs) use ($gdsDateTime): ?string {
     if (empty($segs)) return null;
     $first = $segs[0]; $last = $segs[count($segs) - 1];
-    $dep = $gdsDateTime($first->departureDate, $first->departureTime);
-    $arr = $gdsDateTime($last->arrivalDate ?: $last->departureDate, $last->arrivalTime);
+    $dep = $gdsDateTime($first->departureDate, $first->departureTime, $first->departureAirport);
+    $arr = $gdsDateTime($last->arrivalDate ?: $last->departureDate, $last->arrivalTime, $last->arrivalAirport);
     if ($dep === null || $arr === null) return null;
-    if ($arr < $dep) $arr = $arr->modify('+1 day');
+    if ($arr->getTimestamp() < $dep->getTimestamp()) $arr = $arr->modify('+1 day');
     $mins = (int) round(($arr->getTimestamp() - $dep->getTimestamp()) / 60);
     if ($mins <= 0 || $mins > 96 * 60) return null;
     return sprintf('%dh %02dm', intdiv($mins, 60), $mins % 60);
@@ -138,9 +146,9 @@ $legDuration = static function (array $segs) use ($gdsDateTime): ?string {
 // Arrival day offset +1/+2
 $arrivalOffset = static function (Segment $seg) use ($gdsDateTime): int {
     if (!$seg->arrivalDate) return 0;
-    $dep = $gdsDateTime($seg->departureDate, $seg->departureTime);
-    $arr = $gdsDateTime($seg->arrivalDate, $seg->arrivalTime);
-    if ($dep === null || $arr === null || $arr <= $dep) return 0;
+    $dep = $gdsDateTime($seg->departureDate, $seg->departureTime, $seg->departureAirport);
+    $arr = $gdsDateTime($seg->arrivalDate, $seg->arrivalTime, $seg->arrivalAirport);
+    if ($dep === null || $arr === null || $arr->getTimestamp() <= $dep->getTimestamp()) return 0;
     return min(2, (int) $dep->diff($arr)->days);
 };
 
@@ -215,7 +223,7 @@ $routeDisplay = static function (array $legs): string {
     return implode(' – ', $ports);
 };
 
-// Itinerary title with city names
+// Itinerary title with city names (no "Flight Itinerary:" prefix)
 $itinTitle = static function (array $legs) use ($portCity): string {
     if (empty($legs)) return 'Flight Itinerary';
     $allSegs = [];
@@ -226,15 +234,14 @@ $itinTitle = static function (array $legs) use ($portCity): string {
     $origin = $portCity($first->departureAirport);
     $dest   = $portCity($last->arrivalAirport);
     if ($origin === $dest) {
-        // Round trip — collect unique waypoints
         $waypoints = [$origin];
         foreach ($allSegs as $seg) {
             $city = $portCity($seg->arrivalAirport);
             if ($city !== end($waypoints)) $waypoints[] = $city;
         }
-        return 'Flight Itinerary: ' . implode(' → ', $waypoints);
+        return implode(' → ', $waypoints);
     }
-    return 'Flight Itinerary: ' . $origin . ' → ' . $dest;
+    return $origin . ' → ' . $dest;
 };
 
 // WhatsApp text builder — rich visual structure
@@ -496,6 +503,7 @@ Example:
                             'show_agency_header' => 'Header',
                             'show_agency_footer' => 'Footer',
                             'show_disclaimer'    => 'Disclaimer',
+                            'show_must_read'     => 'Must Read',
                         ] as $key => $label): ?>
                             <label class="mini-toggle" title="<?= Html::e($label) ?>">
                                 <input type="hidden" name="<?= Html::e($key) ?>" value="0">
@@ -566,10 +574,33 @@ Example:
         ══════════════════════════════════════ -->
         <article class="itin-card" id="itineraryCard">
 
-            <?php if ($showAgencyHeader): ?>
+            <?php if ($showAgencyHeader):
+                $agencyFooterCfg = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
+                $agencyBranches  = is_array($agencyFooterCfg['branches'] ?? null) ? $agencyFooterCfg['branches'] : [];
+                $agencyOffices   = [];
+                // Always include head office city
+                $hoLines = (array) ($agencyFooterCfg['head_office']['lines'] ?? []);
+                $hoTitle = (string) ($agencyFooterCfg['head_office']['title'] ?? '');
+                // Extract city name from title or use default
+                if (preg_match('/KATHMANDU|POKHARA|SYDNEY|MELBOURNE|LONDON|DUBAI/i', $hoTitle, $hm)) {
+                    $agencyOffices[] = ucfirst(strtolower($hm[0]));
+                } else {
+                    $agencyOffices[] = 'Kathmandu';
+                }
+                foreach ($agencyBranches as $br) {
+                    if (is_array($br) && !empty($br['title'])) {
+                        $agencyOffices[] = ucfirst(strtolower((string) $br['title']));
+                    }
+                }
+            ?>
                 <div class="card-agency">
                     <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?>" class="agency-logo">
-                    <span class="agency-label">Flight Itinerary</span>
+                    <div class="agency-offices">
+                        <?php foreach ($agencyOffices as $oi => $office): ?>
+                            <?php if ($oi > 0): ?><span class="agency-dot">·</span><?php endif; ?>
+                            <span class="agency-office"><?= Html::e($office) ?></span>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             <?php endif; ?>
 
@@ -586,7 +617,15 @@ Example:
                 <div class="pax-item">
                     <span class="pax-key">Passenger<?= count($result->passengers) !== 1 ? 's' : '' ?></span>
                     <span class="pax-val">
-                        <?= Html::e(implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))) ?>
+                        <?php if (count($result->passengers) === 1): ?>
+                            <?= Html::e($result->passengers[0]->name) ?>
+                        <?php else: ?>
+                            <ol class="pax-list">
+                                <?php foreach ($result->passengers as $pax): ?>
+                                    <li><?= Html::e($pax->name) ?></li>
+                                <?php endforeach; ?>
+                            </ol>
+                        <?php endif; ?>
                     </span>
                 </div>
                 <?php endif; ?>
@@ -629,8 +668,6 @@ Example:
                                     <span class="leg-head-title"><?php
                                         if ($legLabel !== null) {
                                             echo Html::e($legLabel) . ': ';
-                                        } else {
-                                            echo 'Flight: ';
                                         }
                                         echo Html::e($legOrigin) . ' &rarr; ' . Html::e($legDest);
                                     ?></span>
@@ -863,6 +900,30 @@ Example:
                     <?php endforeach; ?>
                 </div>
                 <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- ── Must Read section ─────────────── -->
+            <?php if ($show('show_must_read')):
+                $mustReadDefault = implode("\n", [
+                    '• Reconfirm your flight 24–48 hours before departure directly with the airline.',
+                    '• Check-in at least 3 hours before international and 2 hours before domestic flights.',
+                    '• Carry original travel documents — passport, visa, and printed/digital itinerary.',
+                    '• Verify transit visa requirements for all stopover countries before travel.',
+                    '• Baggage allowances vary by airline and fare class — excess baggage charges apply at check-in.',
+                    '• Roaming Nepal is not liable for flight delays, cancellations, or schedule changes by airlines.',
+                    '• For any assistance, contact us at the numbers listed below.',
+                ]);
+                $mustReadText = (string) ($settings['must_read_text'] ?? $mustReadDefault);
+                $mustReadLines = array_filter(array_map('trim', explode("\n", $mustReadText)));
+            ?>
+                <div class="card-must-read">
+                    <div class="must-read-title">&#9888; MUST READ</div>
+                    <ul class="must-read-list">
+                        <?php foreach ($mustReadLines as $mrl): ?>
+                            <li><?= Html::e(ltrim($mrl, '•- ')) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
             <?php endif; ?>
 
             <!-- ── Card footer ────────────────────── -->
