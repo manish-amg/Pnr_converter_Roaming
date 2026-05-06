@@ -18,3 +18,19 @@ DirectoryIndex index.php
     php_value upload_max_filesize 10M
     php_value post_max_size 10M
 </IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), camera=(), microphone=()"
+</IfModule>
+
+# Block direct access to config and data directories
+<FilesMatch "\.(php)$">
+    <RequireAll>
+        Require all granted
+    </RequireAll>
+</FilesMatch>

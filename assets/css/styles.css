@@ -1030,6 +1030,41 @@ body.share-mode .share-hint {
   .feature-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* ── Compact flight block tweaks ──────────────────── */
+.fb-headline { padding: 8px 18px 6px; }
+.fb-body { padding: 8px 18px 10px; gap: 10px; }
+.fb-logo { width: 44px; height: 22px; object-fit: contain; }
+.fb-code-badge { width: 44px; height: 22px; font-size: 10px; }
+.fb-route-line { margin: 1px 0; font-size: 13px; }
+.fb-time { font-size: 16px; }
+.fb-dur { font-size: 11px; padding: 2px 7px; }
+
+/* ── Fare/baggage row ──────────────────────────────── */
+.card-fare-row {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 10px 22px;
+  border-top: 1px solid var(--line);
+  background: #f8fafc;
+}
+
+.fare-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: var(--radius-pill);
+  background: var(--brand-soft); border: 1px solid var(--brand-border);
+  font-size: 13px; font-weight: 600; color: var(--brand);
+}
+
+.fare-key {
+  font-size: 10px; font-weight: 900; text-transform: uppercase;
+  letter-spacing: .05em; color: var(--muted);
+}
+
+/* ── Table operated-by ─────────────────────────────── */
+.tbl-opby {
+  display: block; font-size: 10px; color: var(--muted);
+  font-style: italic; margin-top: 2px;
+}
+
 @media (max-width: 480px) {
   .fb-logo-col { width: 36px; }
   .fb-logo, .fb-code-badge { width: 36px; height: 36px; }

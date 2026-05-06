@@ -47,8 +47,8 @@ $airlineLogo = static function (string $code) use ($projectRoot, $asset): array 
         $p = 'assets/images/airlines/' . $code . '.' . $ext;
         if (is_file($projectRoot . '/' . $p)) return ['src' => $asset($p), 'local' => true];
     }
-    // CDN fallback — Aviasales logo API (free, CORS-enabled)
-    return ['src' => 'https://pics.avs.io/100/40/' . $code . '.png', 'local' => false];
+    // CDN fallback — Google Flights logo CDN (reliable, CORS-enabled)
+    return ['src' => 'https://www.gstatic.com/flights/airline_logos/70px/' . $code . '.png', 'local' => false];
 };
 
 $logoImg = static function (array $logo, string $cls, string $alt): string {
@@ -315,6 +315,18 @@ $buildTextVersion = static function () use ($result, $show, $showDisclaimer, $se
     return trim(implode("\n", $lines));
 };
 
+// Extract fare and baggage from raw input
+$rawFare    = null;
+$rawBaggage = null;
+if ($rawInput !== '') {
+    if (preg_match('/\b((?:Rs|NPR|INR|USD|EUR|GBP|AUD|AED|SAR|QAR|BDT|THB|SGD)\.?\s*[\d,]+(?:\.\d{1,2})?(?:\s*\/-)?)/i', $rawInput, $fm)) {
+        $rawFare = trim($fm[1]);
+    }
+    if (preg_match('/\b(?:baggage|bag|bgga?ge?)\s*[:\-]?\s*([\d]+\s*(?:kg|pc|pcs?|piece)s?(?:\s*x\s*[\d]+\s*(?:kg|pcs?)?)?)/i', $rawInput, $bm)) {
+        $rawBaggage = trim($bm[1]);
+    }
+}
+
 $renderable = $result !== null && $result->isRenderable();
 ?>
 <!doctype html>
@@ -565,6 +577,17 @@ Example:
                 <?php endif; ?>
             </div>
 
+            <?php if ($rawFare !== null || $rawBaggage !== null): ?>
+                <div class="card-fare-row">
+                    <?php if ($rawFare !== null): ?>
+                        <span class="fare-chip"><span class="fare-key">Fare</span> <?= Html::e($rawFare) ?></span>
+                    <?php endif; ?>
+                    <?php if ($rawBaggage !== null): ?>
+                        <span class="fare-chip"><span class="fare-key">Baggage</span> <?= Html::e($rawBaggage) ?></span>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <?php if ($resultFormat === 'table'): ?>
                 <!-- ── TABLE FORMAT ──────────────────── -->
                 <?php foreach ($legs as $leg):
@@ -605,6 +628,7 @@ Example:
                                         <div>
                                             <strong><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></strong>
                                             <?php if ($show('show_airline_name') && $seg->airlineName): ?><em><?= Html::e($seg->airlineName) ?></em><?php endif; ?>
+                                            <?php if ($show('show_operated_by') && $seg->operatedBy): ?><small class="tbl-opby">Op: <?= Html::e($seg->operatedBy) ?></small><?php endif; ?>
                                         </div>
                                     </div>
                                 </td>
