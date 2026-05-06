@@ -53,7 +53,7 @@ $featureDefaults = [
     'show_disclaimer'        => false,
 ];
 
-$show             = static fn (string $key) use ($features, $featureDefaults): bool
+$show             = static fn (string $key): bool
     => (bool) ($features[$key] ?? $featureDefaults[$key] ?? false);
 $showAgencyHeader = $show('show_agency_header');
 $showAgencyFooter = $show('show_agency_footer');
