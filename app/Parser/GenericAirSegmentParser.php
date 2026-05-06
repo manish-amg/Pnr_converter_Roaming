@@ -87,7 +87,7 @@ final class GenericAirSegmentParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
-        $pattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])?(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?\s*)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?(.*)$/i';
+        $pattern = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])?(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:[1-7]\*?\s*)?([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+(#?\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)\s+(#?\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?(.*)$/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;
         }

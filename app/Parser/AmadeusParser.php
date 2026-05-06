@@ -78,7 +78,7 @@ final class AmadeusParser extends BaseParser
         // Pattern handles optional Amadeus terminal prefix: e.g. 7*MELKUL (Terminal 7 at MEL)
         // Booking class ([A-Z]) after flight number is optional to support formats like:
         //   1  TG 585  09MAY 6*KTIBKK DK1  2115 2235  09MAY  E  0 320 M
-        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:\d\*\s*)?([A-Z]{3})\s*(?:\d\*\s*)?([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:\d\*\s*)?([A-Z]{3})\s*(?:\d\*\s*)?([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+(#?\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)\s+(#?\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;
         }
