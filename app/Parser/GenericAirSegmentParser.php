@@ -25,13 +25,34 @@ final class GenericAirSegmentParser extends BaseParser
         $ticket = $this->extractTicketNumber($lines);
         $seat = $this->extractSeatNumber($lines);
 
-        foreach ($lines as $line) {
+        $count = count($lines);
+        for ($i = 0; $i < $count; $i++) {
+            $line = $lines[$i];
             if ($this->isSensitiveLine($line)) {
                 continue;
             }
 
             $segment = $this->parseSegmentLine($line, $ticket, $seat);
             if ($segment !== null) {
+                // Look ahead for "OPERATED BY ..." continuation lines
+                while (isset($lines[$i + 1]) && $this->isContinuationLine($lines[$i + 1])) {
+                    $i++;
+                    $cont = $lines[$i];
+                    if (preg_match('/^\s*OPERATED\s+BY\s+(.+)/i', $cont, $cm) === 1) {
+                        $operatedBy = trim($cm[1]);
+                        $segment = new Segment(
+                            $segment->airlineCode, $segment->flightNumber, $segment->airlineName,
+                            $segment->status, $segment->departureAirport, $segment->arrivalAirport,
+                            $segment->departureDate, $segment->departureTime,
+                            $segment->arrivalDate, $segment->arrivalTime,
+                            $segment->bookingClass, $segment->cabin,
+                            $segment->layoverDuration, $operatedBy,
+                            $segment->ticketNumber, $segment->seatNumber,
+                            $segment->aircraft, $segment->rawLine,
+                            $segment->departureTerminal
+                        );
+                    }
+                }
                 $segments[] = $segment;
                 continue;
             }
@@ -143,6 +164,11 @@ final class GenericAirSegmentParser extends BaseParser
         $formatted = strtoupper($nextDay->format('dM'));
 
         return isset($m[3]) && $m[3] !== '' ? $formatted . $nextDay->format('Y') : $formatted;
+    }
+
+    private function isContinuationLine(string $line): bool
+    {
+        return preg_match('/^\s*(?:OPERATED\s+BY|SEE\s+RTSVC|NOTE|CHANGE\s+OF\s+GAUGE|CODESHARE)/i', $line) === 1;
     }
 
     private function looksLikeAirSegment(string $line): bool

@@ -19,7 +19,7 @@ final class AmadeusParser extends BaseParser
         if (preg_match('/\bNM\d+[A-Z]+\/[A-Z]+/i', $raw) === 1) {
             $score += 25;
         }
-        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}\s+(?:\d\*)?[A-Z]{6}\s+[A-Z]{2}\d?/mi', $raw) === 1) {
+        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}(?:\s+[A-Z])?\s+\d{1,2}[A-Z]{3}\s+(?:\d\*)?[A-Z]{6}\s+[A-Z]{2}\d?/mi', $raw) === 1) {
             $score += 35;
         }
         if (preg_match('/\bAPIS|FA PAX|TK OK|SSR DOCS\b/i', $raw) === 1) {
@@ -76,7 +76,9 @@ final class AmadeusParser extends BaseParser
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
         // Pattern handles optional Amadeus terminal prefix: e.g. 7*MELKUL (Terminal 7 at MEL)
-        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})\s+([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:\d\*\s*)?([A-Z]{3})\s*(?:\d\*\s*)?([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        // Booking class ([A-Z]) after flight number is optional to support formats like:
+        //   1  TG 585  09MAY 6*KTIBKK DK1  2115 2235  09MAY  E  0 320 M
+        $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})(?:\s+([A-Z]))?\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+(?:\d\*\s*)?([A-Z]{3})\s*(?:\d\*\s*)?([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+([#0-9APMapm:]{3,8})\s+([#0-9APMapm:]{3,8})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;
         }

@@ -118,6 +118,7 @@ return [
     'DAD' => ['name' => 'Da Nang International Airport',             'city' => 'Da Nang',        'country' => 'Vietnam',               'lat' => 16.0439,  'lon' => 108.1993],
     'REP' => ['name' => 'Siem Reap–Angkor International Airport',    'city' => 'Siem Reap',      'country' => 'Cambodia',              'lat' => 13.4107,  'lon' => 103.8127],
     'PNH' => ['name' => 'Phnom Penh International Airport',          'city' => 'Phnom Penh',     'country' => 'Cambodia',              'lat' => 11.5466,  'lon' => 104.8440],
+    'KTI' => ['name' => 'Techo International Airport',               'city' => 'Phnom Penh',     'country' => 'Cambodia',              'lat' => 11.3833,  'lon' => 104.8167],
     'VTE' => ['name' => 'Wattay International Airport',              'city' => 'Vientiane',      'country' => 'Laos',                  'lat' => 17.9883,  'lon' => 102.5633],
     'RGN' => ['name' => 'Yangon International Airport',              'city' => 'Yangon',         'country' => 'Myanmar',               'lat' => 16.9073,  'lon' =>  96.1332],
     'MDL' => ['name' => 'Mandalay International Airport',            'city' => 'Mandalay',       'country' => 'Myanmar',               'lat' => 21.7022,  'lon' =>  95.9779],
@@ -209,4 +210,11 @@ return [
     'DME' => ['name' => 'Domodedovo International Airport',          'city' => 'Moscow',         'country' => 'Russia',                'lat' => 55.4088,  'lon' =>  37.9063],
     'LED' => ['name' => 'Pulkovo Airport',                           'city' => 'St. Petersburg', 'country' => 'Russia',                'lat' => 59.8003,  'lon' =>  30.2625],
     'ALA' => ['name' => 'Almaty International Airport',              'city' => 'Almaty',         'country' => 'Kazakhstan',            'lat' => 43.3521,  'lon' =>  77.0405],
+    // Caucasus / Central Asia
+    'GYD' => ['name' => 'Heydar Aliyev International Airport',      'city' => 'Baku',           'country' => 'Azerbaijan',            'lat' => 40.4675,  'lon' =>  50.0467],
+    'TBS' => ['name' => 'Tbilisi International Airport',            'city' => 'Tbilisi',        'country' => 'Georgia',               'lat' => 41.6692,  'lon' =>  44.9547],
+    'EVN' => ['name' => 'Zvartnots International Airport',          'city' => 'Yerevan',        'country' => 'Armenia',               'lat' => 40.1473,  'lon' =>  44.3959],
+    'TAS' => ['name' => 'Tashkent International Airport',           'city' => 'Tashkent',       'country' => 'Uzbekistan',            'lat' => 41.2579,  'lon' =>  69.2812],
+    // Maldives
+    'MLE' => ['name' => 'Velana International Airport',             'city' => 'Male',           'country' => 'Maldives',              'lat' =>  4.1918,  'lon' =>  73.5290],
 ];

@@ -28,14 +28,33 @@ $rateLimited = (bool) ($rateLimited ?? false);
 
 $distanceUnit = in_array((string) ($features['distance_unit'] ?? 'off'), ['off', 'km', 'miles'], true)
     ? (string) $features['distance_unit'] : 'off';
-$resultFormat = in_array((string) ($features['result_format'] ?? 'detailed'),
+$resultFormat = in_array((string) ($features['result_format'] ?? 'table'),
     ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'], true)
-    ? (string) $features['result_format'] : 'detailed';
+    ? (string) $features['result_format'] : 'table';
 $use24HourTime = array_key_exists('use_12_hour_clock', $features)
     ? !(bool) $features['use_12_hour_clock']
     : (bool) ($features['use_24_hour_time'] ?? true);
 
-$show             = static fn (string $key): bool => (bool) ($features[$key] ?? false);
+$featureDefaults = [
+    'show_airline_logo'      => true,
+    'show_airline_name'      => true,
+    'show_flight_duration'   => true,
+    'show_transit_time'      => true,
+    'show_operated_by'       => true,
+    'show_cabin'             => true,
+    'show_terminal'          => false,
+    'show_aircraft'          => false,
+    'show_booking_class'     => false,
+    'show_booking_reference' => false,
+    'show_ticket_numbers'    => false,
+    'show_seat_numbers'      => false,
+    'show_agency_header'     => false,
+    'show_agency_footer'     => false,
+    'show_disclaimer'        => false,
+];
+
+$show             = static fn (string $key) use ($features, $featureDefaults): bool
+    => (bool) ($features[$key] ?? $featureDefaults[$key] ?? false);
 $showAgencyHeader = $show('show_agency_header');
 $showAgencyFooter = $show('show_agency_footer');
 $showDisclaimer   = $show('show_disclaimer');
@@ -199,15 +218,23 @@ $routeDisplay = static function (array $legs): string {
 // Itinerary title with city names
 $itinTitle = static function (array $legs) use ($portCity): string {
     if (empty($legs)) return 'Flight Itinerary';
-    $parts = [];
-    foreach ($legs as $leg) {
-        $first = $leg['segments'][0] ?? null;
-        $last  = $leg['segments'][count($leg['segments']) - 1] ?? null;
-        if ($first && $last) {
-            $parts[] = $portCity($first->departureAirport) . ' → ' . $portCity($last->arrivalAirport);
+    $allSegs = [];
+    foreach ($legs as $leg) { foreach ($leg['segments'] as $s) { $allSegs[] = $s; } }
+    if (empty($allSegs)) return 'Flight Itinerary';
+    $first = $allSegs[0];
+    $last  = $allSegs[count($allSegs) - 1];
+    $origin = $portCity($first->departureAirport);
+    $dest   = $portCity($last->arrivalAirport);
+    if ($origin === $dest) {
+        // Round trip — collect unique waypoints
+        $waypoints = [$origin];
+        foreach ($allSegs as $seg) {
+            $city = $portCity($seg->arrivalAirport);
+            if ($city !== end($waypoints)) $waypoints[] = $city;
         }
+        return 'Flight Itinerary: ' . implode(' → ', $waypoints);
     }
-    return 'Flight Itinerary: ' . implode(' // ', $parts);
+    return 'Flight Itinerary: ' . $origin . ' → ' . $dest;
 };
 
 // WhatsApp text builder — rich visual structure
@@ -555,24 +582,18 @@ Example:
             </div>
 
             <div class="card-pax">
+                <?php if (count($result->passengers) > 0): ?>
                 <div class="pax-item">
                     <span class="pax-key">Passenger<?= count($result->passengers) !== 1 ? 's' : '' ?></span>
                     <span class="pax-val">
-                        <?= Html::e(count($result->passengers) > 0
-                            ? implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))
-                            : 'Not detected') ?>
+                        <?= Html::e(implode(', ', array_map(static fn ($p) => $p->name, $result->passengers))) ?>
                     </span>
                 </div>
+                <?php endif; ?>
                 <?php if ($show('show_booking_reference') && $result->recordLocator !== null): ?>
                     <div class="pax-item">
                         <span class="pax-key">Booking ref</span>
                         <span class="pax-val"><span class="ref-code"><?= Html::e($result->recordLocator) ?></span></span>
-                    </div>
-                <?php endif; ?>
-                <?php if ($firstSeg instanceof Segment && $lastSeg instanceof Segment): ?>
-                    <div class="pax-item">
-                        <span class="pax-key">Route</span>
-                        <span class="pax-val"><?= Html::e($routeDisplay($legs)) ?></span>
                     </div>
                 <?php endif; ?>
             </div>
@@ -597,21 +618,35 @@ Example:
                     $legFirst = $legSegs[0] ?? null;
                     $legLast  = $legSegs[count($legSegs) - 1] ?? null;
                     $legDur   = $legDuration($legSegs);
+                    $legOrigin = $legFirst ? $portCity($legFirst->departureAirport) : '';
+                    $legDest   = $legLast  ? $portCity($legLast->arrivalAirport)   : '';
                 ?>
-                <?php if ($legLabel !== null && $legFirst && $legLast): ?>
-                    <div class="leg-head">
-                        <span><?= Html::e($legLabel) ?>: <?= Html::e($portCity($legFirst->departureAirport)) ?> &rarr; <?= Html::e($portCity($legLast->arrivalAirport)) ?></span>
-                        <?php if ($legDur): ?><span class="leg-dur"><?= Html::e($legDur) ?></span><?php endif; ?>
-                    </div>
-                <?php endif; ?>
                 <div class="table-scroll">
                     <table class="seg-table">
-                        <thead><tr>
-                            <th>Flight</th><th>Date</th>
-                            <th>Departs</th><th>From</th>
-                            <th>Arrives</th><th>To</th>
-                            <th>Info</th>
-                        </tr></thead>
+                        <thead>
+                            <tr class="leg-head-row">
+                                <th colspan="7" class="leg-head-cell">
+                                    <span class="leg-head-title"><?php
+                                        if ($legLabel !== null) {
+                                            echo Html::e($legLabel) . ': ';
+                                        } else {
+                                            echo 'Flight: ';
+                                        }
+                                        echo Html::e($legOrigin) . ' &rarr; ' . Html::e($legDest);
+                                    ?></span>
+                                    <?php if ($legDur): ?><span class="leg-head-dur"><?= Html::e($legDur) ?></span><?php endif; ?>
+                                </th>
+                            </tr>
+                            <tr>
+                                <th>Date</th>
+                                <th>Flight</th>
+                                <th>Carrier</th>
+                                <th>Departs</th>
+                                <th>Arrives</th>
+                                <th>Duration</th>
+                                <th>Layover</th>
+                            </tr>
+                        </thead>
                         <tbody>
                         <?php foreach ($legSegs as $seg): ?>
                             <?php
@@ -620,46 +655,63 @@ Example:
                             $dur    = $flightDuration($seg);
                             $offset = $arrivalOffset($seg);
                             $dist   = Metadata::distanceLabel($seg->departureAirport, $seg->arrivalAirport, $distanceUnit);
+                            $depMeta = Metadata::airport($seg->departureAirport);
+                            $arrMeta = Metadata::airport($seg->arrivalAirport);
+                            $depLabel = ($depMeta ? ($depMeta['name'] . ', ' . $depMeta['city']) : strtoupper($seg->departureAirport)) . ' (' . strtoupper($seg->departureAirport) . ')';
+                            $arrLabel = ($arrMeta ? ($arrMeta['name'] . ', ' . $arrMeta['city']) : strtoupper($seg->arrivalAirport)) . ' (' . strtoupper($seg->arrivalAirport) . ')';
                             ?>
                             <tr>
+                                <td class="tbl-date">
+                                    <strong><?= Html::e($datePretty($seg->departureDate)) ?></strong>
+                                </td>
                                 <td>
-                                    <div class="tbl-flight">
-                                        <?php if ($logo): ?><?= $logoImg($logo, 'tbl-logo', $seg->airlineCode) ?><?php else: ?><span class="tbl-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
-                                        <div>
-                                            <strong><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></strong>
-                                            <?php if ($show('show_airline_name') && $seg->airlineName): ?><em><?= Html::e($seg->airlineName) ?></em><?php endif; ?>
-                                            <?php if ($show('show_operated_by') && $seg->operatedBy): ?><small class="tbl-opby">Op: <?= Html::e($seg->operatedBy) ?></small><?php endif; ?>
-                                        </div>
+                                    <span class="tbl-flight-num"><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></span>
+                                    <?php if ($show('show_booking_class') && $seg->bookingClass): ?>
+                                        <br><span style="font-size:11px;color:#888"><?= Html::e($seg->bookingClass) ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($show('show_cabin') && $seg->cabin): ?>
+                                        <br><span style="font-size:11px;color:#888"><?= Html::e($seg->cabin) ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($show('show_aircraft') && $seg->aircraft): ?>
+                                        <br><span style="font-size:11px;color:#aaa"><?= Html::e($seg->aircraft) ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($dist): ?>
+                                        <br><span style="font-size:11px;color:#aaa"><?= Html::e($dist) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="tbl-carrier">
+                                        <?php if ($logo): ?><?= $logoImg($logo, 'tbl-carrier-logo', $seg->airlineCode) ?><?php else: ?><span class="tbl-code"><?= Html::e($seg->airlineCode) ?></span><?php endif; ?>
+                                        <?php if ($show('show_airline_name') && $seg->airlineName): ?>
+                                            <span class="tbl-carrier-name"><?= Html::e($seg->airlineName) ?></span>
+                                        <?php endif; ?>
                                     </div>
+                                    <?php if ($show('show_operated_by') && $seg->operatedBy): ?>
+                                        <span class="tbl-opby">Op: <?= Html::e($seg->operatedBy) ?></span>
+                                    <?php endif; ?>
                                 </td>
-                                <td><?= Html::e($datePretty($seg->departureDate)) ?></td>
-                                <td><strong><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></strong><?php if ($seg->departureTerminal): ?><br><span class="tbl-term"><?= Html::e($seg->departureTerminal) ?></span><?php endif; ?></td>
-                                <td><?= Html::e($portDisplay($seg->departureAirport)) ?></td>
+                                <td class="tbl-port">
+                                    <span class="tbl-port-name"><?= Html::e($depLabel) ?></span>
+                                    <span class="tbl-port-time"><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></span>
+                                    <?php if ($show('show_terminal') && $seg->departureTerminal): ?>
+                                        <span class="tbl-term">T<?= Html::e($seg->departureTerminal) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="tbl-port">
+                                    <span class="tbl-port-name"><?= Html::e($arrLabel) ?></span>
+                                    <span class="tbl-port-time"><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?><?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?></span>
+                                </td>
+                                <td class="tbl-dur"><?= $dur ? Html::e($dur) : '&mdash;' ?></td>
                                 <td>
-                                    <strong><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></strong>
-                                    <?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?>
-                                </td>
-                                <td><?= Html::e($portDisplay($seg->arrivalAirport)) ?></td>
-                                <td class="td-chips">
-                                    <?php if ($dur): ?><span><?= Html::e($dur) ?></span><?php endif; ?>
-                                    <?php if ($show('show_cabin') && $seg->cabin): ?><span><?= Html::e($seg->cabin) ?></span><?php endif; ?>
-                                    <?php if ($show('show_booking_class') && $seg->bookingClass): ?><span><?= Html::e($seg->bookingClass) ?></span><?php endif; ?>
-                                    <?php if ($dist): ?><span><?= Html::e($dist) ?></span><?php endif; ?>
-                                    <?php if ($show('show_aircraft') && $seg->aircraft): ?><span><?= Html::e($seg->aircraft) ?></span><?php endif; ?>
+                                    <?php if ($show('show_transit_time') && $seg->layoverDuration): ?>
+                                        <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); $visa = $transitVisa($seg->arrivalAirport); ?>
+                                        <span class="tbl-layover <?= Html::e($loClass) ?>"><?= Html::e($seg->layoverDuration) ?></span>
+                                        <?php if ($visa): ?><br><span class="visa-flag" style="font-size:10px"><?= Html::e($visa) ?></span><?php endif; ?>
+                                    <?php else: ?>
+                                        &mdash;
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                            <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
-                                <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); $visa = $transitVisa($seg->arrivalAirport); ?>
-                                <tr class="tbl-layover-row <?= Html::e($loClass) ?>">
-                                    <td colspan="7">
-                                        <span class="lo-sep-inner">
-                                            &mdash;&mdash; <?= Html::e($loLabel) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>): <strong><?= Html::e($seg->layoverDuration) ?></strong>
-                                            <?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?>
-                                            &mdash;&mdash;
-                                        </span>
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
