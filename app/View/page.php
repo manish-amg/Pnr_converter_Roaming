@@ -404,7 +404,7 @@ $renderable = $result !== null && $result->isRenderable();
                     <textarea
                         id="pnr_text"
                         name="pnr_text"
-                        rows="<?= $renderable ? '8' : '11' ?>"
+                        rows="<?= $renderable ? '12' : '16' ?>"
                         spellcheck="false"
                         placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
 
@@ -424,6 +424,14 @@ Example:
                     </div>
                 </div>
 
+                <?php if ($renderable): ?>
+                <!-- Share actions in sidebar -->
+                <div class="sidebar-actions">
+                    <button type="button" class="btn btn-wa sidebar-btn" id="waBtn">📱 WhatsApp</button>
+                    <button type="button" class="btn sidebar-btn" id="copyTextBtn">📋 Copy Text</button>
+                </div>
+                <?php endif; ?>
+
             </div><!-- /app-sidebar -->
 
             <!-- ══════════════════════════════════════
@@ -435,8 +443,11 @@ Example:
                 <div class="options-strip settings-panel no-share">
 
                     <!-- Row 1: Layout format + presets -->
-                    <div class="ostrip-row">
-                        <span class="ostrip-label">Layout</span>
+                    <div class="ostrip-row ostrip-row--layout">
+                        <div class="ostrip-row-label">
+                            <span class="ostrip-label">Layout</span>
+                            <span class="ostrip-desc">Card format</span>
+                        </div>
                         <div class="theme-pills" role="radiogroup">
                             <?php foreach ([
                                 'detailed'    => 'Graphic',
@@ -471,7 +482,10 @@ Example:
 
                     <!-- Row 2: Flight detail toggles -->
                     <div class="ostrip-row ostrip-row--toggles">
-                        <span class="ostrip-label">Show</span>
+                        <div class="ostrip-row-label">
+                            <span class="ostrip-label">Flight details</span>
+                            <span class="ostrip-desc">Fields to display</span>
+                        </div>
                         <?php foreach ([
                             'show_airline_logo'      => 'Logo',
                             'show_airline_name'      => 'Airline',
@@ -498,7 +512,10 @@ Example:
 
                     <!-- Row 3: Agency branding (optional) -->
                     <div class="ostrip-row ostrip-row--agency">
-                        <span class="ostrip-label">Agency <span class="ostrip-badge">Optional</span></span>
+                        <div class="ostrip-row-label">
+                            <span class="ostrip-label">Agency branding <span class="ostrip-badge">Optional</span></span>
+                            <span class="ostrip-desc">Add your brand</span>
+                        </div>
                         <?php foreach ([
                             'show_agency_header' => 'Header',
                             'show_agency_footer' => 'Footer',
@@ -529,8 +546,6 @@ Example:
                     </div>
                     <?php if ($renderable): ?>
                         <div class="result-actions">
-                            <button type="button" class="btn btn-wa btn-sm" id="waBtn">📱 WhatsApp</button>
-                            <button type="button" class="btn btn-sm" id="copyTextBtn">📋 Copy Text</button>
                             <button type="button" class="btn btn-sm" id="copyImageBtn">🖼 Copy Image</button>
                             <button type="button" class="btn btn-sm" id="downloadPngBtn">💾 Save PNG</button>
                             <button type="button" class="btn btn-sm" id="printBtn">🖨 Print</button>
@@ -623,7 +638,7 @@ Example:
                         <?php if (count($result->passengers) === 1): ?>
                             <?= Html::e($result->passengers[0]->name) ?>
                         <?php else: ?>
-                            <ol class="pax-list">
+                            <ol class="pax-list<?= count($result->passengers) > 4 ? ' pax-list--cols' : '' ?>">
                                 <?php foreach ($result->passengers as $pax): ?>
                                     <li><?= Html::e($pax->name) ?></li>
                                 <?php endforeach; ?>
@@ -727,7 +742,7 @@ Example:
                                         <?php endif; ?>
                                     </div>
                                     <?php if ($show('show_operated_by') && $seg->operatedBy): ?>
-                                        <span class="tbl-opby">Op: <?= Html::e($seg->operatedBy) ?></span>
+                                        <span class="tbl-opby">Operated by <?= Html::e($seg->operatedBy) ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="tbl-port">
@@ -883,7 +898,7 @@ Example:
                                             <?php if ($show('show_booking_class') && $seg->bookingClass): ?><span>Class <?= Html::e($seg->bookingClass) ?></span><?php endif; ?>
                                             <?php if ($dist): ?><span><?= Html::e($dist) ?></span><?php endif; ?>
                                             <?php if ($show('show_aircraft') && $seg->aircraft): ?><span><?= Html::e($seg->aircraft) ?></span><?php endif; ?>
-                                            <?php if ($show('show_operated_by') && $seg->operatedBy): ?><span>Op: <?= Html::e($seg->operatedBy) ?></span><?php endif; ?>
+                                            <?php if ($show('show_operated_by') && $seg->operatedBy): ?><span>Operated by <?= Html::e($seg->operatedBy) ?></span><?php endif; ?>
                                             <?php if ($show('show_ticket_numbers') && $seg->ticketNumber): ?><span>TKT <?= Html::e($maskTicket($seg->ticketNumber, (bool) ($features['mask_ticket_numbers'] ?? true))) ?></span><?php endif; ?>
                                             <?php if ($show('show_seat_numbers') && $seg->seatNumber): ?><span>Seat <?= Html::e($maskSeat($seg->seatNumber, (bool) ($features['mask_seat_numbers'] ?? false))) ?></span><?php endif; ?>
                                         </div>

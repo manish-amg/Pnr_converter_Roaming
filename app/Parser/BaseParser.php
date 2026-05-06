@@ -124,7 +124,7 @@ abstract class BaseParser implements ParserInterface
                 continue;
             }
 
-            if (preg_match_all('/(?:^|\s)(?:NM\d+|\d+\.\d*|\d+)\s*([A-Z][A-Z -]+\/[A-Z][A-Z -]+(?:\s+(?:MR|MRS|MS|MSTR|MISS|CHD|INF))?)/i', $line, $matches) > 0) {
+            if (preg_match_all('/(?:^|(?<=\s))(?:NM\d+|\d+\.\d*|\d+)\s*([A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*\/[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*(?:\s+(?:MR|MRS|MS|MSTR|MISS|CHD|INF))?)/i', $line, $matches) > 0) {
                 foreach ($matches[1] as $name) {
                     $passengers[] = new Passenger($this->formatPassengerName($name));
                 }

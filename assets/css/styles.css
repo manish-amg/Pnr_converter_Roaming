@@ -60,10 +60,10 @@ a { color: inherit; text-decoration: none; }
 .topbar {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 12px 24px;
-  background: #0e7490;
-  border-bottom: none;
-  box-shadow: 0 2px 12px rgba(14,116,144,.25);
+  padding: 10px 24px;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 2px 16px rgba(0,0,0,.25);
 }
 
 .brand-logo {
@@ -202,13 +202,15 @@ a { color: inherit; text-decoration: none; }
 
 textarea {
   display: block; width: 100%;
-  min-height: 200px;
+  min-height: 260px;
+  max-height: 70vh;
   padding: 20px;
   border: none; outline: none;
   background: transparent;
-  font: 14px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: #e2e8f0;
   resize: vertical;
+  overflow-y: auto;
 }
 
 textarea::placeholder { color: #475569; white-space: pre-wrap; }
@@ -254,21 +256,51 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
   align-items: center;
   flex-wrap: wrap;
   gap: 5px;
-  padding: 6px 12px;
+  padding: 7px 12px;
   border-bottom: 1px solid var(--line);
+  position: relative;
 }
 
-.ostrip-row:first-child { padding: 8px 12px; background: var(--brand-soft); }
 .ostrip-row:last-child { border-bottom: none; }
 
-.ostrip-row--agency { background: #fafcff; }
+/* Row 1 — Layout: teal-tinted */
+.ostrip-row--layout {
+  background: #ecfeff;
+  border-left: 3px solid var(--brand);
+}
+
+/* Row 2 — Flight details: neutral white */
+.ostrip-row--toggles {
+  background: #fff;
+  border-left: 3px solid #6366f1;
+}
+
+/* Row 3 — Agency branding: warm amber tint */
+.ostrip-row--agency {
+  background: #fffbeb;
+  border-left: 3px solid var(--amber);
+}
+
+.ostrip-row-label {
+  display: flex; flex-direction: column; gap: 1px;
+  min-width: 80px; flex-shrink: 0; margin-right: 4px;
+}
+
+.ostrip-desc {
+  font-size: 9px; color: var(--muted);
+  font-weight: 500; white-space: nowrap;
+}
 
 .ostrip-label {
   font-size: 9px; font-weight: 900;
-  color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
-  white-space: nowrap; margin-right: 2px; flex-shrink: 0;
+  text-transform: uppercase; letter-spacing: .06em;
+  white-space: nowrap;
   display: flex; align-items: center; gap: 5px;
 }
+
+.ostrip-row--layout .ostrip-label  { color: var(--brand); }
+.ostrip-row--toggles .ostrip-label { color: #6366f1; }
+.ostrip-row--agency .ostrip-label  { color: #b45309; }
 
 .ostrip-badge {
   font-size: 9px; font-weight: 700;
@@ -608,6 +640,35 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
   margin: 0; padding: 0 0 0 16px;
   font-size: 13px; font-weight: 600; color: #0f172a;
   line-height: 1.7;
+}
+
+.pax-list--cols {
+  columns: 2; column-gap: 24px;
+}
+
+/* Sidebar share actions (WhatsApp + Copy Text) */
+.sidebar-actions {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.sidebar-btn {
+  width: 100%; justify-content: center;
+  min-height: 40px; font-size: 13px; font-weight: 700;
+  border-radius: 10px;
+}
+
+.btn-wa.sidebar-btn {
+  background: var(--wa-green); border-color: var(--wa-green); color: #fff;
+}
+.btn-wa.sidebar-btn:hover:not(:disabled) {
+  background: var(--wa-hover); border-color: var(--wa-hover);
+}
+
+.sidebar-btn:not(.btn-wa) {
+  background: var(--green); border-color: var(--green); color: #fff;
+}
+.sidebar-btn:not(.btn-wa):hover:not(:disabled) {
+  background: var(--green-hover); border-color: var(--green-hover);
 }
 
 .ref-code {
