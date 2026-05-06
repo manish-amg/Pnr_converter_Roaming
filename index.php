@@ -69,6 +69,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Handle boolean feature keys that come from the UI but may not exist in config/settings.php
+    foreach (['show_must_read'] as $extraKey) {
+        if (array_key_exists($extraKey, $_POST)) {
+            $features[$extraKey] = $_POST[$extraKey] === '1';
+        }
+    }
+
     if (isset($features['use_12_hour_clock'])) {
         $features['use_24_hour_time'] = !(bool) $features['use_12_hour_clock'];
     }

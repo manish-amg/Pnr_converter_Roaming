@@ -598,7 +598,10 @@ Example:
                     <div class="agency-offices">
                         <?php foreach ($agencyOffices as $oi => $office): ?>
                             <?php if ($oi > 0): ?><span class="agency-dot">·</span><?php endif; ?>
-                            <span class="agency-office"><?= Html::e($office) ?></span>
+                            <span class="agency-office">
+                                <svg class="loc-pin" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a4.5 4.5 0 0 1 4.5 4.5c0 3-4.5 9-4.5 9S3.5 8.5 3.5 5.5A4.5 4.5 0 0 1 8 1zm0 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
+                                <?= Html::e($office) ?>
+                            </span>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -847,7 +850,6 @@ Example:
                                     <span class="fb-alname"><?= Html::e($seg->airlineName) ?></span>
                                 <?php endif; ?>
                                 <?php if ($dur): ?><span class="fb-dur"><?= Html::e($dur) ?></span><?php endif; ?>
-                                <?php if ($seg->status): ?><span class="fb-status"><?= Html::e($seg->status) ?></span><?php endif; ?>
                             </div>
 
                             <div class="fb-body">
