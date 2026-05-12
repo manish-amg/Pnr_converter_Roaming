@@ -425,11 +425,24 @@ Example:
                 </div>
 
                 <?php if ($renderable): ?>
-                <!-- Share actions in sidebar -->
+                <!-- Primary export actions in sidebar -->
                 <div class="sidebar-actions">
-                    <button type="button" class="btn btn-wa sidebar-btn" id="waBtn">📱 WhatsApp</button>
-                    <button type="button" class="btn sidebar-btn" id="copyTextBtn">📋 Copy Text</button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="copyImageBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M2 13l5-5 4 4 2-2 5 5"/></svg>
+                        Copy Image
+                    </button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="downloadPngBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 3v9M6 8l4 4 4-4M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>
+                        Save PNG
+                    </button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="printBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7V3h10v4M5 13H3a1 1 0 01-1-1V8a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1h-2M5 11h10v6H5v-6z"/></svg>
+                        Print
+                    </button>
                 </div>
+                <!-- Hidden: WhatsApp / Copy Text (available via JS only if needed) -->
+                <button type="button" class="btn btn-wa sidebar-btn" id="waBtn" hidden aria-hidden="true">WhatsApp</button>
+                <button type="button" class="btn sidebar-btn" id="copyTextBtn" hidden aria-hidden="true">Copy Text</button>
                 <?php endif; ?>
 
             </div><!-- /app-sidebar -->
@@ -546,9 +559,8 @@ Example:
                     </div>
                     <?php if ($renderable): ?>
                         <div class="result-actions">
-                            <button type="button" class="btn btn-sm" id="copyImageBtn">🖼 Copy Image</button>
-                            <button type="button" class="btn btn-sm" id="downloadPngBtn">💾 Save PNG</button>
-                            <button type="button" class="btn btn-sm" id="printBtn">🖨 Print</button>
+                            <button type="button" class="btn btn-sm btn-ghost" id="copyTextBtn2">📋 Copy Text</button>
+                            <button type="button" class="btn btn-sm btn-ghost" id="waBtn2">💬 WhatsApp</button>
                         </div>
                     <?php endif; ?>
                 </div>

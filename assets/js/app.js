@@ -7,8 +7,10 @@
   const printBtn       = byId('printBtn');
   const downloadPngBtn = byId('downloadPngBtn');
   const copyTextBtn    = byId('copyTextBtn');
+  const copyTextBtn2   = byId('copyTextBtn2');
   const copyImageBtn   = byId('copyImageBtn');
   const waBtn          = byId('waBtn');
+  const waBtn2         = byId('waBtn2');
   const resetBtn       = byId('resetBtn');
   const form           = document.querySelector('form');
   const settingsPanel  = document.querySelector('.settings-panel');
@@ -65,35 +67,7 @@
     });
   }
 
-  /* ── WhatsApp copy ──────────────────────────────── */
-  if (waBtn) {
-    waBtn.addEventListener('click', async () => {
-      const ta = byId('waVersion');
-      if (!ta) return;
-      try {
-        await navigator.clipboard.writeText(ta.value);
-        temporaryLabel(waBtn, '✓ Copied!');
-      } catch {
-        ta.select(); document.execCommand('copy');
-        temporaryLabel(waBtn, '✓ Copied!');
-      }
-    });
-  }
-
-  /* ── Copy text ──────────────────────────────────── */
-  if (copyTextBtn) {
-    copyTextBtn.addEventListener('click', async () => {
-      const ta = byId('textVersion');
-      if (!ta) return;
-      try {
-        await navigator.clipboard.writeText(ta.value);
-        temporaryLabel(copyTextBtn, '✓ Copied!');
-      } catch {
-        ta.select(); document.execCommand('copy');
-        temporaryLabel(copyTextBtn, '✓ Copied!');
-      }
-    });
-  }
+  /* WhatsApp + Copy Text handled by wireCopyText / wireWa above */
 
   /* ── Save PNG ───────────────────────────────────── */
   if (downloadPngBtn) {
@@ -137,11 +111,45 @@
     }
   }
 
+  /* ── Wire copyTextBtn2 / waBtn2 (result-bar secondary actions) ─── */
+  function wireCopyText(btn) {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const ta = byId('textVersion');
+      if (!ta) return;
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        temporaryLabel(btn, '✓ Copied!');
+      } catch {
+        ta.select(); document.execCommand('copy');
+        temporaryLabel(btn, '✓ Copied!');
+      }
+    });
+  }
+  function wireWa(btn) {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const ta = byId('waVersion');
+      if (!ta) return;
+      try {
+        await navigator.clipboard.writeText(ta.value);
+        temporaryLabel(btn, '✓ Copied!');
+      } catch {
+        ta.select(); document.execCommand('copy');
+        temporaryLabel(btn, '✓ Copied!');
+      }
+    });
+  }
+  wireCopyText(copyTextBtn);
+  wireCopyText(copyTextBtn2);
+  wireWa(waBtn);
+  wireWa(waBtn2);
+
   /* ── Helpers ─────────────────────────────────────── */
   function temporaryLabel(btn, label) {
-    const orig = btn.textContent;
+    const origHtml = btn.innerHTML;
     btn.textContent = label;
-    setTimeout(() => { btn.textContent = orig; }, 1800);
+    setTimeout(() => { btn.innerHTML = origHtml; }, 1800);
   }
 
   function toggleShareMode(force) {

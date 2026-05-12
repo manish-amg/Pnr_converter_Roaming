@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Malaysia Airlines">
-  <rect width="96" height="96" rx="18" fill="#ffffff"/>
-  <rect x="6" y="6" width="84" height="84" rx="15" fill="none" stroke="#d8e2e8" stroke-width="4"/>
-  <path d="M22 57 L48 24 L74 57 H58 L48 43 L38 57 Z" fill="#1f4f9a"/>
-  <path d="M28 63 H68 L60 72 H36 Z" fill="#d21f3c"/>
-  <text x="48" y="84" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="800" fill="#1f4f9a">MH</text>
-</svg>
