@@ -392,19 +392,29 @@ $renderable = $result !== null && $result->isRenderable();
 
 <main class="page-wrap">
     <form method="post" id="converterForm" autocomplete="off">
-        <div class="app-layout<?= $renderable ? ' app-layout--split' : '' ?>">
+        <div class="app-layout<?= $renderable ? ' app-layout--split' : '' ?>" id="appLayout">
 
             <!-- ══════════════════════════════════════
-                 SIDEBAR — Input + Options
+                 SIDEBAR — Input + Export
             ══════════════════════════════════════ -->
-            <div class="app-sidebar">
+            <div class="app-sidebar" id="appSidebar">
+
+                <div class="sidebar-hd">
+                    <span class="sidebar-hd-title">
+                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 2h14v14H2z"/><path d="M2 7h14M7 7v9"/></svg>
+                        PNR Input
+                    </span>
+                    <button type="button" class="sidebar-collapse-btn" id="collapseInputBtn" title="Hide input panel">
+                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 3L5 9l6 6"/></svg>
+                    </button>
+                </div>
 
                 <!-- Input card -->
                 <div class="input-card">
                     <textarea
                         id="pnr_text"
                         name="pnr_text"
-                        rows="<?= $renderable ? '12' : '16' ?>"
+                        rows="<?= $renderable ? '10' : '14' ?>"
                         spellcheck="false"
                         placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
 
@@ -414,18 +424,18 @@ Example:
 
                     <div class="input-foot">
                         <div class="input-chips">
-                            <span title="Your PNR is never saved or logged">🔒 Memory only</span>
-                            <span title="Sensitive lines are automatically ignored">🚫 Passport/payment ignored</span>
+                            <span title="Your PNR is never saved or logged">🔒 Private</span>
+                            <span title="Sensitive lines are automatically ignored">🚫 Docs ignored</span>
                         </div>
                         <div class="convert-btns">
-                            <button type="submit" class="btn btn-convert">✈&nbsp; Convert</button>
+                            <button type="submit" class="btn btn-convert">✈ Convert</button>
                             <button type="reset" id="resetBtn" class="btn btn-ghost">Clear</button>
                         </div>
                     </div>
                 </div>
 
                 <?php if ($renderable): ?>
-                <!-- Primary export actions in sidebar -->
+                <!-- Primary export actions -->
                 <div class="sidebar-actions">
                     <button type="button" class="btn btn-export sidebar-btn" id="copyImageBtn">
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M2 13l5-5 4 4 2-2 5 5"/></svg>
@@ -440,111 +450,123 @@ Example:
                         Print
                     </button>
                 </div>
-                <!-- Hidden: WhatsApp / Copy Text (available via JS only if needed) -->
-                <button type="button" class="btn btn-wa sidebar-btn" id="waBtn" hidden aria-hidden="true">WhatsApp</button>
-                <button type="button" class="btn sidebar-btn" id="copyTextBtn" hidden aria-hidden="true">Copy Text</button>
                 <?php endif; ?>
 
             </div><!-- /app-sidebar -->
+
+            <!-- Expand button (shown only when sidebar is collapsed) -->
+            <button type="button" class="sidebar-expand-btn" id="expandInputBtn" title="Show input panel" aria-label="Show input">
+                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 3l6 6-6 6"/></svg>
+            </button>
 
             <!-- ══════════════════════════════════════
                  MAIN — Options strip + Result
             ══════════════════════════════════════ -->
             <div class="app-main">
 
-                <!-- ── Options strip (always visible, auto-submits on change) ── -->
-                <div class="options-strip settings-panel no-share">
+                <!-- ── Options panel (tabbed) ── -->
+                <div class="opts-panel-wrap settings-panel no-share">
+                    <div class="opts-tab-bar" role="tablist">
+                        <button type="button" class="opts-tab" role="tab" data-tab="layout" aria-selected="true">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="2" width="14" height="12" rx="1.5"/><path d="M1 6h14M6 6v8"/></svg>
+                            Layout
+                        </button>
+                        <button type="button" class="opts-tab" role="tab" data-tab="details" aria-selected="false">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+                            Details
+                        </button>
+                        <button type="button" class="opts-tab" role="tab" data-tab="agency" aria-selected="false">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="1" width="12" height="14" rx="1"/><path d="M5 5h6M5 8h6M5 11h3"/></svg>
+                            Agency
+                        </button>
+                    </div>
 
-                    <!-- Row 1: Layout format + presets -->
-                    <div class="ostrip-row ostrip-row--layout">
-                        <div class="ostrip-row-label">
-                            <span class="ostrip-label">Layout</span>
-                            <span class="ostrip-desc">Card format</span>
+                    <!-- Tab: Layout -->
+                    <div class="opts-tab-panel" data-panel="layout">
+                        <div class="opts-section">
+                            <div class="opts-section-label">Format</div>
+                            <div class="theme-pills" role="radiogroup">
+                                <?php foreach ([
+                                    'detailed'    => 'Graphic',
+                                    'table'       => 'Table',
+                                    'three_lines' => '3 Lines',
+                                    'two_lines'   => '2 Lines',
+                                    'compact'     => 'Compact',
+                                ] as $val => $lbl): ?>
+                                    <label class="theme-pill">
+                                        <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
+                                        <span><?= Html::e($lbl) ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                        <div class="theme-pills" role="radiogroup">
+                        <div class="opts-section opts-section--inline">
+                            <div class="opts-section-label">Presets</div>
+                            <div class="preset-pills">
+                                <button type="button" class="pill-btn" data-preset="branded">Branded</button>
+                                <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
+                            </div>
+                            <div class="opts-section-label opts-section-label--mid">Distance</div>
+                            <div class="dist-pills" role="radiogroup">
+                                <?php foreach (['off' => 'Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
+                                    <label class="pill-radio-sm">
+                                        <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
+                                        <span><?= Html::e($lbl) ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Details -->
+                    <div class="opts-tab-panel" data-panel="details" hidden>
+                        <div class="opts-section opts-section--toggles">
                             <?php foreach ([
-                                'detailed'    => 'Graphic',
-                                'table'       => 'Table',
-                                'three_lines' => '3 Lines',
-                                'two_lines'   => '2 Lines',
-                                'compact'     => 'Compact',
-                                'whatsapp'    => 'WhatsApp',
-                            ] as $val => $lbl): ?>
-                                <label class="theme-pill">
-                                    <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
-                                    <span><?= Html::e($lbl) ?></span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                        <div class="ostrip-sep"></div>
-                        <div class="preset-pills">
-                            <button type="button" class="pill-btn" data-preset="branded">Branded</button>
-                            <button type="button" class="pill-btn" data-preset="neutral">Neutral</button>
-                            <button type="button" class="pill-btn" data-preset="whatsapp">WA</button>
-                        </div>
-                        <div class="ostrip-sep"></div>
-                        <div class="dist-pills" role="radiogroup">
-                            <?php foreach (['off' => 'Dist: Off', 'km' => 'km', 'miles' => 'mi'] as $val => $lbl): ?>
-                                <label class="pill-radio-sm">
-                                    <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
-                                    <span><?= Html::e($lbl) ?></span>
+                                'show_airline_logo'      => 'Logo',
+                                'show_airline_name'      => 'Airline',
+                                'show_flight_duration'   => 'Duration',
+                                'show_transit_time'      => 'Layover',
+                                'show_terminal'          => 'Terminal',
+                                'show_cabin'             => 'Cabin',
+                                'show_operated_by'       => 'Op. By',
+                                'show_aircraft'          => 'Aircraft',
+                                'use_12_hour_clock'      => '12h',
+                                'show_booking_reference' => 'Ref',
+                                'show_booking_class'     => 'Class',
+                                'show_ticket_numbers'    => 'Ticket',
+                                'show_seat_numbers'      => 'Seat',
+                            ] as $key => $label): ?>
+                                <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                    <span class="mt-track" aria-hidden="true"></span>
+                                    <span class="mt-label"><?= Html::e($label) ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <!-- Row 2: Flight detail toggles -->
-                    <div class="ostrip-row ostrip-row--toggles">
-                        <div class="ostrip-row-label">
-                            <span class="ostrip-label">Flight details</span>
-                            <span class="ostrip-desc">Fields to display</span>
+                    <!-- Tab: Agency -->
+                    <div class="opts-tab-panel" data-panel="agency" hidden>
+                        <div class="opts-section opts-section--toggles">
+                            <?php foreach ([
+                                'show_agency_header' => 'Header',
+                                'show_agency_footer' => 'Footer',
+                                'show_disclaimer'    => 'Disclaimer',
+                                'show_must_read'     => 'Must Read',
+                            ] as $key => $label): ?>
+                                <label class="mini-toggle" title="<?= Html::e($label) ?>">
+                                    <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                                    <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                                    <span class="mt-track" aria-hidden="true"></span>
+                                    <span class="mt-label"><?= Html::e($label) ?></span>
+                                </label>
+                            <?php endforeach; ?>
                         </div>
-                        <?php foreach ([
-                            'show_airline_logo'      => 'Logo',
-                            'show_airline_name'      => 'Airline',
-                            'show_flight_duration'   => 'Duration',
-                            'show_transit_time'      => 'Layover',
-                            'show_terminal'          => 'Terminal',
-                            'show_cabin'             => 'Cabin',
-                            'show_operated_by'       => 'Operated by',
-                            'show_aircraft'          => 'Aircraft',
-                            'use_12_hour_clock'      => '12h Clock',
-                            'show_booking_reference' => 'Booking Ref',
-                            'show_booking_class'     => 'Class Code',
-                            'show_ticket_numbers'    => 'Ticket No.',
-                            'show_seat_numbers'      => 'Seat No.',
-                        ] as $key => $label): ?>
-                            <label class="mini-toggle" title="<?= Html::e($label) ?>">
-                                <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                <span class="mt-track" aria-hidden="true"></span>
-                                <span class="mt-label"><?= Html::e($label) ?></span>
-                            </label>
-                        <?php endforeach; ?>
+                        <p class="opts-agency-note">Configure agency details in <code>config/settings.php</code></p>
                     </div>
 
-                    <!-- Row 3: Agency branding (optional) -->
-                    <div class="ostrip-row ostrip-row--agency">
-                        <div class="ostrip-row-label">
-                            <span class="ostrip-label">Agency branding <span class="ostrip-badge">Optional</span></span>
-                            <span class="ostrip-desc">Add your brand</span>
-                        </div>
-                        <?php foreach ([
-                            'show_agency_header' => 'Header',
-                            'show_agency_footer' => 'Footer',
-                            'show_disclaimer'    => 'Disclaimer',
-                            'show_must_read'     => 'Must Read',
-                        ] as $key => $label): ?>
-                            <label class="mini-toggle" title="<?= Html::e($label) ?>">
-                                <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                <input type="checkbox" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                <span class="mt-track" aria-hidden="true"></span>
-                                <span class="mt-label"><?= Html::e($label) ?></span>
-                            </label>
-                        <?php endforeach; ?>
-                    </div>
-
-                </div><!-- /options-strip -->
+                </div><!-- /opts-panel-wrap -->
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
@@ -558,9 +580,20 @@ Example:
                         <?php endif; ?>
                     </div>
                     <?php if ($renderable): ?>
-                        <div class="result-actions">
-                            <button type="button" class="btn btn-sm btn-ghost" id="copyTextBtn2">📋 Copy Text</button>
-                            <button type="button" class="btn btn-sm btn-ghost" id="waBtn2">💬 WhatsApp</button>
+                        <!-- Collapsed-mode export actions (only visible when sidebar is hidden) -->
+                        <div class="result-collapsed-actions" id="collapsedExportBtns">
+                            <button type="button" class="btn btn-sm btn-export-sm" id="copyImageBtn2">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="14" height="14" rx="1.5"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none"/><path d="M1 10.5l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
+                                Copy Image
+                            </button>
+                            <button type="button" class="btn btn-sm btn-export-sm" id="downloadPngBtn2">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2v8M5 7l3 3 3-3M3 12v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V12"/></svg>
+                                Save PNG
+                            </button>
+                            <button type="button" class="btn btn-sm btn-export-sm" id="printBtn2">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5V2h8v3M4 11H2.5A.5.5 0 012 10.5v-4A.5.5 0 012.5 6h11a.5.5 0 01.5.5v4a.5.5 0 01-.5.5H12M4 9h8v5H4V9z"/></svg>
+                                Print
+                            </button>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -956,32 +989,58 @@ Example:
             <?php endif; ?>
 
             <!-- ── Card footer ────────────────────── -->
-            <?php if ($showDisclaimer || $showAgencyFooter): ?>
+            <?php if ($showDisclaimer || $showAgencyFooter):
+                // Default footer data (overridden by config/settings.php on server)
+                $footerCfg  = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
+                $headOffice = is_array($footerCfg['head_office'] ?? null) ? $footerCfg['head_office'] : [
+                    'title' => 'ROAMING NEPAL TRAVEL & TOURS PVT. LTD.',
+                    'lines' => [
+                        'Gairidhara-02, Nil Saraswoti Marg, Kathmandu, Nepal',
+                        'P: +(977) 015905391 / 015905392',
+                        'M: +(977) 9851075316 · 9841093086',
+                        'W: www.roamingnepal.com',
+                    ],
+                ];
+                $branches = is_array($footerCfg['branches'] ?? null) ? $footerCfg['branches'] : [
+                    ['title' => 'POKHARA', 'lines' => ['Lakeside (Khahare), Kaski', '+977-61-591401 / 591402']],
+                    ['title' => 'AUSTRALIA', 'lines' => ['15 Crossing Rd, Mernda VIC 3754', '+(61) 0452055393']],
+                ];
+            ?>
                 <div class="card-footer">
                     <?php if ($showDisclaimer): ?>
                         <p class="disclaimer"><?= Html::e((string) ($settings['default_disclaimer'] ?? 'Please verify final schedule, terminal and check-in details with the airline before travel.')) ?></p>
                     <?php endif; ?>
-                    <?php if ($showAgencyFooter):
-                        $footer     = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
-                        $headOffice = is_array($footer['head_office'] ?? null) ? $footer['head_office'] : [];
-                        $branches   = is_array($footer['branches'] ?? null) ? $footer['branches'] : [];
-                    ?>
-                        <div class="footer-grid">
+                    <?php if ($showAgencyFooter): ?>
+                        <div class="footer-compact">
                             <?php if (!empty($headOffice)): ?>
-                                <div class="footer-col">
-                                    <?php if (!empty($headOffice['title'])): ?><strong><?= Html::e((string) $headOffice['title']) ?></strong><?php endif; ?>
-                                    <?php foreach ((array) ($headOffice['lines'] ?? []) as $ln): ?><span><?= Html::e((string) $ln) ?></span><?php endforeach; ?>
+                                <div class="fc-main">
+                                    <?php if (!empty($headOffice['title'])): ?>
+                                        <div class="fc-name"><?= Html::e((string) $headOffice['title']) ?></div>
+                                    <?php endif; ?>
+                                    <div class="fc-lines">
+                                        <?php foreach ((array) ($headOffice['lines'] ?? []) as $ln): ?>
+                                            <span><?= Html::e(ltrim((string) $ln, '#')) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
                             <?php endif; ?>
-                            <?php foreach ($branches as $branch): ?>
-                                <?php if (!is_array($branch)) continue; ?>
-                                <div class="footer-col">
-                                    <?php if (!empty($branch['title'])): ?><strong><?= Html::e((string) $branch['title']) ?></strong><?php endif; ?>
-                                    <?php foreach ((array) ($branch['lines'] ?? []) as $ln): ?><span><?= Html::e((string) $ln) ?></span><?php endforeach; ?>
+                            <?php if (!empty($branches)): ?>
+                                <div class="fc-branches">
+                                    <?php foreach ($branches as $branch): ?>
+                                        <?php if (!is_array($branch)) continue; ?>
+                                        <div class="fc-branch">
+                                            <?php if (!empty($branch['title'])): ?><strong><?= Html::e((string) $branch['title']) ?></strong><?php endif; ?>
+                                            <?php foreach ((array) ($branch['lines'] ?? []) as $ln): ?>
+                                                <span><?= Html::e(ltrim((string) $ln, '#')) ?></span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endforeach; ?>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
-                        <?php if (!empty($settings['footer_note'])): ?><p class="footer-note"><?= Html::e((string) $settings['footer_note']) ?></p><?php endif; ?>
+                        <?php if (!empty($settings['footer_note'])): ?>
+                            <p class="footer-note"><?= Html::e((string) $settings['footer_note']) ?></p>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>

@@ -2,35 +2,85 @@
   'use strict';
 
   const byId = (id) => document.getElementById(id);
-  const card           = byId('itineraryCard');
-  const shareModeBtn   = byId('shareModeBtn');
-  const printBtn       = byId('printBtn');
-  const downloadPngBtn = byId('downloadPngBtn');
-  const copyTextBtn    = byId('copyTextBtn');
-  const copyTextBtn2   = byId('copyTextBtn2');
-  const copyImageBtn   = byId('copyImageBtn');
-  const waBtn          = byId('waBtn');
-  const waBtn2         = byId('waBtn2');
-  const resetBtn       = byId('resetBtn');
-  const form           = document.querySelector('form');
-  const settingsPanel  = document.querySelector('.settings-panel');
-  const presetBtns     = document.querySelectorAll('[data-preset]');
+  const card             = byId('itineraryCard');
+  const shareModeBtn     = byId('shareModeBtn');
+  const printBtn         = byId('printBtn');
+  const printBtn2        = byId('printBtn2');
+  const downloadPngBtn   = byId('downloadPngBtn');
+  const downloadPngBtn2  = byId('downloadPngBtn2');
+  const copyImageBtn     = byId('copyImageBtn');
+  const copyImageBtn2    = byId('copyImageBtn2');
+  const resetBtn         = byId('resetBtn');
+  const collapseInputBtn = byId('collapseInputBtn');
+  const expandInputBtn   = byId('expandInputBtn');
+  const appLayout        = byId('appLayout');
+  const form             = document.querySelector('form');
+  const settingsPanel    = document.querySelector('.settings-panel');
+  const presetBtns       = document.querySelectorAll('[data-preset]');
 
   /* ── Share mode ─────────────────────────────────── */
   if (shareModeBtn) {
     shareModeBtn.addEventListener('click', () => toggleShareMode());
   }
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.body.classList.contains('share-mode')) {
       toggleShareMode(false);
     }
   });
 
-  /* ── Print ──────────────────────────────────────── */
-  if (printBtn) {
-    printBtn.addEventListener('click', () => window.print());
+  /* ── Sidebar collapse / expand ──────────────────── */
+  const COLLAPSED_KEY = 'pnrc-sidebar-collapsed';
+
+  function setSidebarCollapsed(collapsed) {
+    if (!appLayout) return;
+    appLayout.classList.toggle('sidebar-collapsed', collapsed);
+    try { sessionStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
   }
+
+  // Restore collapse state on page load
+  try {
+    if (sessionStorage.getItem(COLLAPSED_KEY) === '1') setSidebarCollapsed(true);
+  } catch {}
+
+  if (collapseInputBtn) {
+    collapseInputBtn.addEventListener('click', () => setSidebarCollapsed(true));
+  }
+  if (expandInputBtn) {
+    expandInputBtn.addEventListener('click', () => setSidebarCollapsed(false));
+  }
+
+  /* ── Dynamic tabs ───────────────────────────────── */
+  const TAB_KEY = 'pnrc-active-tab';
+  const tabBtns  = document.querySelectorAll('.opts-tab');
+  const tabPanels = document.querySelectorAll('.opts-tab-panel');
+
+  function activateTab(name) {
+    tabBtns.forEach((btn) => {
+      const active = btn.getAttribute('data-tab') === name;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    tabPanels.forEach((panel) => {
+      const active = panel.getAttribute('data-panel') === name;
+      panel.hidden = !active;
+    });
+    try { sessionStorage.setItem(TAB_KEY, name); } catch {}
+  }
+
+  if (tabBtns.length) {
+    // Restore last active tab
+    const saved = (() => { try { return sessionStorage.getItem(TAB_KEY); } catch { return null; } })();
+    activateTab(saved || 'layout');
+
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab')));
+    });
+  }
+
+  /* ── Print ──────────────────────────────────────── */
+  [printBtn, printBtn2].forEach((btn) => {
+    if (btn) btn.addEventListener('click', () => window.print());
+  });
 
   /* ── Clear — navigate to fresh page ─────────────── */
   if (resetBtn) {
@@ -67,13 +117,12 @@
     });
   }
 
-  /* WhatsApp + Copy Text handled by wireCopyText / wireWa above */
-
   /* ── Save PNG ───────────────────────────────────── */
-  if (downloadPngBtn) {
-    downloadPngBtn.addEventListener('click', async () => {
+  function wireSavePng(btn) {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
       if (!card) return;
-      temporaryLabel(downloadPngBtn, '⏳ Rendering…');
+      temporaryLabel(btn, '⏳ Rendering…');
       try {
         const blob = await renderCardToPng(card);
         const url  = URL.createObjectURL(blob);
@@ -82,68 +131,39 @@
         document.body.appendChild(a); a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        temporaryLabel(downloadPngBtn, '💾 Save PNG');
+        temporaryLabel(btn, '✓ Saved!');
       } catch (err) {
         console.error('PNG render error:', err);
-        temporaryLabel(downloadPngBtn, '❌ Failed');
+        temporaryLabel(btn, '❌ Failed');
       }
     });
   }
+  wireSavePng(downloadPngBtn);
+  wireSavePng(downloadPngBtn2);
 
   /* ── Copy image ─────────────────────────────────── */
-  if (copyImageBtn) {
+  function wireCopyImage(btn) {
+    if (!btn) return;
     if (!navigator.clipboard || !window.ClipboardItem) {
-      copyImageBtn.disabled = true;
-      copyImageBtn.title = 'Image clipboard not supported in this browser';
-    } else {
-      copyImageBtn.addEventListener('click', async () => {
-        if (!card) return;
-        temporaryLabel(copyImageBtn, '⏳ Rendering…');
-        try {
-          const blob = await renderCardToPng(card);
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          temporaryLabel(copyImageBtn, '✓ Copied!');
-        } catch (err) {
-          console.error('Copy image error:', err);
-          temporaryLabel(copyImageBtn, '❌ Failed');
-        }
-      });
+      btn.disabled = true;
+      btn.title = 'Image clipboard not supported in this browser';
+      return;
     }
-  }
-
-  /* ── Wire copyTextBtn2 / waBtn2 (result-bar secondary actions) ─── */
-  function wireCopyText(btn) {
-    if (!btn) return;
     btn.addEventListener('click', async () => {
-      const ta = byId('textVersion');
-      if (!ta) return;
+      if (!card) return;
+      temporaryLabel(btn, '⏳ Rendering…');
       try {
-        await navigator.clipboard.writeText(ta.value);
+        const blob = await renderCardToPng(card);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         temporaryLabel(btn, '✓ Copied!');
-      } catch {
-        ta.select(); document.execCommand('copy');
-        temporaryLabel(btn, '✓ Copied!');
+      } catch (err) {
+        console.error('Copy image error:', err);
+        temporaryLabel(btn, '❌ Failed');
       }
     });
   }
-  function wireWa(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', async () => {
-      const ta = byId('waVersion');
-      if (!ta) return;
-      try {
-        await navigator.clipboard.writeText(ta.value);
-        temporaryLabel(btn, '✓ Copied!');
-      } catch {
-        ta.select(); document.execCommand('copy');
-        temporaryLabel(btn, '✓ Copied!');
-      }
-    });
-  }
-  wireCopyText(copyTextBtn);
-  wireCopyText(copyTextBtn2);
-  wireWa(waBtn);
-  wireWa(waBtn2);
+  wireCopyImage(copyImageBtn);
+  wireCopyImage(copyImageBtn2);
 
   /* ── Helpers ─────────────────────────────────────── */
   function temporaryLabel(btn, label) {
@@ -169,13 +189,6 @@
       check('show_agency_footer', false);
       check('show_disclaimer',    false);
       radio('result_format', 'detailed');
-      return;
-    }
-    if (preset === 'whatsapp') {
-      check('show_agency_header', false);
-      check('show_agency_footer', false);
-      check('show_disclaimer',    true);
-      radio('result_format', 'whatsapp');
       return;
     }
     // branded
