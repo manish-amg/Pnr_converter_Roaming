@@ -101,10 +101,10 @@
     expandInputBtn.addEventListener('click', () => setSidebarCollapsed(false));
   }
 
-  /* ── Dynamic tabs ───────────────────────────────── */
-  const TAB_KEY = 'pnrc-active-tab';
-  const tabBtns  = document.querySelectorAll('.opts-tab');
-  const tabPanels = document.querySelectorAll('.opts-tab-panel');
+  /* ── Dynamic tabs (ctrl-tab + opts-tab both) ──────── */
+  const TAB_KEY   = 'pnrc-active-tab';
+  const tabBtns   = document.querySelectorAll('.ctrl-tab, .opts-tab');
+  const tabPanels = document.querySelectorAll('.ctrl-panel-body, .opts-tab-panel');
 
   function activateTab(name) {
     tabBtns.forEach((btn) => {
@@ -116,18 +116,37 @@
       const active = panel.getAttribute('data-panel') === name;
       panel.hidden = !active;
     });
-    try { sessionStorage.setItem(TAB_KEY, name); } catch {}
+    try { localStorage.setItem(TAB_KEY, name); } catch {}
   }
 
   if (tabBtns.length) {
-    // Restore last active tab
-    const saved = (() => { try { return sessionStorage.getItem(TAB_KEY); } catch { return null; } })();
+    const saved = (() => { try { return localStorage.getItem(TAB_KEY); } catch { return null; } })();
     activateTab(saved || 'layout');
-
     tabBtns.forEach((btn) => {
       btn.addEventListener('click', () => activateTab(btn.getAttribute('data-tab')));
     });
   }
+
+  /* ── Cabin mode segmented control ──────────────────
+     _cabin_mode radio (off/class/cabin) drives two
+     hidden inputs: show_cabin and show_booking_class   */
+  const cabinModeRadios = document.querySelectorAll('input[name="_cabin_mode"]');
+  const hidShowCabin = byId('hidShowCabin');
+  const hidShowClass = byId('hidShowClass');
+
+  function applyCabinMode(val) {
+    if (hidShowCabin) hidShowCabin.value = val === 'cabin' ? '1' : '0';
+    if (hidShowClass) hidShowClass.value = val === 'class'  ? '1' : '0';
+  }
+
+  cabinModeRadios.forEach((r) => {
+    r.addEventListener('change', () => {
+      if (r.checked) { applyCabinMode(r.value); saveSettings(); }
+    });
+  });
+
+  // Apply initial state
+  cabinModeRadios.forEach((r) => { if (r.checked) applyCabinMode(r.value); });
 
   /* ── Print ──────────────────────────────────────── */
   [printBtn, printBtn2].forEach((btn) => {
@@ -259,6 +278,19 @@
       const isActive = Boolean(active && btn.getAttribute('data-preset') === active);
       btn.classList.toggle('is-active', isActive);
       btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
+
+  /* ── Pill preset button active state ──────────────── */
+  function updatePillBtnState() {
+    // highlight ctrl-preset-btn based on current form state
+    const fmt = form ? form.querySelector('input[name="result_format"]:checked') : null;
+    const hdr = form ? form.querySelector('input[name="show_agency_header"][value="1"]') : null;
+    if (!fmt || !hdr) return;
+    const isBranded = hdr.checked;
+    presetBtns.forEach((btn) => {
+      const p = btn.getAttribute('data-preset');
+      btn.classList.toggle('is-active', p === 'branded' ? isBranded : !isBranded);
     });
   }
 
