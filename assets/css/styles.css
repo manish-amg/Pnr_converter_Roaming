@@ -1044,30 +1044,39 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
   font-size: 11px; font-weight: 700; border: 1px solid var(--line);
 }
 
-/* ── Table format — compact ─────────────────────────── */
+/* ── Table format — compact with borders ──────────── */
 .table-scroll { overflow-x: visible; padding: 0 12px 12px; }
 
-.seg-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.seg-table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px; overflow: hidden;
+}
 
 .seg-table th {
-  background: #f8fafc;
-  color: #64748b;
+  background: #f0f9ff;
+  color: #0e7490;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 7px 10px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 2px solid #bae6fd;
+  border-right: 1px solid #e0f2fe;
   text-align: left;
 }
+.seg-table th:last-child { border-right: none; }
 
 .seg-table td {
   padding: 8px 10px;
   border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f1f5f9;
   vertical-align: middle;
 }
+.seg-table td:last-child { border-right: none; }
 .seg-table tbody tr:last-child td { border-bottom: none; }
-.seg-table tr:hover td { background: #fafcff; }
+.seg-table tbody tr:nth-child(even) td { background: #fafcff; }
+.seg-table tr:hover td { background: #f0fdf4; transition: background .1s; }
 
 .tbl-date strong { font-size: 12.5px; font-weight: 700; white-space: nowrap; }
 .tbl-flight-num { font-size: 13px; font-weight: 800; }

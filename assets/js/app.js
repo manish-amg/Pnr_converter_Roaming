@@ -28,18 +28,70 @@
     }
   });
 
+  /* ══ Settings persistence (localStorage) ════════════
+     All form toggle/radio values are saved per key and
+     restored on every page load — survives tab close.
+  ═══════════════════════════════════════════════════ */
+  const SETTINGS_KEY  = 'pnrc-settings-v2';
+  const SETTINGS_SKIP = new Set(['pnr_text']); // don't persist the PNR textarea
+
+  function saveSettings() {
+    if (!form) return;
+    const data = {};
+    const els  = form.querySelectorAll('input[type="checkbox"], input[type="radio"]');
+    els.forEach((el) => {
+      if (SETTINGS_SKIP.has(el.name)) return;
+      if (el.type === 'radio') {
+        if (el.checked) data[el.name] = el.value;
+      } else {
+        // For checkboxes, only store '1' entries (hidden 0-value inputs handle unset)
+        if (el.checked) data[el.name] = '1';
+      }
+    });
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(data)); } catch {}
+  }
+
+  function restoreSettings() {
+    if (!form) return;
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch { saved = null; }
+    if (!saved || typeof saved !== 'object') return;
+
+    Object.entries(saved).forEach(([name, value]) => {
+      if (SETTINGS_SKIP.has(name)) return;
+      const radios = form.querySelectorAll(`input[type="radio"][name="${CSS.escape(name)}"]`);
+      if (radios.length) {
+        radios.forEach((r) => { r.checked = r.value === value; });
+        return;
+      }
+      const cb = form.querySelector(`input[type="checkbox"][name="${CSS.escape(name)}"][value="1"]`);
+      if (cb) cb.checked = value === '1';
+    });
+  }
+
+  // Restore on load (before first paint, PHP values are already set — only override if saved)
+  // We only restore if the page was loaded WITHOUT a POST (fresh GET = no result yet)
+  if (form && !card) {
+    restoreSettings();
+  }
+
+  // Save whenever a setting changes
+  if (form && settingsPanel) {
+    settingsPanel.addEventListener('change', () => saveSettings());
+  }
+
   /* ── Sidebar collapse / expand ──────────────────── */
   const COLLAPSED_KEY = 'pnrc-sidebar-collapsed';
 
   function setSidebarCollapsed(collapsed) {
     if (!appLayout) return;
     appLayout.classList.toggle('sidebar-collapsed', collapsed);
-    try { sessionStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
+    try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
   }
 
-  // Restore collapse state on page load
+  // Restore collapse state on page load (now uses localStorage so it persists)
   try {
-    if (sessionStorage.getItem(COLLAPSED_KEY) === '1') setSidebarCollapsed(true);
+    if (localStorage.getItem(COLLAPSED_KEY) === '1') setSidebarCollapsed(true);
   } catch {}
 
   if (collapseInputBtn) {
@@ -109,6 +161,7 @@
         const preset = btn.getAttribute('data-preset');
         applyPreset(preset);
         updatePresetState(preset);
+        saveSettings();
         if (card) {
           if (typeof form.requestSubmit === 'function') form.requestSubmit();
           else form.submit();
@@ -116,6 +169,9 @@
       });
     });
   }
+
+  // Also save settings when the result page loads (settings were applied by PHP)
+  if (card) saveSettings();
 
   /* ── Save PNG ───────────────────────────────────── */
   function wireSavePng(btn) {
