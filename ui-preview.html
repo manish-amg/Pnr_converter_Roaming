@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PNR Converter — UI Preview Draft</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#0e7490; --brand-dark:#0c6278; --brand-light:#22d3ee;
+  --brand-soft:#ecfeff; --brand-border:#a5f3fc;
+  --purple:#7c3aed; --purple-soft:#f5f3ff;
+  --amber:#d97706; --amber-soft:#fffbeb;
+  --green:#059669; --green-soft:#f0fdf4;
+  --ink:#0f172a; --ink-mid:#334155; --muted:#64748b;
+  --line:#e2e8f0; --surface:#fff;
+  --navy:#0f172a; --navy-mid:#1e293b; --navy-light:#334155;
+  --r:12px; --r-sm:7px; --r-pill:999px;
+  --shadow:0 4px 24px rgba(14,116,144,.10);
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06),0 2px 8px rgba(15,23,42,.07);
+  --shadow-card:0 2px 20px rgba(14,116,144,.09),0 1px 4px rgba(0,0,0,.04);
+}
+html{font-size:15px}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  color:var(--ink); line-height:1.6;
+  background:linear-gradient(160deg,#f0f9ff 0%,#f8fafc 50%,#fdf4ff 100%);
+  min-height:100vh;
+}
+
+/* ══════════════════════════════════
+   TOPBAR
+══════════════════════════════════ */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  height:54px; padding:0 24px;
+  background:linear-gradient(90deg,#0f172a 0%,#1e293b 100%);
+  border-bottom:1px solid #334155;
+  position:sticky; top:0; z-index:100;
+}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--brand) 0%,var(--brand-light) 100%);
+  display:grid;place-items:center;color:#fff;font-size:16px;
+}
+.brand-name{
+  font-family:'Outfit',sans-serif;
+  font-size:15px;font-weight:800;color:#fff;letter-spacing:-.01em;
+}
+.brand-tag{
+  font-size:10px;font-weight:600;color:#64748b;
+  letter-spacing:.04em;text-transform:uppercase;
+  margin-top:-2px;
+}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-badge{
+  padding:3px 10px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.07);color:#94a3b8;
+  font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.1);
+}
+.topbar-btn{
+  padding:5px 14px;border-radius:var(--r-pill);
+  background:var(--brand);color:#fff;
+  font-size:12px;font-weight:700;border:none;cursor:pointer;
+}
+
+/* ══════════════════════════════════
+   PAGE WRAP
+══════════════════════════════════ */
+.wrap{max-width:1280px;margin:0 auto;padding:20px 20px 60px}
+
+/* ── VIEW TABS (Homepage vs Result) ── */
+.view-toggle{
+  display:flex;gap:6px;margin-bottom:20px;
+  background:var(--surface);padding:4px;border-radius:var(--r-pill);
+  border:1px solid var(--line);box-shadow:var(--shadow-sm);
+  width:fit-content;
+}
+.vt-btn{
+  padding:6px 18px;border-radius:var(--r-pill);
+  font-size:12px;font-weight:700;border:none;cursor:pointer;
+  background:transparent;color:var(--muted);transition:.14s;
+}
+.vt-btn.active{background:var(--navy);color:#fff;box-shadow:var(--shadow-sm)}
+
+/* ══════════════════════════════════
+   HOMEPAGE — empty state
+══════════════════════════════════ */
+.homepage{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.hp-hero{
+  background:linear-gradient(140deg,#0f172a 0%,#1e293b 60%,#0c4a6e 100%);
+  border-radius:var(--r);padding:36px 32px;color:#fff;
+  position:relative;overflow:hidden;
+}
+.hp-hero::after{
+  content:'✈';position:absolute;right:-10px;bottom:-10px;
+  font-size:120px;opacity:.06;transform:rotate(15deg);
+  pointer-events:none;
+}
+.hp-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:700;color:var(--brand-light);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;
+}
+.hp-eyebrow::before{content:'';width:20px;height:2px;background:var(--brand-light);border-radius:1px}
+.hp-title{
+  font-family:'Outfit',sans-serif;
+  font-size:32px;font-weight:900;line-height:1.15;
+  letter-spacing:-.02em;margin-bottom:14px;
+}
+.hp-title span{color:var(--brand-light)}
+.hp-sub{font-size:14px;color:#94a3b8;line-height:1.7;margin-bottom:24px}
+.hp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.hp-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 12px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.07);color:#cbd5e1;
+  font-size:11.5px;font-weight:600;border:1px solid rgba(255,255,255,.1);
+}
+.hp-chip-dot{width:6px;height:6px;border-radius:50%;background:var(--brand-light)}
+
+.hp-input-panel{
+  background:var(--navy);border-radius:var(--r);
+  padding:18px;box-shadow:var(--shadow);
+}
+.hp-input-label{
+  font-size:11px;font-weight:800;color:#64748b;
+  text-transform:uppercase;letter-spacing:.07em;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.hp-input-label::after{content:'';flex:1;height:1px;background:#334155}
+
+textarea.hp-ta{
+  display:block;width:100%;
+  height:200px;
+  background:#0f172a;color:#e2e8f0;
+  border:1px solid #334155;border-radius:9px;
+  padding:14px 16px;
+  font:12.5px/1.65 ui-monospace,Menlo,monospace;
+  resize:vertical;outline:none;
+}
+textarea.hp-ta:focus{border-color:var(--brand-light);box-shadow:0 0 0 3px rgba(20,184,166,.15)}
+textarea.hp-ta::placeholder{color:#475569}
+
+.hp-input-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;gap:8px;
+}
+.hp-chips-sm{display:flex;gap:6px}
+.chip-sm{
+  padding:3px 9px;border-radius:var(--r-pill);
+  background:#1e293b;color:#64748b;
+  font-size:10.5px;font-weight:600;border:1px solid #334155;
+}
+.btn-convert{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 22px;border-radius:9px;
+  background:var(--brand);color:#fff;
+  font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;
+  border:none;cursor:pointer;white-space:nowrap;
+  box-shadow:0 2px 8px rgba(14,116,144,.3);
+  transition:.14s;
+}
+.btn-convert:hover{background:var(--brand-dark);transform:translateY(-1px);box-shadow:0 4px 16px rgba(14,116,144,.35)}
+
+/* Example formats row */
+.format-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.fmt-chip{
+  padding:3px 10px;border-radius:var(--r-pill);
+  background:rgba(34,211,238,.08);color:var(--brand-light);
+  font-size:10.5px;font-weight:700;border:1px solid rgba(34,211,238,.15);
+}
+
+/* ══════════════════════════════════
+   RESULT VIEW — split layout
+══════════════════════════════════ */
+.result-view{display:grid;grid-template-columns:290px 1fr;gap:14px;align-items:start}
+
+/* ── Sidebar ── */
+.sidebar{
+  background:var(--navy);border-radius:var(--r);
+  padding:14px;box-shadow:var(--shadow);
+  position:sticky;top:70px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.sb-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:6px;border-bottom:1px solid #334155;
+}
+.sb-hd-title{
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:800;color:#475569;
+  text-transform:uppercase;letter-spacing:.07em;
+}
+.sb-collapse{
+  display:grid;place-items:center;width:26px;height:26px;
+  border-radius:6px;border:1px solid #334155;
+  background:transparent;color:#64748b;cursor:pointer;font-size:12px;
+}
+.sb-collapse:hover{background:#1e293b;color:#94a3b8}
+
+.sb-textarea{
+  display:block;width:100%;height:150px;
+  background:#0f172a;color:#e2e8f0;
+  border:1px solid #334155;border-radius:9px;
+  padding:12px 14px;font:12px/1.6 ui-monospace,Menlo,monospace;
+  resize:vertical;outline:none;
+}
+.sb-textarea:focus{border-color:var(--brand-light)}
+
+.sb-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:6px;
+}
+.sb-chips{display:flex;gap:5px}
+.sb-chip{padding:2px 8px;border-radius:var(--r-pill);background:#1e293b;color:#64748b;font-size:10px;font-weight:600;border:1px solid #334155}
+.sb-btns{display:flex;gap:6px}
+.btn-sm-convert{
+  padding:7px 14px;border-radius:8px;
+  background:var(--brand);color:#fff;
+  font-size:12px;font-weight:800;border:none;cursor:pointer;
+}
+.btn-sm-ghost{
+  padding:7px 10px;border-radius:8px;
+  background:transparent;color:#64748b;
+  font-size:12px;font-weight:700;border:none;cursor:pointer;
+}
+.btn-sm-ghost:hover{background:#1e293b;color:#94a3b8}
+
+/* Export actions */
+.export-actions{display:flex;flex-direction:column;gap:7px}
+.export-btn{
+  display:flex;align-items:center;gap:8px;
+  width:100%;padding:9px 14px;border-radius:9px;
+  font-size:12.5px;font-weight:700;border:none;cursor:pointer;
+  text-align:left;transition:.13s;
+}
+.export-btn-icon{
+  width:28px;height:28px;border-radius:7px;
+  display:grid;place-items:center;flex-shrink:0;font-size:14px;
+}
+.exp-copy{background:#0e7490;color:#fff}
+.exp-copy .export-btn-icon{background:rgba(255,255,255,.15)}
+.exp-copy:hover{background:#0c6278}
+.exp-save{background:#7c3aed;color:#fff}
+.exp-save .export-btn-icon{background:rgba(255,255,255,.15)}
+.exp-save:hover{background:#6d28d9}
+.exp-print{background:#b45309;color:#fff}
+.exp-print .export-btn-icon{background:rgba(255,255,255,.15)}
+.exp-print:hover{background:#92400e}
+.exp-label{display:flex;flex-direction:column;line-height:1.2}
+.exp-sub{font-size:9.5px;opacity:.7;font-weight:500;margin-top:1px}
+
+/* ── Main area ── */
+.main-area{min-width:0;display:flex;flex-direction:column;gap:10px}
+
+/* Options panel (tabs) */
+.opts-wrap{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);
+}
+.opts-tabs{
+  display:flex;border-bottom:1px solid var(--line);background:#f8fafc;
+}
+.opt-tab{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:8px 16px;font-size:11.5px;font-weight:700;color:var(--muted);
+  background:transparent;border:none;border-bottom:2px solid transparent;
+  cursor:pointer;margin-bottom:-1px;transition:.13s;
+}
+.opt-tab.active{color:var(--brand);border-bottom-color:var(--brand);background:#fff;font-weight:800}
+.opt-tab svg{width:13px;height:13px}
+
+.opts-body{padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+
+.opts-section-lbl{
+  font-size:9.5px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-right:3px;
+}
+
+/* Pills */
+.pill{
+  display:inline-flex;align-items:center;
+  padding:4px 11px;border-radius:var(--r-pill);
+  border:1px solid var(--line);background:#fff;color:var(--ink-mid);
+  font-size:11px;font-weight:700;cursor:pointer;transition:.12s;
+}
+.pill.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.pill:hover:not(.active){border-color:var(--brand);color:var(--brand)}
+.pill-sm{
+  display:inline-flex;align-items:center;
+  padding:3px 9px;border-radius:var(--r-pill);
+  border:1px solid var(--line);background:#fff;color:var(--muted);
+  font-size:10.5px;font-weight:700;cursor:pointer;transition:.12s;
+}
+.pill-sm.active{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+
+/* Toggles */
+.toggle-wrap{display:flex;flex-wrap:wrap;gap:5px 4px}
+.toggle{
+  display:inline-flex;align-items:center;gap:5px;
+  cursor:pointer;padding:3px 7px;border-radius:6px;
+  border:1px solid transparent;transition:.12s;
+}
+.toggle:hover{background:#f8fafc;border-color:var(--line)}
+.toggle-track{
+  width:28px;height:15px;border-radius:var(--r-pill);
+  background:#e2e8f0;position:relative;flex-shrink:0;
+  transition:background .15s;
+}
+.toggle-track::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:11px;height:11px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.15s;
+}
+.toggle.on .toggle-track{background:var(--brand)}
+.toggle.on .toggle-track::after{transform:translateX(13px)}
+.toggle-lbl{font-size:10px;font-weight:700;color:var(--muted)}
+.toggle.on .toggle-lbl{color:var(--brand)}
+.sep{width:1px;height:16px;background:var(--line);margin:0 3px}
+
+/* ── Result bar ── */
+.result-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  padding:7px 12px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow-sm);
+}
+.rbadges{display:flex;flex-wrap:wrap;gap:5px}
+.rbadge{
+  padding:2px 9px;border-radius:var(--r-pill);
+  font-size:10.5px;font-weight:800;background:#f8fafc;
+  color:var(--muted);border:1px solid var(--line);
+}
+.rbadge.fmt{background:var(--brand-soft);color:var(--brand);border-color:var(--brand-border)}
+.rbadge.high{background:#dcfce7;color:#15803d;border-color:#86efac}
+
+/* ══════════════════════════════════
+   ITINERARY CARD
+══════════════════════════════════ */
+.itin-card{
+  background:#fff;border-radius:var(--r);
+  box-shadow:var(--shadow-card);
+  border:1px solid rgba(14,116,144,.08);
+  overflow:hidden;
+}
+
+/* Agency header */
+.card-agency{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;flex-wrap:wrap;
+  padding:8px 16px;
+  background:linear-gradient(110deg,#ecfeff 0%,#f0fdfa 60%,#e0f2fe 100%);
+  border-bottom:2px solid #bae6fd;
+}
+.agency-logo-ph{
+  display:flex;align-items:center;gap:8px;
+}
+.agency-logo-img{
+  height:36px;width:auto;object-fit:contain;
+}
+.agency-logo-ph img{height:36px}
+.agency-offices{display:flex;align-items:center;gap:5px;margin-left:auto}
+.agency-office{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:10.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--brand);
+}
+.office-dot{color:#94a3b8;font-size:9px}
+
+/* Card title */
+.card-title-row{
+  background:linear-gradient(100deg,#0c4a6e 0%,#0e7490 100%);
+  padding:10px 16px;display:flex;align-items:center;gap:10px;
+}
+.card-title{
+  font-family:'Outfit',sans-serif;
+  color:#fff;font-size:15px;font-weight:800;letter-spacing:-.01em;
+  flex:1;
+}
+.card-title-meta{
+  display:flex;gap:5px;align-items:center;
+}
+.title-badge{
+  padding:2px 8px;border-radius:var(--r-pill);
+  background:rgba(255,255,255,.12);color:#bae6fd;
+  font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,.15);
+}
+
+/* Pax row */
+.card-pax{
+  display:flex;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);background:#f8fafc;
+  padding:7px 16px;font-size:12.5px;
+}
+.pax-item{flex:1 1 180px;padding:3px 10px 3px 0;border-right:1px solid var(--line);margin-right:10px}
+.pax-item:last-child{border-right:none;margin-right:0}
+.pax-key{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:2px}
+.pax-val{font-size:13px;font-weight:600;color:var(--ink)}
+
+/* Leg head */
+.leg-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 16px;background:var(--ink);color:#fff;
+  font-size:12.5px;font-weight:800;
+}
+.leg-dur{font-size:11px;font-weight:700;opacity:.65;white-space:nowrap}
+
+/* ── Table ── */
+.table-scroll{padding:0 12px 12px}
+.seg-table{
+  width:100%;border-collapse:collapse;font-size:12.5px;
+  border:1px solid #e2e8f0;border-radius:7px;overflow:hidden;
+}
+.seg-table th{
+  background:#f0f9ff;color:#0e7490;font-size:10px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.5px;
+  padding:7px 10px;border-bottom:2px solid #bae6fd;border-right:1px solid #e0f2fe;
+  text-align:left;
+}
+.seg-table th:last-child{border-right:none}
+.seg-table td{
+  padding:9px 10px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;
+  vertical-align:middle;
+}
+.seg-table td:last-child{border-right:none}
+.seg-table tbody tr:last-child td{border-bottom:none}
+.seg-table tbody tr:nth-child(even) td{background:#fafcff}
+.seg-table tr:hover td{background:#f0fdf4;transition:background .1s}
+
+.tbl-carrier{display:flex;align-items:center;gap:6px}
+.tbl-logo{height:22px;width:auto;max-width:56px;object-fit:contain}
+.tbl-flight-num{font-size:13px;font-weight:800;color:var(--ink)}
+.tbl-al-name{font-size:10.5px;color:var(--muted);display:block;margin-top:1px}
+.tbl-date strong{font-size:12.5px;font-weight:700}
+.tbl-date small{display:block;font-size:10px;color:var(--muted)}
+.tbl-port{line-height:1.3}
+.tbl-port-time{font-size:15px;font-weight:800;color:var(--ink);display:block}
+.tbl-port-name{font-size:10.5px;color:var(--muted);display:block}
+.dur-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:var(--r-pill);
+  background:var(--brand-soft);color:var(--brand);
+  font-size:10.5px;font-weight:800;border:1px solid var(--brand-border);
+}
+.chips-row{display:flex;flex-wrap:wrap;gap:3px}
+.chip{
+  padding:1px 6px;border-radius:var(--r-pill);
+  background:#f8fafc;color:var(--muted);
+  font-size:10px;font-weight:700;border:1px solid var(--line);
+}
+.chip.eco{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
+
+/* Layover row */
+.lo-row td{padding:0;border-bottom:1px solid #f1f5f9}
+.lo-inner{
+  display:block;padding:6px 16px;
+  font-size:11.5px;text-align:center;
+  background:#f0fdfa;color:var(--brand);
+  border-top:1px dashed #a5f3fc;
+  border-bottom:1px dashed #a5f3fc;
+}
+.lo-inner strong{font-weight:900}
+
+/* ── Must Read ── */
+.must-read{
+  margin:0 16px 12px;padding:10px 14px;
+  border-radius:7px;border:1.5px solid #f59e0b;
+  background:#fffbeb;
+}
+.must-read-title{
+  font-size:10px;font-weight:900;text-transform:uppercase;
+  letter-spacing:.07em;color:#b45309;margin-bottom:7px;
+  display:flex;align-items:center;gap:5px;
+}
+.must-read-list{margin:0;padding-left:16px;font-size:11.5px;color:#78350f;line-height:1.8}
+
+/* ── Compact footer ── */
+.card-footer{
+  border-top:1px solid var(--line);background:#f8fafc;overflow:hidden;
+}
+.disclaimer{
+  padding:7px 14px;background:#fffbeb;border-bottom:1px solid #fde68a;
+  color:#92400e;font-size:11px;font-weight:700;
+}
+.footer-compact{display:flex;flex-wrap:wrap}
+.fc-main{
+  flex:2;min-width:200px;padding:9px 14px;border-right:1px solid var(--line);
+}
+.fc-name{
+  font-family:'Outfit',sans-serif;font-size:9.5px;font-weight:900;
+  color:var(--brand);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;
+}
+.fc-lines{display:flex;flex-wrap:wrap;gap:2px 10px}
+.fc-lines span{font-size:10px;color:var(--ink-mid);white-space:nowrap;line-height:1.5}
+.fc-branches{display:flex;flex-wrap:wrap}
+.fc-branch{
+  display:flex;flex-direction:column;gap:2px;
+  padding:9px 12px;border-right:1px solid var(--line);min-width:120px;
+}
+.fc-branch:last-child{border-right:none}
+.fc-branch strong{
+  font-family:'Outfit',sans-serif;font-size:8.5px;font-weight:900;
+  color:var(--brand);text-transform:uppercase;letter-spacing:.06em;
+  display:block;margin-bottom:2px;
+}
+.fc-branch span{font-size:9.5px;color:var(--ink-mid);line-height:1.45}
+
+/* ══════════════════════════════════
+   ANNOTATION BOXES (for preview)
+══════════════════════════════════ */
+.preview-note{
+  background:linear-gradient(135deg,#7c3aed,#0e7490);
+  color:#fff;border-radius:var(--r);padding:12px 18px;
+  font-size:13px;font-weight:600;margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.preview-note strong{font-family:'Outfit',sans-serif;font-size:14px;font-weight:800}
+.tag{
+  padding:2px 8px;border-radius:var(--r-pill);
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.tag-new{background:#dcfce7;color:#15803d}
+.tag-fix{background:#fef9c3;color:#854d0e}
+.tag-rm{background:#fee2e2;color:#991b1b}
+
+/* Responsive */
+@media(max-width:900px){
+  .homepage,.result-view{grid-template-columns:1fr}
+  .hp-hero{order:2}
+  .hp-input-panel{order:1}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#">
+    <div class="brand-icon">✈</div>
+    <div>
+      <div class="brand-name">Roaming Nepal</div>
+      <div class="brand-tag">PNR Converter</div>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <span class="topbar-badge">🔒 No PNR storage · v4.1</span>
+    <button class="topbar-btn">Share view</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- View toggle (for preview only) -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+    <div class="view-toggle">
+      <button class="vt-btn active" onclick="show('home',this)">🏠 Homepage</button>
+      <button class="vt-btn" onclick="show('result',this)">✈ Result View</button>
+    </div>
+    <div style="font-size:12px;color:#64748b;font-weight:600">← Click to switch preview state</div>
+  </div>
+
+  <!-- ═══════════════════════════
+       HOMEPAGE VIEW
+  ═══════════════════════════ -->
+  <div id="v-home">
+
+    <div class="preview-note">
+      <strong>Homepage (empty state)</strong>
+      &nbsp;·&nbsp; Two-column hero: brand pitch on left, input on right
+      &nbsp; <span class="tag tag-new">NEW LAYOUT</span>
+    </div>
+
+    <div class="homepage">
+
+      <!-- Left: Hero -->
+      <div class="hp-hero">
+        <div class="hp-eyebrow">Roaming Nepal Tools</div>
+        <h1 class="hp-title">Turn GDS codes into<br><span>beautiful itineraries</span></h1>
+        <p class="hp-sub">Paste any Amadeus, Galileo, Sabre, or Worldspan PNR and get a clean, client-ready flight itinerary in seconds — no login required.</p>
+        <div class="hp-chips">
+          <span class="hp-chip"><span class="hp-chip-dot"></span>Amadeus</span>
+          <span class="hp-chip"><span class="hp-chip-dot"></span>Galileo</span>
+          <span class="hp-chip"><span class="hp-chip-dot"></span>Sabre</span>
+          <span class="hp-chip"><span class="hp-chip-dot"></span>Worldspan</span>
+          <span class="hp-chip"><span class="hp-chip-dot"></span>Casual format</span>
+        </div>
+        <div class="format-chips" style="margin-top:20px;border-top:1px solid rgba(255,255,255,.08);padding-top:16px">
+          <span class="fmt-chip">🖼 Graphic card</span>
+          <span class="fmt-chip">📊 Table format</span>
+          <span class="fmt-chip">📱 3-line text</span>
+          <span class="fmt-chip">🏷 Branded</span>
+          <span class="fmt-chip">🖨 Print-ready</span>
+        </div>
+      </div>
+
+      <!-- Right: Input -->
+      <div class="hp-input-panel">
+        <div class="hp-input-label">Paste your PNR / Itinerary</div>
+        <textarea class="hp-ta" placeholder="1  QR 647  21MAY KTMDOH HK1 1910 2200
+2  QR 007  21MAY DOHLHR HK1 2355 0545+1
+3  BA 067  22MAY LHRATL HK1 0955 1455
+NM1KARKI/RUSHMIT MR"></textarea>
+        <div class="hp-input-foot">
+          <div class="hp-chips-sm">
+            <span class="chip-sm">🔒 Private</span>
+            <span class="chip-sm">🚫 Docs ignored</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm-ghost" style="color:#475569">Clear</button>
+            <button class="btn-convert">✈ Convert</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════
+       RESULT VIEW
+  ═══════════════════════════ -->
+  <div id="v-result" style="display:none">
+
+    <div class="preview-note">
+      <strong>Result View</strong>
+      &nbsp;·&nbsp; Sidebar (input + export) + Main (tabs + card)
+      <div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">
+        <span class="tag tag-new">DYNAMIC TABS</span>
+        <span class="tag tag-new">COMPACT CARD</span>
+        <span class="tag tag-fix">TABLE BORDERS</span>
+        <span class="tag tag-rm">WA removed</span>
+      </div>
+    </div>
+
+    <div class="result-view">
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="sb-hd">
+          <div class="sb-hd-title">📋 PNR Input</div>
+          <button class="sb-collapse" title="Collapse">‹</button>
+        </div>
+
+        <textarea class="sb-textarea" readonly>1  QR 647  21MAY KTMDOH HK1 1910 2200
+2  QR 007  21MAY DOHLHR HK1 2355 0545+1
+3  BA 067  22MAY LHRATL HK1 0955 1455
+NM1KARKI/RUSHMIT MR</textarea>
+
+        <div class="sb-foot">
+          <div class="sb-chips">
+            <span class="sb-chip">🔒 Private</span>
+          </div>
+          <div class="sb-btns">
+            <button class="btn-sm-ghost">Clear</button>
+            <button class="btn-sm-convert">✈ Convert</button>
+          </div>
+        </div>
+
+        <div class="export-actions">
+          <button class="export-btn exp-copy">
+            <div class="export-btn-icon">🖼</div>
+            <div class="exp-label">
+              Copy Image
+              <span class="exp-sub">Copies card to clipboard</span>
+            </div>
+          </button>
+          <button class="export-btn exp-save">
+            <div class="export-btn-icon">💾</div>
+            <div class="exp-label">
+              Save PNG
+              <span class="exp-sub">Download as image file</span>
+            </div>
+          </button>
+          <button class="export-btn exp-print">
+            <div class="export-btn-icon">🖨</div>
+            <div class="exp-label">
+              Print
+              <span class="exp-sub">Print or save as PDF</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div class="main-area">
+
+        <!-- Options tabs -->
+        <div class="opts-wrap">
+          <div class="opts-tabs">
+            <button class="opt-tab active" onclick="switchTab('layout',this)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="2" width="14" height="12" rx="1.5"/><path d="M1 6h14M6 6v8"/></svg>
+              Layout
+            </button>
+            <button class="opt-tab" onclick="switchTab('details',this)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M2 8h8M2 12h10"/></svg>
+              Details
+            </button>
+            <button class="opt-tab" onclick="switchTab('agency',this)">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="1" width="12" height="14" rx="1"/><path d="M5 5h6M5 8h6M5 11h3"/></svg>
+              Agency
+            </button>
+          </div>
+
+          <div id="tab-layout" class="opts-body">
+            <span class="opts-section-lbl">Format</span>
+            <div class="pill active">Graphic</div>
+            <div class="pill">Table</div>
+            <div class="pill">3 Lines</div>
+            <div class="pill">2 Lines</div>
+            <div class="pill">Compact</div>
+            <div class="sep"></div>
+            <span class="opts-section-lbl">Preset</span>
+            <div class="pill-sm">Branded</div>
+            <div class="pill-sm">Neutral</div>
+            <div class="sep"></div>
+            <span class="opts-section-lbl">Dist</span>
+            <div class="pill-sm active">Off</div>
+            <div class="pill-sm">km</div>
+            <div class="pill-sm">mi</div>
+          </div>
+
+          <div id="tab-details" class="opts-body" style="display:none">
+            <div class="toggle-wrap">
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Logo</span></div>
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Airline</span></div>
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Duration</span></div>
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Layover</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Terminal</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Cabin</span></div>
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Op. By</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Aircraft</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">12h</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Ref</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Class</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Ticket</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Seat</span></div>
+            </div>
+          </div>
+
+          <div id="tab-agency" class="opts-body" style="display:none">
+            <div class="toggle-wrap">
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Header</span></div>
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Footer</span></div>
+              <div class="toggle on"><div class="toggle-track"></div><span class="toggle-lbl">Disclaimer</span></div>
+              <div class="toggle"><div class="toggle-track"></div><span class="toggle-lbl">Must Read</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result bar -->
+        <div class="result-bar">
+          <div class="rbadges">
+            <span class="rbadge fmt">Amadeus / GDS style</span>
+            <span class="rbadge high">HIGH</span>
+            <span class="rbadge">3 flights</span>
+            <span class="rbadge">1 pax</span>
+          </div>
+        </div>
+
+        <!-- Itinerary Card -->
+        <div class="itin-card">
+
+          <!-- Agency header -->
+          <div class="card-agency">
+            <div class="agency-logo-ph">
+              <svg width="110" height="32" viewBox="0 0 110 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="110" height="32" rx="4" fill="#0f172a"/>
+                <text x="8" y="22" font-family="Outfit,sans-serif" font-size="13" font-weight="900" fill="#0e7490">Roaming</text>
+                <text x="72" y="22" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#94a3b8">Nepal</text>
+              </svg>
+            </div>
+            <div class="agency-offices">
+              <span class="agency-office">📍 Kathmandu</span>
+              <span class="office-dot">·</span>
+              <span class="agency-office">📍 Pokhara</span>
+              <span class="office-dot">·</span>
+              <span class="agency-office">📍 Australia</span>
+            </div>
+          </div>
+
+          <!-- Title -->
+          <div class="card-title-row">
+            <div class="card-title">Kathmandu → London Heathrow</div>
+            <div class="card-title-meta">
+              <span class="title-badge">21–22 MAY</span>
+              <span class="title-badge">3 flights</span>
+            </div>
+          </div>
+
+          <!-- Pax -->
+          <div class="card-pax">
+            <div class="pax-item">
+              <span class="pax-key">Passenger</span>
+              <span class="pax-val">MR RUSHMIT KARKI</span>
+            </div>
+          </div>
+
+          <!-- Leg head -->
+          <div class="leg-head">
+            <span>Kathmandu (KTM) → Doha (DOH)</span>
+            <span class="leg-dur">Leg 1</span>
+          </div>
+
+          <!-- Table -->
+          <div class="table-scroll">
+            <table class="seg-table">
+              <thead>
+                <tr>
+                  <th>Flight</th>
+                  <th>Date</th>
+                  <th>Departs</th>
+                  <th>Arrives</th>
+                  <th>Duration</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="tbl-carrier">
+                      <img class="tbl-logo" src="https://www.gstatic.com/flights/airline_logos/70px/QR.png" alt="QR">
+                      <div>
+                        <div class="tbl-flight-num">QR 647</div>
+                        <span class="tbl-al-name">Qatar Airways</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="tbl-date">
+                      <strong>21 MAY</strong>
+                      <small>Tuesday</small>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="tbl-port">
+                      <span class="tbl-port-time">19:10</span>
+                      <span class="tbl-port-name">Kathmandu (KTM)</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="tbl-port">
+                      <span class="tbl-port-time">22:00</span>
+                      <span class="tbl-port-name">Doha (DOH)</span>
+                    </div>
+                  </td>
+                  <td><span class="dur-chip">5h 20m</span></td>
+                  <td>
+                    <div class="chips-row">
+                      <span class="chip eco">Economy</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Layover -->
+          <div style="margin:0 12px 8px">
+            <div class="lo-inner" style="border-radius:6px;border:1px dashed #a5f3fc">
+              ⏱ Layover at Doha (DOH) — <strong>1h 55m</strong>
+            </div>
+          </div>
+
+          <!-- Leg 2 -->
+          <div class="leg-head">
+            <span>Doha (DOH) → London Heathrow (LHR)</span>
+            <span class="leg-dur">Leg 2</span>
+          </div>
+          <div class="table-scroll">
+            <table class="seg-table">
+              <thead>
+                <tr>
+                  <th>Flight</th>
+                  <th>Date</th>
+                  <th>Departs</th>
+                  <th>Arrives</th>
+                  <th>Duration</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="tbl-carrier">
+                      <img class="tbl-logo" src="https://www.gstatic.com/flights/airline_logos/70px/QR.png" alt="QR">
+                      <div>
+                        <div class="tbl-flight-num">QR 007</div>
+                        <span class="tbl-al-name">Qatar Airways</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div class="tbl-date"><strong>21 MAY</strong><small>Tuesday</small></div></td>
+                  <td><div class="tbl-port"><span class="tbl-port-time">23:55</span><span class="tbl-port-name">Doha (DOH)</span></div></td>
+                  <td><div class="tbl-port"><span class="tbl-port-time">05:45 <small style="font-size:9px;color:#f59e0b">+1d</small></span><span class="tbl-port-name">London Heathrow (LHR)</span></div></td>
+                  <td><span class="dur-chip">7h 50m</span></td>
+                  <td><div class="chips-row"><span class="chip eco">Economy</span></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Disclaimer -->
+          <div class="card-footer">
+            <div class="disclaimer">⚠ Please verify final schedule, terminal and check-in details with the airline before travel.</div>
+            <div class="footer-compact">
+              <div class="fc-main">
+                <div class="fc-name">ROAMING NEPAL TRAVEL &amp; TOURS PVT. LTD.</div>
+                <div class="fc-lines">
+                  <span>Gairidhara-02, Nil Saraswoti Marg, Kathmandu</span>
+                  <span>P: +(977) 015905391 / 015905392</span>
+                  <span>M: +(977) 9851075316 · 9841093086</span>
+                  <span>W: www.roamingnepal.com</span>
+                </div>
+              </div>
+              <div class="fc-branches">
+                <div class="fc-branch">
+                  <strong>POKHARA</strong>
+                  <span>Lakeside (Khahare), Kaski</span>
+                  <span>+977-61-591401 / 591402</span>
+                </div>
+                <div class="fc-branch">
+                  <strong>AUSTRALIA</strong>
+                  <span>15 Crossing Rd, Mernda VIC 3754</span>
+                  <span>+(61) 0452055393</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /itin-card -->
+      </div><!-- /main-area -->
+    </div><!-- /result-view -->
+  </div><!-- /v-result -->
+
+</div><!-- /wrap -->
+
+<script>
+function show(view, btn) {
+  document.getElementById('v-home').style.display = view === 'home' ? '' : 'none';
+  document.getElementById('v-result').style.display = view === 'result' ? '' : 'none';
+  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function switchTab(name, btn) {
+  ['layout','details','agency'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.opt-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
