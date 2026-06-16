@@ -163,6 +163,34 @@ final class Metadata
         return $earthRadiusKm * (2 * atan2(sqrt($a), sqrt(1 - $a)));
     }
 
+    /**
+     * Rough economy-class CO2 estimate (tonnes) across all segments.
+     * ~0.10 kg CO2 per passenger-km — returns null if no distance data.
+     * @param array $segments objects with ->departureAirport / ->arrivalAirport
+     */
+    public static function co2Tonnes(array $segments): ?float
+    {
+        $km = 0.0;
+        $any = false;
+        foreach ($segments as $seg) {
+            $from = $seg->departureAirport ?? null;
+            $to   = $seg->arrivalAirport ?? null;
+            if ($from === null || $to === null) {
+                continue;
+            }
+            $d = self::distanceKm((string) $from, (string) $to);
+            if ($d !== null && $d > 0) {
+                $km += $d;
+                $any = true;
+            }
+        }
+        if (!$any || $km <= 0) {
+            return null;
+        }
+
+        return round(($km * 0.10) / 1000, 1);
+    }
+
     private static function load(string $type): array
     {
         if ($type === 'airports') {

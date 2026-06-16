@@ -11,3 +11,8 @@ storage/
 # Editor/OS noise.
 .idea/
 .vscode/
+
+# Local design preview / QA artifacts (not deployed)
+design-preview.html
+ui-preview.html
+qa-render.html

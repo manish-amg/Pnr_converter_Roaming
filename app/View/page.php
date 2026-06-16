@@ -28,9 +28,10 @@ $rateLimited = (bool) ($rateLimited ?? false);
 
 $distanceUnit = in_array((string) ($features['distance_unit'] ?? 'off'), ['off', 'km', 'miles'], true)
     ? (string) $features['distance_unit'] : 'off';
-$resultFormat = in_array((string) ($features['result_format'] ?? 'table'),
-    ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'], true)
-    ? (string) $features['result_format'] : 'table';
+$resultFormat = (string) ($features['result_format'] ?? 'detailed');
+if (!in_array($resultFormat, ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'], true)) {
+    $resultFormat = 'detailed';
+}
 $use24HourTime = array_key_exists('use_12_hour_clock', $features)
     ? !(bool) $features['use_12_hour_clock']
     : (bool) ($features['use_24_hour_time'] ?? true);
@@ -52,6 +53,7 @@ $featureDefaults = [
     'show_agency_footer'     => false,
     'show_disclaimer'        => false,
     'show_must_read'         => false,
+    'show_co2'               => true,
 ];
 
 $show             = static fn (string $key): bool
@@ -464,149 +466,97 @@ Example:
             ══════════════════════════════════════ -->
             <div class="app-main">
 
-                <!-- ── Options panel (dark slick) ── -->
-                <div class="ctrl-panel settings-panel no-share">
+                <!-- ── Control panel: Layout Themes + Display Options ── -->
+                <?php
+                $optCard = static function (string $key, string $label) use ($show): string {
+                    ob_start(); ?>
+                    <label class="opt">
+                        <span class="opt-top"><span class="opt-lbl"><?= Html::e($label) ?></span></span>
+                        <span class="opt-sw-wrap">
+                            <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                            <input type="checkbox" class="opt-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                            <span class="opt-sw" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <?php return (string) ob_get_clean();
+                };
+                ?>
+                <div class="ctrl2 settings-panel no-share">
 
-                    <!-- Tab nav -->
-                    <div class="ctrl-tabs" role="tablist">
-                        <button type="button" class="ctrl-tab" role="tab" data-tab="layout" aria-selected="true">
-                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="12" height="12" rx="1.5"/><path d="M1 5h12M5 5v8"/></svg>
-                            Layout
-                        </button>
-                        <button type="button" class="ctrl-tab" role="tab" data-tab="details" aria-selected="false">
-                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h10M2 7h7M2 11h9"/></svg>
-                            Display
-                        </button>
-                        <button type="button" class="ctrl-tab" role="tab" data-tab="agency" aria-selected="false">
-                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="1" width="10" height="12" rx="1"/><path d="M4 4h6M4 7h6M4 10h3"/></svg>
-                            Agency
-                        </button>
-                    </div>
-
-                    <!-- ── Tab: Layout ── -->
-                    <div class="ctrl-panel-body" data-panel="layout">
-
-                        <div class="ctrl-section">
-                            <div class="ctrl-section-title">Results Format</div>
-                            <?php foreach ([
-                                'detailed'    => ['Graphic',  'Full card with icons & colours'],
-                                'table'       => ['Table',    'Row-per-flight reference table'],
-                                'three_lines' => ['3 Lines',  'Compact three-line text'],
-                                'two_lines'   => ['2 Lines',  'Ultra-compact two-line text'],
-                                'compact'     => ['Compact',  'Dense single-line output'],
-                            ] as $val => [$lbl, $desc]): ?>
-                                <label class="ctrl-fmt-row">
-                                    <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
-                                    <span class="ctrl-fmt-radio"></span>
-                                    <span class="ctrl-fmt-text">
-                                        <span class="ctrl-fmt-name"><?= Html::e($lbl) ?></span>
-                                        <span class="ctrl-fmt-desc"><?= Html::e($desc) ?></span>
-                                    </span>
-                                </label>
-                            <?php endforeach; ?>
+                    <!-- Layout Themes -->
+                    <div class="cpanel">
+                        <span class="cpanel-title">Layout Themes</span>
+                        <div class="theme-pills">
+                            <button type="button" class="tpill is-active" data-preset="branded">Branded</button>
+                            <button type="button" class="tpill" data-preset="neutral">Neutral</button>
+                            <button type="button" class="tpill" data-preset="whatsapp">WhatsApp</button>
                         </div>
-
-                        <div class="ctrl-section">
-                            <div class="ctrl-section-title">Distance</div>
-                            <div class="ctrl-seg" role="radiogroup">
-                                <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Miles'] as $val => $lbl): ?>
-                                    <label class="ctrl-seg-opt">
-                                        <input type="radio" name="distance_unit" value="<?= Html::e($val) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $val) ?>>
+                        <div class="cpanel-sub">All layouts free — no sign-up</div>
+                        <div class="fmt-box">
+                            <div class="fmt-pills" role="radiogroup">
+                                <?php foreach ([
+                                    'table'       => 'Table',
+                                    'three_lines' => '3 Lines',
+                                    'two_lines'   => '2 Lines',
+                                    'compact'     => 'Compact',
+                                    'detailed'    => 'Graphic',
+                                ] as $val => $lbl): ?>
+                                    <label class="fpill<?= $resultFormat === $val ? ' is-active' : '' ?>">
+                                        <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
                                         <span><?= Html::e($lbl) ?></span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="ctrl-section ctrl-section--inline">
-                            <span class="ctrl-section-title" style="margin-bottom:0">Presets</span>
-                            <div style="display:flex;gap:6px">
-                                <button type="button" class="ctrl-preset-btn" data-preset="branded">Branded</button>
-                                <button type="button" class="ctrl-preset-btn" data-preset="neutral">Neutral</button>
+                    <!-- Display Options -->
+                    <div class="cpanel">
+                        <span class="cpanel-title">Display Options</span>
+                        <div class="disp-head">
+                            <span class="disp-hint">Toggle what appears on the itinerary</span>
+                        </div>
+                        <div class="opt-grid">
+                            <!-- Distance (special: pill selector) -->
+                            <div class="opt opt-multi">
+                                <span class="opt-top"><span class="opt-lbl">Distance</span></span>
+                                <span class="opt-mini" role="radiogroup">
+                                    <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Mi'] as $dv => $dl): ?>
+                                        <label class="opt-mini-pill<?= ($features['distance_unit'] ?? 'off') === $dv ? ' is-active' : '' ?>">
+                                            <input type="radio" name="distance_unit" value="<?= Html::e($dv) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $dv) ?>>
+                                            <span><?= Html::e($dl) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </span>
                             </div>
+                            <?php
+                            foreach ([
+                                'show_airline_logo'      => 'Logos',
+                                'show_airline_name'      => 'Airline Name',
+                                'show_flight_duration'   => 'Duration',
+                                'show_transit_time'      => 'Layover',
+                                'show_co2'               => 'CO₂ Estimate',
+                                'use_12_hour_clock'      => '12hr Clock',
+                                'show_cabin'             => 'Cabin',
+                                'show_booking_class'     => 'Class',
+                                'show_operated_by'       => 'Operated By',
+                                'show_terminal'          => 'Terminal',
+                                'show_aircraft'          => 'Aircraft',
+                                'show_booking_reference' => 'Booking Ref',
+                                'show_ticket_numbers'    => 'Ticket No',
+                                'show_seat_numbers'      => 'Seat No',
+                                'show_agency_header'     => 'Agency Header',
+                                'show_agency_footer'     => 'Footer',
+                                'show_disclaimer'        => 'Disclaimer',
+                                'show_must_read'         => 'Must Read',
+                            ] as $k => $lbl) {
+                                echo $optCard($k, $lbl);
+                            }
+                            ?>
                         </div>
-
                     </div>
 
-                    <!-- ── Tab: Display ── -->
-                    <div class="ctrl-panel-body" data-panel="details" hidden>
-
-                        <div class="ctrl-section">
-                            <div class="ctrl-section-title">Display Options</div>
-                            <?php foreach ([
-                                'show_airline_logo'      => 'Show Airline Logo',
-                                'show_airline_name'      => 'Show Airline Name',
-                                'show_flight_duration'   => 'Show Duration',
-                                'show_transit_time'      => 'Transit Time',
-                                'use_12_hour_clock'      => '12 Hour Clock',
-                                'show_operated_by'       => 'Show Operated By',
-                                'show_aircraft'          => 'Aircraft Type',
-                                'show_terminal'          => 'Terminal Info',
-                                'show_booking_reference' => 'Booking Reference',
-                                'show_booking_class'     => 'Booking Class',
-                                'show_ticket_numbers'    => 'Ticket Numbers',
-                                'show_seat_numbers'      => 'Seat Numbers',
-                            ] as $key => $label): ?>
-                                <label class="ctrl-toggle-row">
-                                    <span class="ctrl-toggle-lbl"><?= Html::e($label) ?></span>
-                                    <span class="ctrl-sw">
-                                        <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                        <input type="checkbox" class="ctrl-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                        <span class="ctrl-sw-track" aria-hidden="true"><span class="ctrl-sw-thumb"></span></span>
-                                    </span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <div class="ctrl-section">
-                            <div class="ctrl-section-title">Show Cabin</div>
-                            <div class="ctrl-seg" role="radiogroup">
-                                <label class="ctrl-seg-opt">
-                                    <input type="radio" name="_cabin_mode" value="off"<?= Html::checked(!$show('show_cabin') && !$show('show_booking_class')) ?>>
-                                    <span>Off</span>
-                                </label>
-                                <label class="ctrl-seg-opt">
-                                    <input type="radio" name="_cabin_mode" value="class"<?= Html::checked(!$show('show_cabin') && $show('show_booking_class')) ?>>
-                                    <span>Class</span>
-                                </label>
-                                <label class="ctrl-seg-opt">
-                                    <input type="radio" name="_cabin_mode" value="cabin"<?= Html::checked($show('show_cabin')) ?>>
-                                    <span>Cabin</span>
-                                </label>
-                            </div>
-                            <!-- Hidden inputs driven by cabin_mode JS -->
-                            <input type="hidden" name="show_cabin" value="0" id="hidShowCabin">
-                            <input type="hidden" name="show_booking_class" value="0" id="hidShowClass">
-                        </div>
-
-                    </div>
-
-                    <!-- ── Tab: Agency ── -->
-                    <div class="ctrl-panel-body" data-panel="agency" hidden>
-
-                        <div class="ctrl-section">
-                            <div class="ctrl-section-title">Card Branding</div>
-                            <?php foreach ([
-                                'show_agency_header' => 'Agency Header',
-                                'show_agency_footer' => 'Agency Footer',
-                                'show_disclaimer'    => 'Disclaimer Text',
-                                'show_must_read'     => 'Must Read Section',
-                            ] as $key => $label): ?>
-                                <label class="ctrl-toggle-row">
-                                    <span class="ctrl-toggle-lbl"><?= Html::e($label) ?></span>
-                                    <span class="ctrl-sw">
-                                        <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                                        <input type="checkbox" class="ctrl-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                                        <span class="ctrl-sw-track" aria-hidden="true"><span class="ctrl-sw-thumb"></span></span>
-                                    </span>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                        <p class="ctrl-note">Edit <code>config/settings.php</code> to set your agency details, logo and contact info.</p>
-
-                    </div>
-
-                </div><!-- /ctrl-panel -->
+                </div><!-- /ctrl2 -->
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
@@ -694,7 +644,7 @@ Example:
                 }
             ?>
                 <div class="card-agency">
-                    <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?>" class="agency-logo">
+                    <img src="<?= Html::e($asset('assets/images/roaming-nepal-logo.png')) ?>" alt="<?= Html::e($agencyName) ?>" class="agency-logo">
                     <div class="agency-offices">
                         <?php foreach ($agencyOffices as $oi => $office): ?>
                             <?php if ($oi > 0): ?><span class="agency-dot">·</span><?php endif; ?>
@@ -712,7 +662,7 @@ Example:
             $lastSeg  = $result->segments[count($result->segments) - 1] ?? null;
             ?>
             <div class="card-title-row">
-                <h2 class="card-title"><?= Html::e($itinTitle($legs)) ?></h2>
+                <h2 class="card-title"><span class="ct-label">Flight Itinerary:</span> <?= Html::e($itinTitle($legs)) ?></h2>
             </div>
 
             <div class="card-pax">
@@ -1046,13 +996,22 @@ Example:
                         <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
                             <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); ?>
                             <div class="lo-sep <?= Html::e($loClass) ?>">
-                                &mdash;&mdash;&mdash; <?= Html::e($loLabel) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>): <strong><?= Html::e($seg->layoverDuration) ?></strong><?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?> &mdash;&mdash;&mdash;
+                                <strong><?= Html::e($seg->layoverDuration) ?></strong> <?= Html::e(strtolower($loLabel)) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>)<?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?>
                             </div>
                         <?php endif; ?>
 
                     <?php endforeach; ?>
                 </div>
                 <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- ── CO2 estimate ──────────────────── -->
+            <?php if ($show('show_co2')):
+                $co2 = Metadata::co2Tonnes($result->segments);
+            ?>
+                <?php if ($co2 !== null): ?>
+                    <div class="itin-co2"><span class="leaf">&#127793;</span> Estimated <?= Html::e(number_format($co2, 1)) ?> tonnes CO&#8322; &middot; economy</div>
+                <?php endif; ?>
             <?php endif; ?>
 
             <!-- ── Must Read section ─────────────── -->
