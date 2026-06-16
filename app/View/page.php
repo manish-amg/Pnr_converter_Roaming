@@ -406,8 +406,8 @@ $renderable = $result !== null && $result->isRenderable();
                         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 2h14v14H2z"/><path d="M2 7h14M7 7v9"/></svg>
                         PNR Input
                     </span>
-                    <button type="button" class="sidebar-collapse-btn" id="collapseInputBtn" title="Hide input panel">
-                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 3L5 9l6 6"/></svg>
+                    <button type="button" class="sidebar-collapse-btn" id="collapseInputBtn" title="Minimize — show only the itinerary">
+                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/><path d="M12.5 7.5L10.5 9l2 1.5" stroke-width="1.5"/></svg>
                     </button>
                 </div>
 
@@ -456,10 +456,23 @@ Example:
 
             </div><!-- /app-sidebar -->
 
-            <!-- Expand button (shown only when sidebar is collapsed) -->
-            <button type="button" class="sidebar-expand-btn" id="expandInputBtn" title="Show input panel" aria-label="Show input">
-                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M7 3l6 6-6 6"/></svg>
-            </button>
+            <!-- Floating dock — visible only when minimized (clean screenshot view) -->
+            <div class="min-dock no-print no-share" id="minDock" aria-hidden="true">
+                <button type="button" class="min-dock-btn min-dock-restore" id="expandInputBtn" title="Show input &amp; options">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/><path d="M10.5 7.5L12.5 9l-2 1.5" stroke-width="1.5"/></svg>
+                    <span>Show panels</span>
+                </button>
+                <span class="min-dock-sep"></span>
+                <button type="button" class="min-dock-btn" id="copyImageBtnDock" title="Copy image to clipboard" aria-label="Copy image">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1.3" fill="currentColor" stroke="none"/><path d="M2 12l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
+                </button>
+                <button type="button" class="min-dock-btn" id="downloadPngBtnDock" title="Save as PNG" aria-label="Save PNG">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2.5v8M5.5 7L9 10.5 12.5 7M3.5 13v1.5a1 1 0 001 1h9a1 1 0 001-1V13"/></svg>
+                </button>
+                <button type="button" class="min-dock-btn" id="printBtnDock" title="Print or save PDF" aria-label="Print">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V2.5h8V6M5 12.5H3.5a1 1 0 01-1-1V8a1 1 0 011-1h11a1 1 0 011 1v3.5a1 1 0 01-1 1H13M5 10h8v5.5H5V10z"/></svg>
+                </button>
+            </div>
 
             <!-- ══════════════════════════════════════
                  MAIN — Options strip + Result

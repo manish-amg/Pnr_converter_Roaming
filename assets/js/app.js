@@ -6,10 +6,13 @@
   const shareModeBtn     = byId('shareModeBtn');
   const printBtn         = byId('printBtn');
   const printBtn2        = byId('printBtn2');
+  const printBtnDock     = byId('printBtnDock');
   const downloadPngBtn   = byId('downloadPngBtn');
   const downloadPngBtn2  = byId('downloadPngBtn2');
+  const downloadPngBtnDock = byId('downloadPngBtnDock');
   const copyImageBtn     = byId('copyImageBtn');
   const copyImageBtn2    = byId('copyImageBtn2');
+  const copyImageBtnDock = byId('copyImageBtnDock');
   const resetBtn         = byId('resetBtn');
   const collapseInputBtn = byId('collapseInputBtn');
   const expandInputBtn   = byId('expandInputBtn');
@@ -149,7 +152,7 @@
   cabinModeRadios.forEach((r) => { if (r.checked) applyCabinMode(r.value); });
 
   /* ── Print ──────────────────────────────────────── */
-  [printBtn, printBtn2].forEach((btn) => {
+  [printBtn, printBtn2, printBtnDock].forEach((btn) => {
     if (btn) btn.addEventListener('click', () => window.print());
   });
 
@@ -215,6 +218,7 @@
   }
   wireSavePng(downloadPngBtn);
   wireSavePng(downloadPngBtn2);
+  wireSavePng(downloadPngBtnDock);
 
   /* ── Copy image ─────────────────────────────────── */
   function wireCopyImage(btn) {
@@ -239,6 +243,7 @@
   }
   wireCopyImage(copyImageBtn);
   wireCopyImage(copyImageBtn2);
+  wireCopyImage(copyImageBtnDock);
 
   /* ── Helpers ─────────────────────────────────────── */
   function temporaryLabel(btn, label) {
