@@ -78,6 +78,13 @@
     restoreSettings();
   }
 
+  // Scroll the itinerary into view after a conversion (result exists on page load)
+  if (card) {
+    setTimeout(() => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+  }
+
   // Save whenever a setting changes
   if (form && settingsPanel) {
     settingsPanel.addEventListener('change', () => saveSettings());
@@ -268,19 +275,19 @@
       check('show_agency_header', false);
       check('show_agency_footer', false);
       check('show_disclaimer',    false);
-      radio('result_format', 'detailed');
       return;
     }
-    // branded
+    // roaming (was 'branded') — enable Roaming Nepal header + footer
     check('show_agency_header', true);
     check('show_agency_footer', true);
     check('show_disclaimer',    true);
-    radio('result_format', 'detailed');
   }
 
   function updatePresetState(active) {
+    // 'roaming' is the new name for 'branded'
+    const normalized = active === 'branded' ? 'roaming' : active;
     presetBtns.forEach((btn) => {
-      const isActive = Boolean(active && btn.getAttribute('data-preset') === active);
+      const isActive = Boolean(normalized && btn.getAttribute('data-preset') === normalized);
       btn.classList.toggle('is-active', isActive);
       btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     });
@@ -288,14 +295,12 @@
 
   /* ── Pill preset button active state ──────────────── */
   function updatePillBtnState() {
-    // highlight ctrl-preset-btn based on current form state
-    const fmt = form ? form.querySelector('input[name="result_format"]:checked') : null;
     const hdr = form ? form.querySelector('input[name="show_agency_header"][value="1"]') : null;
-    if (!fmt || !hdr) return;
+    if (!hdr) return;
     const isBranded = hdr.checked;
     presetBtns.forEach((btn) => {
       const p = btn.getAttribute('data-preset');
-      btn.classList.toggle('is-active', p === 'branded' ? isBranded : !isBranded);
+      btn.classList.toggle('is-active', (p === 'roaming' || p === 'branded') ? isBranded : !isBranded);
     });
   }
 
@@ -304,19 +309,37 @@
     if (typeof window.html2canvas !== 'function') {
       throw new Error('html2canvas not loaded');
     }
+    // Temporarily disable overflow on any table scroll wrappers so html2canvas
+    // captures the full table width, not just the visible portion.
+    const scrollEls = element.querySelectorAll('.ref-table-scroll');
+    const origStyles = [];
+    scrollEls.forEach((el) => {
+      origStyles.push({ el, overflow: el.style.overflow, width: el.style.width });
+      el.style.overflow = 'visible';
+      el.style.width = el.scrollWidth + 'px';
+    });
+
+    const fullW = Math.max(element.offsetWidth, element.scrollWidth);
     const canvas = await window.html2canvas(element, {
       backgroundColor: '#ffffff',
       scale: 2,
       useCORS: true,
       allowTaint: false,
       logging: false,
-      width:  element.offsetWidth,
+      width:  fullW,
       height: element.scrollHeight,
       scrollX: 0,
       scrollY: -window.scrollY,
       windowWidth:  document.documentElement.offsetWidth,
       windowHeight: document.documentElement.offsetHeight,
     });
+
+    // Restore overflow styles
+    origStyles.forEach(({ el, overflow, width }) => {
+      el.style.overflow = overflow;
+      el.style.width    = width;
+    });
+
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png', 0.95));
   }
 

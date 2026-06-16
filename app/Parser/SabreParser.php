@@ -16,6 +16,10 @@ final class SabreParser extends BaseParser
         if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}[A-Z]\s+\d{1,2}[A-Z]{3}\s+[A-Z]{3}[A-Z]{3}/mi', $raw) === 1) {
             $score += 40;
         }
+        // Sabre concatenated-airport format: "1 QR 651Y 25AUG 2 KTMDOH*SS1 1105 1300"
+        if (preg_match('/^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}[A-Z]\s+\d{1,2}[A-Z]{3}\s+\d\s+[A-Z]{6}\*/mi', $raw) === 1) {
+            $score += 40;
+        }
         if (preg_match('/^\s*\d+\.\d+[A-Z]+\/[A-Z]+/mi', $raw) === 1) {
             $score += 20;
         }
@@ -71,6 +75,24 @@ final class SabreParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
+        // Pattern 2: Sabre with day-of-week + concatenated airports + asterisk
+        // e.g. "1 QR 651Y 25AUG 2 KTMDOH*SS1  1105  1300"
+        $pat2 = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+\d\s+([A-Z]{3})([A-Z]{3})\*?[A-Z]{2}\d*\s+(\d{3,4})\s+(\d{3,4})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
+        if (preg_match($pat2, $line, $p) === 1) {
+            $airlineCode = strtoupper($p[1]);
+            return new Segment(
+                $airlineCode, $p[2], Metadata::airlineName($airlineCode),
+                'HK',
+                strtoupper($p[5]), strtoupper($p[6]),
+                $this->normalizeDate($p[4]), $this->normalizeTime($p[7]),
+                isset($p[9]) && $p[9] !== '' ? $this->normalizeDate($p[9]) : null,
+                $this->normalizeTime($p[8]),
+                strtoupper($p[3]), $this->cabinFromClass($p[3]),
+                null, $this->extractOperatedBy($line),
+                $ticket, $seat, $this->extractAircraft($line), $line
+            );
+        }
+
         $pattern = '/^\s*\d+\s+([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+([A-Z]{3})\s*([A-Z]{3})\s+([A-Z]{2}\d?)(?:\s+\d+)?\s+(#?\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)\s+(#?\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';
         if (preg_match($pattern, $line, $m) !== 1) {
             return null;

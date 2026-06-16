@@ -69,8 +69,8 @@ $airlineLogo = static function (string $code) use ($projectRoot, $asset): array 
         $p = 'assets/images/airlines/' . $code . '.' . $ext;
         if (is_file($projectRoot . '/' . $p)) return ['src' => $asset($p), 'local' => true];
     }
-    // CDN fallback — Google Flights logo CDN (reliable, CORS-enabled)
-    return ['src' => 'https://www.gstatic.com/flights/airline_logos/70px/' . $code . '.png', 'local' => false];
+    // CDN fallback — AviaSales CDN (high coverage, CORS-enabled)
+    return ['src' => 'https://pics.avs.io/200/200/' . $code . '.png', 'local' => false];
 };
 
 $logoImg = static function (array $logo, string $cls, string $alt): string {
@@ -494,18 +494,13 @@ Example:
                     <?php return (string) ob_get_clean();
                 };
                 ?>
-                <div class="ctrl2 settings-panel no-share">
+                <!-- ── Compact control bar ─────────────────────────── -->
+                <div class="ctrl-bar settings-panel no-share">
 
-                    <!-- Layout Themes -->
-                    <div class="cpanel">
-                        <span class="cpanel-title">Layout Themes</span>
-                        <div class="theme-pills">
-                            <button type="button" class="tpill is-active" data-preset="branded">Branded</button>
-                            <button type="button" class="tpill" data-preset="neutral">Neutral</button>
-                            <button type="button" class="tpill" data-preset="whatsapp">WhatsApp</button>
-                        </div>
-                        <div class="cpanel-sub">All layouts free — no sign-up</div>
-                        <div class="fmt-box">
+                    <!-- Row 1: Format + Agency presets -->
+                    <div class="cb-row1">
+                        <div class="cb-sect">
+                            <span class="cb-sect-lbl">Format</span>
                             <div class="fmt-pills" role="radiogroup">
                                 <?php foreach ([
                                     'table'       => 'Table',
@@ -521,14 +516,18 @@ Example:
                                 <?php endforeach; ?>
                             </div>
                         </div>
+                        <span class="cb-div"></span>
+                        <div class="cb-sect">
+                            <span class="cb-sect-lbl">Agency</span>
+                            <div class="cb-presets">
+                                <button type="button" class="tpill is-active" data-preset="roaming" title="Enable Roaming Nepal header &amp; footer">Roaming Nepal</button>
+                                <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding — clean neutral look">Neutral</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Display Options -->
-                    <div class="cpanel">
-                        <span class="cpanel-title">Display Options</span>
-                        <div class="disp-head">
-                            <span class="disp-hint">Toggle what appears on the itinerary</span>
-                        </div>
+                    <!-- Row 2: Display options (compact grid) -->
+                    <div class="cb-opts">
                         <div class="opt-grid">
                             <!-- Distance (special: pill selector) -->
                             <div class="opt opt-multi">
@@ -569,7 +568,7 @@ Example:
                         </div>
                     </div>
 
-                </div><!-- /ctrl2 -->
+                </div><!-- /ctrl-bar -->
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
@@ -828,10 +827,10 @@ Example:
                                         <span class="ref-sub">T<?= Html::e($seg->departureTerminal) ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <!-- From (airport full name) -->
+                                <!-- From -->
                                 <td class="ref-td ref-td-port">
-                                    <?= Html::e($depPortLabel) ?>
-                                    <span class="ref-iata">(<?= Html::e(strtoupper($seg->departureAirport)) ?>)</span>
+                                    <strong class="ref-port-code"><?= Html::e(strtoupper($seg->departureAirport)) ?></strong>
+                                    <span class="ref-port-name"><?= Html::e($depCity) ?></span>
                                     <?php if ($dist): ?><span class="ref-sub"><?= Html::e($dist) ?></span><?php endif; ?>
                                 </td>
                                 <!-- Arrive time -->
@@ -841,10 +840,10 @@ Example:
                                         <span class="ref-nextday"><?= Html::e($arrDateNote) ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <!-- At (arrival airport) -->
+                                <!-- At -->
                                 <td class="ref-td ref-td-port">
-                                    <?= Html::e($arrPortLabel) ?>
-                                    <span class="ref-iata">(<?= Html::e(strtoupper($seg->arrivalAirport)) ?>)</span>
+                                    <strong class="ref-port-code"><?= Html::e(strtoupper($seg->arrivalAirport)) ?></strong>
+                                    <span class="ref-port-name"><?= Html::e($arrCity) ?></span>
                                 </td>
                                 <!-- Duration -->
                                 <td class="ref-td ref-td-num">
