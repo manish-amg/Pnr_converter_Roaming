@@ -65,20 +65,30 @@ $showDisclaimer   = $show('show_disclaimer');
 $airlineLogo = static function (string $code) use ($projectRoot, $asset): array {
     $code = strtoupper(preg_replace('/[^A-Z0-9]/', '', $code) ?? '');
     if ($code === '') return ['src' => '', 'local' => false];
-    foreach (['svg', 'png', 'webp'] as $ext) {
+    foreach (['png', 'svg', 'webp'] as $ext) {
         $p = 'assets/images/airlines/' . $code . '.' . $ext;
         if (is_file($projectRoot . '/' . $p)) return ['src' => $asset($p), 'local' => true];
     }
-    // CDN fallback — AviaSales CDN (high coverage, CORS-enabled)
-    return ['src' => 'https://pics.avs.io/200/200/' . $code . '.png', 'local' => false];
+    // No CDN fallback — only show verified local logos to prevent random/wrong images
+    return ['src' => '', 'local' => false];
 };
 
+// Badge class mapping by image class prefix
 $logoImg = static function (array $logo, string $cls, string $alt): string {
     if ($logo['src'] === '') return '';
-    $cors = $logo['local'] ? '' : ' crossorigin="anonymous"';
-    $err  = ' onerror="this.style.visibility=\'hidden\'"';
+    // On error: hide image and reveal the fallback text badge beside it
+    $err = ' onerror="this.style.display=\'none\';var n=this.nextSibling;if(n)n.style.display=\'inline-flex\';"';
+    // Choose badge class to match context (fb-logo, ref-logo-img, cpt-logo)
+    if (str_starts_with($cls, 'fb-')) {
+        $badge = '<span class="fb-code-badge" style="display:none">' . htmlspecialchars($alt, ENT_QUOTES) . '</span>';
+    } elseif (str_starts_with($cls, 'ref-')) {
+        $badge = '<span class="ref-code-badge" style="display:none">' . htmlspecialchars($alt, ENT_QUOTES) . '</span>';
+    } else {
+        $badge = '<span class="cpt-code" style="display:none">' . htmlspecialchars($alt, ENT_QUOTES) . '</span>';
+    }
     return '<img src="' . htmlspecialchars($logo['src'], ENT_QUOTES) . '"'
-        . $cors . $err . ' class="' . $cls . '" alt="' . htmlspecialchars($alt, ENT_QUOTES) . '" loading="lazy">';
+        . $err . ' class="' . $cls . '" alt="' . htmlspecialchars($alt, ENT_QUOTES) . '" loading="lazy">'
+        . $badge;
 };
 
 $maskTicket = static function (?string $t, bool $mask): ?string {
@@ -658,8 +668,7 @@ Example:
                 <div class="card-agency">
                     <img src="<?= Html::e($asset('assets/images/roaming-nepal-logo.png')) ?>" alt="<?= Html::e($agencyName) ?>" class="agency-logo">
                     <div class="agency-offices">
-                        <?php foreach ($agencyOffices as $oi => $office): ?>
-                            <?php if ($oi > 0): ?><span class="agency-dot">·</span><?php endif; ?>
+                        <?php foreach ($agencyOffices as $office): ?>
                             <span class="agency-office">
                                 <svg class="loc-pin" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a4.5 4.5 0 0 1 4.5 4.5c0 3-4.5 9-4.5 9S3.5 8.5 3.5 5.5A4.5 4.5 0 0 1 8 1zm0 6a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
                                 <?= Html::e($office) ?>

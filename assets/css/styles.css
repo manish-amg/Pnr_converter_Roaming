@@ -108,6 +108,7 @@ a { color: inherit; text-decoration: none; }
 }
 .app-layout.sidebar-collapsed .app-sidebar,
 .app-layout.sidebar-collapsed .ctrl2,
+.app-layout.sidebar-collapsed .ctrl-bar,
 .app-layout.sidebar-collapsed .result-bar {
   display: none;
 }
