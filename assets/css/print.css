@@ -13,33 +13,22 @@
 /* ── Hide all UI chrome ── */
 .topbar,
 .app-sidebar,
-.ctrl-bar,
-.ctrl2,
 .result-bar,
 .parse-bar,
-.options-strip,
-.options-card,
-.input-card,
 .share-hint,
 .empty-hint,
 .empty-state,
 .alert,
-.result-actions,
 .result-actions-inline,
 .result-collapsed-actions,
 .min-dock,
 .no-print,
 .no-share,
-.history-panel,
-.gds-detect-chip,
 .copy-toast,
 #shareModeBtn, #resetBtn,
-#collapseInputBtn, #expandInputBtn,
-#printBtn,  #printBtn2,  #printBtnDock,
-#downloadPngBtn,  #downloadPngBtn2,  #downloadPngBtnDock,
-#copyImageBtn,    #copyImageBtn2,    #copyImageBtnDock,
-#copyTextBtn,
-#pnrPlainText { display: none !important; }
+#printBtn2,
+#downloadPngBtn2,
+#copyImageBtn2 { display: none !important; }
 
 /* ── Clean page ── */
 html, body {

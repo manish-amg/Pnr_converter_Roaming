@@ -454,6 +454,94 @@ Example:
                     </div>
                 </div>
 
+                <!-- ── Format · Agency · Options ─ -->
+                <?php
+                $optCard = static function (string $key, string $label) use ($show): string {
+                    ob_start(); ?>
+                    <label class="opt">
+                        <span class="opt-top"><span class="opt-lbl"><?= Html::e($label) ?></span></span>
+                        <span class="opt-sw-wrap">
+                            <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+                            <input type="checkbox" class="opt-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+                            <span class="opt-sw" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <?php return (string) ob_get_clean();
+                };
+                ?>
+                <div class="ctrl-bar settings-panel no-share">
+                    <div class="cb-row1">
+                        <div class="cb-sect">
+                            <span class="cb-sect-lbl">Format</span>
+                            <div class="fmt-pills" role="radiogroup">
+                                <?php foreach ([
+                                    'table'       => 'Table',
+                                    'three_lines' => '3 Lines',
+                                    'two_lines'   => '2 Lines',
+                                    'compact'     => 'Compact',
+                                    'detailed'    => 'Graphic',
+                                ] as $val => $lbl): ?>
+                                    <label class="fpill<?= $resultFormat === $val ? ' is-active' : '' ?>">
+                                        <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
+                                        <span><?= Html::e($lbl) ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <span class="cb-div"></span>
+                        <div class="cb-sect">
+                            <span class="cb-sect-lbl">Agency</span>
+                            <div class="cb-presets">
+                                <button type="button" class="tpill is-active" data-preset="roaming" title="Enable Roaming Nepal header &amp; footer">Roaming Nepal</button>
+                                <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding — clean neutral look">Neutral</button>
+                            </div>
+                        </div>
+                        <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="<?= $renderable ? 'false' : 'true' ?>" aria-controls="cbOptsDrw">
+                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="4" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>
+                            <span class="cb-opts-toggle-lbl">Options</span>
+                        </button>
+                    </div>
+                    <div class="cb-opts" id="cbOptsDrw"<?= $renderable ? ' hidden' : '' ?>>
+                        <div class="opt-grid">
+                            <div class="opt opt-multi">
+                                <span class="opt-top"><span class="opt-lbl">Distance</span></span>
+                                <span class="opt-mini" role="radiogroup">
+                                    <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Mi'] as $dv => $dl): ?>
+                                        <label class="opt-mini-pill<?= ($features['distance_unit'] ?? 'off') === $dv ? ' is-active' : '' ?>">
+                                            <input type="radio" name="distance_unit" value="<?= Html::e($dv) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $dv) ?>>
+                                            <span><?= Html::e($dl) ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </span>
+                            </div>
+                            <?php
+                            foreach ([
+                                'show_airline_logo'      => 'Logos',
+                                'show_airline_name'      => 'Airline Name',
+                                'show_flight_duration'   => 'Duration',
+                                'show_transit_time'      => 'Layover',
+                                'show_co2'               => 'CO₂ Estimate',
+                                'use_12_hour_clock'      => '12hr Clock',
+                                'show_cabin'             => 'Cabin',
+                                'show_booking_class'     => 'Class',
+                                'show_operated_by'       => 'Operated By',
+                                'show_terminal'          => 'Terminal',
+                                'show_aircraft'          => 'Aircraft',
+                                'show_booking_reference' => 'Booking Ref',
+                                'show_ticket_numbers'    => 'Ticket No',
+                                'show_seat_numbers'      => 'Seat No',
+                                'show_agency_header'     => 'Agency Header',
+                                'show_agency_footer'     => 'Footer',
+                                'show_disclaimer'        => 'Disclaimer',
+                                'show_must_read'         => 'Must Read',
+                            ] as $k => $lbl) {
+                                echo $optCard($k, $lbl);
+                            }
+                            ?>
+                        </div>
+                    </div>
+                </div><!-- /ctrl-bar -->
+
                 <?php if ($renderable): ?>
                 <!-- Primary export actions -->
                 <div class="sidebar-actions">
@@ -461,7 +549,7 @@ Example:
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M2 13l5-5 4 4 2-2 5 5"/></svg>
                         Copy Image
                     </button>
-                    <button type="button" class="btn btn-export sidebar-btn" id="copyTextBtn" style="background:#0e7490;border-color:#0e7490;">
+                    <button type="button" class="btn btn-export sidebar-btn" id="copyTextBtn">
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="12" height="14" rx="1.5"/><path d="M7 7h5M7 10h5M7 13h3"/><path d="M6 1.5h9a1.5 1.5 0 011.5 1.5v13"/></svg>
                         Copy Text
                     </button>
@@ -502,101 +590,6 @@ Example:
                  MAIN — Options strip + Result
             ══════════════════════════════════════ -->
             <div class="app-main">
-
-                <!-- ── Control panel: Layout Themes + Display Options ── -->
-                <?php
-                $optCard = static function (string $key, string $label) use ($show): string {
-                    ob_start(); ?>
-                    <label class="opt">
-                        <span class="opt-top"><span class="opt-lbl"><?= Html::e($label) ?></span></span>
-                        <span class="opt-sw-wrap">
-                            <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                            <input type="checkbox" class="opt-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                            <span class="opt-sw" aria-hidden="true"></span>
-                        </span>
-                    </label>
-                    <?php return (string) ob_get_clean();
-                };
-                ?>
-                <!-- ── Compact control bar ─────────────────────────── -->
-                <div class="ctrl-bar settings-panel no-share">
-
-                    <!-- Row 1: Format + Agency presets + Options toggle -->
-                    <div class="cb-row1">
-                        <div class="cb-sect">
-                            <span class="cb-sect-lbl">Format</span>
-                            <div class="fmt-pills" role="radiogroup">
-                                <?php foreach ([
-                                    'table'       => 'Table',
-                                    'three_lines' => '3 Lines',
-                                    'two_lines'   => '2 Lines',
-                                    'compact'     => 'Compact',
-                                    'detailed'    => 'Graphic',
-                                ] as $val => $lbl): ?>
-                                    <label class="fpill<?= $resultFormat === $val ? ' is-active' : '' ?>">
-                                        <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
-                                        <span><?= Html::e($lbl) ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <span class="cb-div"></span>
-                        <div class="cb-sect">
-                            <span class="cb-sect-lbl">Agency</span>
-                            <div class="cb-presets">
-                                <button type="button" class="tpill is-active" data-preset="roaming" title="Enable Roaming Nepal header &amp; footer">Roaming Nepal</button>
-                                <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding — clean neutral look">Neutral</button>
-                            </div>
-                        </div>
-                        <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="<?= $renderable ? 'false' : 'true' ?>" aria-controls="cbOptsDrw">
-                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="4" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>
-                            <span class="cb-opts-toggle-lbl">Options</span>
-                        </button>
-                    </div>
-
-                    <!-- Display options (compact grid, collapsible) -->
-                    <div class="cb-opts" id="cbOptsDrw"<?= $renderable ? ' hidden' : '' ?>>
-                        <div class="opt-grid">
-                            <!-- Distance (special: pill selector) -->
-                            <div class="opt opt-multi">
-                                <span class="opt-top"><span class="opt-lbl">Distance</span></span>
-                                <span class="opt-mini" role="radiogroup">
-                                    <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Mi'] as $dv => $dl): ?>
-                                        <label class="opt-mini-pill<?= ($features['distance_unit'] ?? 'off') === $dv ? ' is-active' : '' ?>">
-                                            <input type="radio" name="distance_unit" value="<?= Html::e($dv) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $dv) ?>>
-                                            <span><?= Html::e($dl) ?></span>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </span>
-                            </div>
-                            <?php
-                            foreach ([
-                                'show_airline_logo'      => 'Logos',
-                                'show_airline_name'      => 'Airline Name',
-                                'show_flight_duration'   => 'Duration',
-                                'show_transit_time'      => 'Layover',
-                                'show_co2'               => 'CO₂ Estimate',
-                                'use_12_hour_clock'      => '12hr Clock',
-                                'show_cabin'             => 'Cabin',
-                                'show_booking_class'     => 'Class',
-                                'show_operated_by'       => 'Operated By',
-                                'show_terminal'          => 'Terminal',
-                                'show_aircraft'          => 'Aircraft',
-                                'show_booking_reference' => 'Booking Ref',
-                                'show_ticket_numbers'    => 'Ticket No',
-                                'show_seat_numbers'      => 'Seat No',
-                                'show_agency_header'     => 'Agency Header',
-                                'show_agency_footer'     => 'Footer',
-                                'show_disclaimer'        => 'Disclaimer',
-                                'show_must_read'         => 'Must Read',
-                            ] as $k => $lbl) {
-                                echo $optCard($k, $lbl);
-                            }
-                            ?>
-                        </div>
-                    </div>
-
-                </div><!-- /ctrl-bar -->
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
