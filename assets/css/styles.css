@@ -287,43 +287,48 @@ textarea::placeholder { color: #3d5166; white-space: pre-wrap; }
 
 .btn-sm { min-height: 32px; padding: 5px 12px; font-size: 12px; }
 
-/* ══ Settings panel — sidebar-integrated ═════════════ */
+/* ══ Settings panel — horizontal strip above result ══ */
 .ctrl-bar {
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--line);
-  border-radius: 0;
-  box-shadow: none;
-  margin: 0;
-  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xs);
+  margin-bottom: 10px;
 }
 
 .cb-row1 {
-  display: flex; flex-direction: column;
-  gap: 8px;
-  padding: 10px 14px 8px;
+  display: flex; flex-direction: row; align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 7px 12px;
 }
 
-.cb-sect { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; }
+.cb-sect { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
 .cb-sect-lbl {
   font-size: 9.5px; font-weight: 800;
   text-transform: uppercase; letter-spacing: .07em;
   color: var(--muted); white-space: nowrap;
-  min-width: 44px; flex-shrink: 0;
+  flex-shrink: 0;
 }
 
-.cb-div { display: none; }
+.cb-div {
+  display: block;
+  width: 1px; height: 20px;
+  background: var(--line);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
 
 /* Format pills */
-.fmt-pills { display: flex; flex-wrap: wrap; gap: 3px; }
+.fmt-pills { display: flex; flex-wrap: nowrap; gap: 3px; }
 .fpill { cursor: pointer; }
 .fpill input { position: absolute; opacity: 0; pointer-events: none; }
 .fpill span {
   display: inline-flex; align-items: center;
   border: 1px solid var(--line); background: #fff; color: var(--ink-mid);
   font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-pill);
-  transition: all .12s; line-height: 1.4;
+  transition: all .12s; line-height: 1.4; white-space: nowrap;
 }
 .fpill:hover span { border-color: var(--brand); color: var(--brand); }
 .fpill input:checked + span,
@@ -337,30 +342,30 @@ textarea::placeholder { color: #3d5166; white-space: pre-wrap; }
 .tpill {
   border: 1px solid var(--line); background: #fff; color: var(--ink-mid);
   font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: var(--radius-pill);
-  cursor: pointer; transition: all .12s; line-height: 1.4;
+  cursor: pointer; transition: all .12s; line-height: 1.4; white-space: nowrap;
 }
 .tpill:hover { border-color: var(--brand); color: var(--brand); }
 .tpill.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
 
-/* Options toggle button */
+/* Options toggle button — compact, auto-width in horizontal strip */
 .cb-opts-toggle {
-  display: inline-flex; align-items: center; justify-content: space-between;
-  width: 100%;
-  padding: 7px 10px; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: var(--radius-pill);
   border: 1px solid var(--line); background: #fafbfc; color: var(--muted);
   font-size: 11px; font-weight: 700; cursor: pointer;
-  transition: all .12s;
+  transition: all .12s; white-space: nowrap; margin-left: auto;
 }
 .cb-opts-toggle svg { width: 12px; height: 12px; flex-shrink: 0; }
 .cb-opts-toggle:hover { border-color: var(--brand-border); color: var(--brand); background: var(--brand-soft); }
 .cb-opts-toggle[aria-expanded="true"] { background: var(--brand-soft); border-color: var(--brand-border); color: var(--brand); }
-.cb-opts-toggle-lbl { flex: 1; text-align: left; }
+.cb-opts-toggle-lbl { }
 
 /* Options drawer */
 .cb-opts {
   border-top: 1px solid var(--line);
-  padding: 8px 14px 12px;
+  padding: 8px 12px 12px;
   background: #fafbfc;
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 .cb-opts[hidden] { display: none; }
 
@@ -991,6 +996,8 @@ body.share-mode .share-hint {
 }
 
 @media (max-width: 700px) {
+  .fmt-pills { flex-wrap: wrap; }
+  .cb-opts-toggle { margin-left: 0; }
   .topbar { padding: 0 16px; }
   textarea { min-height: 150px; font-size: 13px; }
   .convert-btns { justify-content: flex-end; }

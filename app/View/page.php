@@ -454,7 +454,56 @@ Example:
                     </div>
                 </div>
 
-                <!-- ── Format · Agency · Options ─ -->
+                <?php if ($renderable): ?>
+                <!-- Primary export actions -->
+                <div class="sidebar-actions">
+                    <button type="button" class="btn btn-export sidebar-btn" id="copyImageBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M2 13l5-5 4 4 2-2 5 5"/></svg>
+                        Copy Image
+                    </button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="copyTextBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="12" height="14" rx="1.5"/><path d="M7 7h5M7 10h5M7 13h3"/><path d="M6 1.5h9a1.5 1.5 0 011.5 1.5v13"/></svg>
+                        Copy Text
+                    </button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="downloadPngBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 3v9M6 8l4 4 4-4M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>
+                        Save PNG
+                    </button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="printBtn">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7V3h10v4M5 13H3a1 1 0 01-1-1V8a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1h-2M5 11h10v6H5v-6z"/></svg>
+                        Print / PDF
+                    </button>
+                </div>
+                <!-- Plain-text version for Copy Text button -->
+                <div id="pnrPlainText" hidden aria-hidden="true"><?= htmlspecialchars($buildTextVersion(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></div>
+                <?php endif; ?>
+
+            </div><!-- /app-sidebar -->
+
+            <!-- Floating dock — visible only when minimized (clean screenshot view) -->
+            <div class="min-dock no-print no-share" id="minDock" aria-hidden="true">
+                <button type="button" class="min-dock-btn min-dock-restore" id="expandInputBtn" title="Show input &amp; options">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/><path d="M10.5 7.5L12.5 9l-2 1.5" stroke-width="1.5"/></svg>
+                    <span>Show panels</span>
+                </button>
+                <span class="min-dock-sep"></span>
+                <button type="button" class="min-dock-btn" id="copyImageBtnDock" title="Copy image to clipboard" aria-label="Copy image">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1.3" fill="currentColor" stroke="none"/><path d="M2 12l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
+                </button>
+                <button type="button" class="min-dock-btn" id="downloadPngBtnDock" title="Save as PNG" aria-label="Save PNG">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2.5v8M5.5 7L9 10.5 12.5 7M3.5 13v1.5a1 1 0 001 1h9a1 1 0 001-1V13"/></svg>
+                </button>
+                <button type="button" class="min-dock-btn" id="printBtnDock" title="Print or save PDF" aria-label="Print">
+                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V2.5h8V6M5 12.5H3.5a1 1 0 01-1-1V8a1 1 0 011-1h11a1 1 0 011 1v3.5a1 1 0 01-1 1H13M5 10h8v5.5H5V10z"/></svg>
+                </button>
+            </div>
+
+            <!-- ══════════════════════════════════════
+                 MAIN — Options strip + Result
+            ══════════════════════════════════════ -->
+            <div class="app-main">
+
+                <!-- ── Format · Agency · Options strip ── -->
                 <?php
                 $optCard = static function (string $key, string $label) use ($show): string {
                     ob_start(); ?>
@@ -469,7 +518,7 @@ Example:
                     <?php return (string) ob_get_clean();
                 };
                 ?>
-                <div class="ctrl-bar settings-panel no-share">
+                <div class="ctrl-bar settings-panel no-share no-print">
                     <div class="cb-row1">
                         <div class="cb-sect">
                             <span class="cb-sect-lbl">Format</span>
@@ -541,55 +590,6 @@ Example:
                         </div>
                     </div>
                 </div><!-- /ctrl-bar -->
-
-                <?php if ($renderable): ?>
-                <!-- Primary export actions -->
-                <div class="sidebar-actions">
-                    <button type="button" class="btn btn-export sidebar-btn" id="copyImageBtn">
-                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M2 13l5-5 4 4 2-2 5 5"/></svg>
-                        Copy Image
-                    </button>
-                    <button type="button" class="btn btn-export sidebar-btn" id="copyTextBtn">
-                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="12" height="14" rx="1.5"/><path d="M7 7h5M7 10h5M7 13h3"/><path d="M6 1.5h9a1.5 1.5 0 011.5 1.5v13"/></svg>
-                        Copy Text
-                    </button>
-                    <button type="button" class="btn btn-export sidebar-btn" id="downloadPngBtn">
-                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 3v9M6 8l4 4 4-4M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>
-                        Save PNG
-                    </button>
-                    <button type="button" class="btn btn-export sidebar-btn" id="printBtn">
-                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7V3h10v4M5 13H3a1 1 0 01-1-1V8a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1h-2M5 11h10v6H5v-6z"/></svg>
-                        Print / PDF
-                    </button>
-                </div>
-                <!-- Plain-text version for Copy Text button -->
-                <div id="pnrPlainText" hidden aria-hidden="true"><?= htmlspecialchars($buildTextVersion(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></div>
-                <?php endif; ?>
-
-            </div><!-- /app-sidebar -->
-
-            <!-- Floating dock — visible only when minimized (clean screenshot view) -->
-            <div class="min-dock no-print no-share" id="minDock" aria-hidden="true">
-                <button type="button" class="min-dock-btn min-dock-restore" id="expandInputBtn" title="Show input &amp; options">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/><path d="M10.5 7.5L12.5 9l-2 1.5" stroke-width="1.5"/></svg>
-                    <span>Show panels</span>
-                </button>
-                <span class="min-dock-sep"></span>
-                <button type="button" class="min-dock-btn" id="copyImageBtnDock" title="Copy image to clipboard" aria-label="Copy image">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1.3" fill="currentColor" stroke="none"/><path d="M2 12l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
-                </button>
-                <button type="button" class="min-dock-btn" id="downloadPngBtnDock" title="Save as PNG" aria-label="Save PNG">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2.5v8M5.5 7L9 10.5 12.5 7M3.5 13v1.5a1 1 0 001 1h9a1 1 0 001-1V13"/></svg>
-                </button>
-                <button type="button" class="min-dock-btn" id="printBtnDock" title="Print or save PDF" aria-label="Print">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V2.5h8V6M5 12.5H3.5a1 1 0 01-1-1V8a1 1 0 011-1h11a1 1 0 011 1v3.5a1 1 0 01-1 1H13M5 10h8v5.5H5V10z"/></svg>
-                </button>
-            </div>
-
-            <!-- ══════════════════════════════════════
-                 MAIN — Options strip + Result
-            ══════════════════════════════════════ -->
-            <div class="app-main">
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
@@ -752,7 +752,8 @@ Example:
                     $showAcft   = $show('show_aircraft');
                     $showCabin  = $show('show_cabin');
                     $showClass  = $show('show_booking_class');
-                    $colCount   = 9 + ($showOpBy ? 1 : 0) + ($show('show_transit_time') ? 1 : 0);
+                    $isDirect   = count($legSegs) === 1;
+                    $colCount   = 9 + ($show('show_transit_time') && !$isDirect ? 1 : 0);
                 ?>
                 <div class="ref-table-wrap">
                     <!-- Leg label strip -->
@@ -772,13 +773,12 @@ Example:
                                 <th class="ref-th ref-th-date">Date</th>
                                 <th class="ref-th ref-th-airline">Airline</th>
                                 <th class="ref-th ref-th-num">Flight<br>No</th>
-                                <?php if ($showOpBy): ?><th class="ref-th ref-th-opby">Operated<br>By</th><?php endif; ?>
                                 <th class="ref-th ref-th-time">Depart</th>
                                 <th class="ref-th ref-th-port">From</th>
                                 <th class="ref-th ref-th-time">Arrive</th>
                                 <th class="ref-th ref-th-port">At</th>
                                 <th class="ref-th ref-th-num">Duration</th>
-                                <?php if ($show('show_transit_time')): ?><th class="ref-th ref-th-num">Transit</th><?php endif; ?>
+                                <?php if ($show('show_transit_time') && !$isDirect): ?><th class="ref-th ref-th-num">Transit</th><?php endif; ?>
                             </tr>
                         </thead>
                         <tbody>
@@ -815,8 +815,16 @@ Example:
                                     <?= Html::e($datePretty($seg->departureDate)) ?>
                                 </td>
                                 <!-- Airline -->
+                                <?php
+                                $opByDiffers = $showOpBy && $seg->operatedBy
+                                    && strtolower(trim($seg->operatedBy)) !== strtolower(trim($seg->airlineName ?? ''))
+                                    && strtolower(trim($seg->operatedBy)) !== strtolower(trim($seg->airlineCode));
+                                ?>
                                 <td class="ref-td ref-td-airline" title="<?= Html::e($seg->airlineName ?? $seg->airlineCode) ?>">
                                     <span class="ref-airline-name"><?php if ($show('show_airline_name') && $seg->airlineName): ?><?= Html::e($seg->airlineName) ?><?php else: ?><?= Html::e($seg->airlineCode) ?><?php endif; ?></span>
+                                    <?php if ($opByDiffers): ?>
+                                        <span class="ref-sub ref-opby-inline">Op: <?= Html::e($seg->operatedBy) ?></span>
+                                    <?php endif; ?>
                                     <?php if ($showCabin && $seg->cabin): ?>
                                         <span class="ref-sub"><?= Html::e($seg->cabin) ?></span>
                                     <?php elseif ($showClass && $seg->bookingClass): ?>
@@ -830,12 +838,6 @@ Example:
                                 <td class="ref-td ref-td-num">
                                     <strong><?= Html::e($seg->flightNumber) ?></strong>
                                 </td>
-                                <!-- Operated By (optional) -->
-                                <?php if ($showOpBy): ?>
-                                <td class="ref-td ref-td-opby" title="<?= Html::e($seg->operatedBy ?: ($seg->airlineName ?: $seg->airlineCode)) ?>">
-                                    <span class="ref-opby-name"><?= Html::e($seg->operatedBy ?: ($seg->airlineName ?: $seg->airlineCode)) ?></span>
-                                </td>
-                                <?php endif; ?>
                                 <!-- Depart time -->
                                 <td class="ref-td ref-td-time">
                                     <?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?>
@@ -865,8 +867,8 @@ Example:
                                 <td class="ref-td ref-td-num">
                                     <?= $dur ? Html::e($dur) : '&mdash;' ?>
                                 </td>
-                                <!-- Transit / Layover -->
-                                <?php if ($show('show_transit_time')): ?>
+                                <!-- Transit / Layover (hidden for direct flights) -->
+                                <?php if ($show('show_transit_time') && !$isDirect): ?>
                                 <td class="ref-td ref-td-num">
                                     <?php if ($seg->layoverDuration):
                                         [$loClass, ] = $layoverMeta($seg->layoverDuration);
@@ -874,8 +876,6 @@ Example:
                                     ?>
                                         <span class="ref-transit <?= Html::e($loClass) ?>"><?= Html::e($seg->layoverDuration) ?></span>
                                         <?php if ($visa): ?><span class="ref-sub"><?= Html::e($visa) ?></span><?php endif; ?>
-                                    <?php else: ?>
-                                        <span style="color:#cbd5e1">&mdash;</span>
                                     <?php endif; ?>
                                 </td>
                                 <?php endif; ?>
