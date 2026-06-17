@@ -421,6 +421,9 @@ $renderable = $result !== null && $result->isRenderable();
                     </button>
                 </div>
 
+                <!-- PNR History — JS-rendered, hidden until entries exist -->
+                <div id="historyPanel" style="display:none"></div>
+
                 <!-- Input card -->
                 <div class="input-card">
                     <textarea
@@ -438,10 +441,15 @@ Example:
                         <div class="input-chips">
                             <span title="Your PNR is never saved or logged">🔒 Private</span>
                             <span title="Sensitive lines are automatically ignored">🚫 Docs ignored</span>
+                            <span class="gds-detect-chip" id="gdsDetectChip" style="display:none"><span class="gds-dot"></span><span id="gdsDetectLabel">Detecting…</span></span>
                         </div>
                         <div class="convert-btns">
                             <button type="submit" class="btn btn-convert">✈ Convert</button>
                             <button type="reset" id="resetBtn" class="btn btn-ghost">Clear</button>
+                        </div>
+                        <div class="kbd-hint">
+                            <span class="kbd">Ctrl</span><span style="color:#334155">+</span><span class="kbd">↵</span>
+                            <span style="margin-left:4px">to convert instantly</span>
                         </div>
                     </div>
                 </div>
@@ -453,15 +461,21 @@ Example:
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/><path d="M2 13l5-5 4 4 2-2 5 5"/></svg>
                         Copy Image
                     </button>
+                    <button type="button" class="btn btn-export sidebar-btn" id="copyTextBtn" style="background:#0e7490;border-color:#0e7490;">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="12" height="14" rx="1.5"/><path d="M7 7h5M7 10h5M7 13h3"/><path d="M6 1.5h9a1.5 1.5 0 011.5 1.5v13"/></svg>
+                        Copy Text
+                    </button>
                     <button type="button" class="btn btn-export sidebar-btn" id="downloadPngBtn">
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 3v9M6 8l4 4 4-4M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2"/></svg>
                         Save PNG
                     </button>
                     <button type="button" class="btn btn-export sidebar-btn" id="printBtn">
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7V3h10v4M5 13H3a1 1 0 01-1-1V8a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1h-2M5 11h10v6H5v-6z"/></svg>
-                        Print
+                        Print / PDF
                     </button>
                 </div>
+                <!-- Plain-text version for Copy Text button -->
+                <div id="pnrPlainText" hidden aria-hidden="true"><?= htmlspecialchars($buildTextVersion(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></div>
                 <?php endif; ?>
 
             </div><!-- /app-sidebar -->
@@ -644,7 +658,7 @@ Example:
         <!-- ══════════════════════════════════════
              ITINERARY CARD
         ══════════════════════════════════════ -->
-        <article class="itin-card" id="itineraryCard">
+        <article class="itin-card" id="itineraryCard" data-route="<?= Html::e($itinTitle($legs)) ?>" data-flights="<?= Html::e((string) count($result->segments)) ?>">
 
             <?php if ($showAgencyHeader):
                 $agencyFooterCfg = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
@@ -1128,6 +1142,7 @@ Example:
     </form>
 </main>
 
+<div class="copy-toast" id="copyToast" aria-live="polite"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="<?= Html::e($asset('assets/js/app.js')) ?>"></script>
 </body>

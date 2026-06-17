@@ -2,24 +2,30 @@
   'use strict';
 
   const byId = (id) => document.getElementById(id);
-  const card             = byId('itineraryCard');
-  const shareModeBtn     = byId('shareModeBtn');
-  const printBtn         = byId('printBtn');
-  const printBtn2        = byId('printBtn2');
-  const printBtnDock     = byId('printBtnDock');
-  const downloadPngBtn   = byId('downloadPngBtn');
-  const downloadPngBtn2  = byId('downloadPngBtn2');
+  const card              = byId('itineraryCard');
+  const shareModeBtn      = byId('shareModeBtn');
+  const printBtn          = byId('printBtn');
+  const printBtn2         = byId('printBtn2');
+  const printBtnDock      = byId('printBtnDock');
+  const downloadPngBtn    = byId('downloadPngBtn');
+  const downloadPngBtn2   = byId('downloadPngBtn2');
   const downloadPngBtnDock = byId('downloadPngBtnDock');
-  const copyImageBtn     = byId('copyImageBtn');
-  const copyImageBtn2    = byId('copyImageBtn2');
-  const copyImageBtnDock = byId('copyImageBtnDock');
-  const resetBtn         = byId('resetBtn');
-  const collapseInputBtn = byId('collapseInputBtn');
-  const expandInputBtn   = byId('expandInputBtn');
-  const appLayout        = byId('appLayout');
-  const form             = document.querySelector('form');
-  const settingsPanel    = document.querySelector('.settings-panel');
-  const presetBtns       = document.querySelectorAll('[data-preset]');
+  const copyImageBtn      = byId('copyImageBtn');
+  const copyImageBtn2     = byId('copyImageBtn2');
+  const copyImageBtnDock  = byId('copyImageBtnDock');
+  const copyTextBtn       = byId('copyTextBtn');
+  const resetBtn          = byId('resetBtn');
+  const collapseInputBtn  = byId('collapseInputBtn');
+  const expandInputBtn    = byId('expandInputBtn');
+  const appLayout         = byId('appLayout');
+  const form              = document.querySelector('form');
+  const settingsPanel     = document.querySelector('.settings-panel');
+  const presetBtns        = document.querySelectorAll('[data-preset]');
+  const textarea          = byId('pnr_text');
+  const gdsChip           = byId('gdsDetectChip');
+  const gdsLabel          = byId('gdsDetectLabel');
+  const historyPanel      = byId('historyPanel');
+  const copyToast         = byId('copyToast');
 
   /* ── Share mode ─────────────────────────────────── */
   if (shareModeBtn) {
@@ -31,12 +37,9 @@
     }
   });
 
-  /* ══ Settings persistence (localStorage) ════════════
-     All form toggle/radio values are saved per key and
-     restored on every page load — survives tab close.
-  ═══════════════════════════════════════════════════ */
+  /* ══ Settings persistence (localStorage) ════════════ */
   const SETTINGS_KEY  = 'pnrc-settings-v2';
-  const SETTINGS_SKIP = new Set(['pnr_text']); // don't persist the PNR textarea
+  const SETTINGS_SKIP = new Set(['pnr_text']);
 
   function saveSettings() {
     if (!form) return;
@@ -47,7 +50,6 @@
       if (el.type === 'radio') {
         if (el.checked) data[el.name] = el.value;
       } else {
-        // For checkboxes, only store '1' entries (hidden 0-value inputs handle unset)
         if (el.checked) data[el.name] = '1';
       }
     });
@@ -72,20 +74,16 @@
     });
   }
 
-  // Restore on load (before first paint, PHP values are already set — only override if saved)
-  // We only restore if the page was loaded WITHOUT a POST (fresh GET = no result yet)
   if (form && !card) {
     restoreSettings();
   }
 
-  // Scroll the itinerary into view after a conversion (result exists on page load)
   if (card) {
     setTimeout(() => {
       card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 120);
   }
 
-  // Save whenever a setting changes
   if (form && settingsPanel) {
     settingsPanel.addEventListener('change', () => saveSettings());
   }
@@ -99,7 +97,6 @@
     try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
   }
 
-  // Restore collapse state on page load (now uses localStorage so it persists)
   try {
     if (localStorage.getItem(COLLAPSED_KEY) === '1') setSidebarCollapsed(true);
   } catch {}
@@ -111,7 +108,7 @@
     expandInputBtn.addEventListener('click', () => setSidebarCollapsed(false));
   }
 
-  /* ── Dynamic tabs (ctrl-tab + opts-tab both) ──────── */
+  /* ── Dynamic tabs ──────────────────────────────── */
   const TAB_KEY   = 'pnrc-active-tab';
   const tabBtns   = document.querySelectorAll('.ctrl-tab, .opts-tab');
   const tabPanels = document.querySelectorAll('.ctrl-panel-body, .opts-tab-panel');
@@ -137,9 +134,7 @@
     });
   }
 
-  /* ── Cabin mode segmented control ──────────────────
-     _cabin_mode radio (off/class/cabin) drives two
-     hidden inputs: show_cabin and show_booking_class   */
+  /* ── Cabin mode segmented control ──────────────── */
   const cabinModeRadios = document.querySelectorAll('input[name="_cabin_mode"]');
   const hidShowCabin = byId('hidShowCabin');
   const hidShowClass = byId('hidShowClass');
@@ -154,8 +149,6 @@
       if (r.checked) { applyCabinMode(r.value); saveSettings(); }
     });
   });
-
-  // Apply initial state
   cabinModeRadios.forEach((r) => { if (r.checked) applyCabinMode(r.value); });
 
   /* ── Print ──────────────────────────────────────── */
@@ -163,7 +156,7 @@
     if (btn) btn.addEventListener('click', () => window.print());
   });
 
-  /* ── Clear — navigate to fresh page ─────────────── */
+  /* ── Clear ───────────────────────────────────────── */
   if (resetBtn) {
     resetBtn.addEventListener('click', () => {
       window.location.href = window.location.pathname;
@@ -199,7 +192,6 @@
     });
   }
 
-  // Also save settings when the result page loads (settings were applied by PHP)
   if (card) saveSettings();
 
   /* ── Save PNG ───────────────────────────────────── */
@@ -252,6 +244,143 @@
   wireCopyImage(copyImageBtn2);
   wireCopyImage(copyImageBtnDock);
 
+  /* ── Copy as text ───────────────────────────────── */
+  if (copyTextBtn) {
+    const pnrTextEl = byId('pnrPlainText');
+    if (!pnrTextEl || !navigator.clipboard) {
+      copyTextBtn.disabled = true;
+    } else {
+      copyTextBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(pnrTextEl.textContent || '');
+          temporaryLabel(copyTextBtn, '✓ Copied!');
+          showToast('Itinerary text copied — paste into WhatsApp or email');
+        } catch {
+          temporaryLabel(copyTextBtn, '❌ Failed');
+        }
+      });
+    }
+  }
+
+  /* ── Keyboard shortcut: Ctrl/Cmd+Enter to submit ── */
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (form) {
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.submit();
+      }
+    }
+  });
+
+  /* ── Live GDS format detector ───────────────────── */
+  const GDS_PATTERNS = [
+    { name: 'Amadeus',   re: /^RP\//m },
+    { name: 'Amadeus',   re: /^\s*\d+\s+[A-Z0-9]{2}\s+\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Z]{3}\s+[A-Z]{3}[A-Z]{3}\s+HK/m },
+    { name: 'Sabre',     re: /\b(?:SABRE|1S)\b/i },
+    { name: 'Sabre',     re: /^\s*\d+\s+[A-Z0-9]{2}\s*\d{1,4}[A-Z]\s+\d{1,2}[A-Z]{3}\s+\d\s+[A-Z]{6}/m },
+    { name: 'Galileo',   re: /\b(?:GALILEO|TRAVELPORT|1G|1V)\b/i },
+    { name: 'Worldspan', re: /\b(?:WORLDSPAN|1P)\b/i },
+    { name: 'GDS',       re: /\b(?:HK1|HK\d|SS1|DK1)\b/ },
+  ];
+
+  let detectTimer;
+  if (textarea && gdsChip && gdsLabel) {
+    function runDetect() {
+      const val = textarea.value.trim();
+      if (val.length < 20) { gdsChip.style.display = 'none'; return; }
+      let detected = null;
+      for (const p of GDS_PATTERNS) {
+        if (p.re.test(val)) { detected = p.name; break; }
+      }
+      if (detected) {
+        gdsLabel.textContent = detected + ' detected';
+        gdsChip.style.display = 'inline-flex';
+        gdsChip.classList.add('detected');
+      } else {
+        gdsChip.style.display = 'none';
+        gdsChip.classList.remove('detected');
+      }
+    }
+    textarea.addEventListener('input', () => {
+      clearTimeout(detectTimer);
+      detectTimer = setTimeout(runDetect, 280);
+    });
+    // Run on load if textarea already has content (result page)
+    if (textarea.value.trim().length > 20) runDetect();
+  }
+
+  /* ══ PNR History (last 5 conversions) ════════════ */
+  const HISTORY_KEY = 'pnrc-history-v1';
+  const MAX_HISTORY = 5;
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+  }
+
+  function saveHistoryStore(entries) {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(entries)); } catch {}
+  }
+
+  function pushHistory(route, pnrText, flights) {
+    const entries = loadHistory().filter((e) => e.pnr !== pnrText);
+    entries.unshift({ route, pnr: pnrText, flights, ts: Date.now() });
+    saveHistoryStore(entries.slice(0, MAX_HISTORY));
+  }
+
+  function renderHistoryPanel() {
+    if (!historyPanel) return;
+    const entries = loadHistory();
+    if (!entries.length) { historyPanel.style.display = 'none'; return; }
+
+    historyPanel.style.display = 'block';
+    historyPanel.innerHTML = `
+      <div class="history-panel">
+        <div class="history-hd">
+          <span class="history-hd-title">⏱ Recent PNRs</span>
+          <button class="history-clear-btn" id="historyClearBtn" type="button">Clear all</button>
+        </div>
+        <ul class="history-list" role="list">
+          ${entries.map((e, i) => `
+            <li class="history-item" data-idx="${i}" role="button" tabindex="0" title="Reload this PNR">
+              <span class="history-route">${escHtml(e.route)}</span>
+              <span class="history-meta">${e.flights} flight${e.flights !== 1 ? 's' : ''}</span>
+            </li>`).join('')}
+        </ul>
+      </div>`;
+
+    byId('historyClearBtn').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      saveHistoryStore([]);
+      historyPanel.style.display = 'none';
+      showToast('History cleared');
+    });
+
+    historyPanel.querySelectorAll('.history-item').forEach((item) => {
+      const load = () => {
+        const idx = parseInt(item.getAttribute('data-idx'), 10);
+        const entry = loadHistory()[idx];
+        if (!entry || !textarea) return;
+        textarea.value = entry.pnr;
+        if (form) {
+          if (typeof form.requestSubmit === 'function') form.requestSubmit();
+          else form.submit();
+        }
+      };
+      item.addEventListener('click', load);
+      item.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') load(); });
+    });
+  }
+
+  // Save current conversion to history (only on result pages)
+  if (card && textarea) {
+    const route   = card.dataset.route   || '';
+    const flights = parseInt(card.dataset.flights || '0', 10);
+    const pnrText = textarea.value.trim();
+    if (route && pnrText) pushHistory(route, pnrText, flights);
+  }
+  renderHistoryPanel();
+
   /* ── Helpers ─────────────────────────────────────── */
   function temporaryLabel(btn, label) {
     const origHtml = btn.innerHTML;
@@ -265,11 +394,21 @@
     if (shareModeBtn) shareModeBtn.textContent = on ? 'Exit share view' : 'Share view';
   }
 
+  function showToast(msg) {
+    if (!copyToast) return;
+    copyToast.textContent = msg;
+    copyToast.classList.add('show');
+    setTimeout(() => copyToast.classList.remove('show'), 2600);
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   function applyPreset(preset) {
     const cb    = (n) => form.querySelector(`input[type="checkbox"][name="${n}"]`);
-    const rd    = (n, v) => form.querySelector(`input[type="radio"][name="${n}"][value="${v}"]`);
     const check = (n, v) => { const el = cb(n); if (el) el.checked = v; };
-    const radio = (n, v) => { const el = rd(n, v); if (el) el.checked = true; };
 
     if (preset === 'neutral') {
       check('show_agency_header', false);
@@ -277,14 +416,13 @@
       check('show_disclaimer',    false);
       return;
     }
-    // roaming (was 'branded') — enable Roaming Nepal header + footer
+    // roaming (was 'branded') — enable header + footer
     check('show_agency_header', true);
     check('show_agency_footer', true);
     check('show_disclaimer',    true);
   }
 
   function updatePresetState(active) {
-    // 'roaming' is the new name for 'branded'
     const normalized = active === 'branded' ? 'roaming' : active;
     presetBtns.forEach((btn) => {
       const isActive = Boolean(normalized && btn.getAttribute('data-preset') === normalized);
@@ -293,24 +431,12 @@
     });
   }
 
-  /* ── Pill preset button active state ──────────────── */
-  function updatePillBtnState() {
-    const hdr = form ? form.querySelector('input[name="show_agency_header"][value="1"]') : null;
-    if (!hdr) return;
-    const isBranded = hdr.checked;
-    presetBtns.forEach((btn) => {
-      const p = btn.getAttribute('data-preset');
-      btn.classList.toggle('is-active', (p === 'roaming' || p === 'branded') ? isBranded : !isBranded);
-    });
-  }
-
   /* ── PNG render via html2canvas ──────────────────── */
   async function renderCardToPng(element) {
     if (typeof window.html2canvas !== 'function') {
       throw new Error('html2canvas not loaded');
     }
-    // Temporarily disable overflow on any table scroll wrappers so html2canvas
-    // captures the full table width, not just the visible portion.
+    // Temporarily expand table scroll wrappers so full width is captured
     const scrollEls = element.querySelectorAll('.ref-table-scroll');
     const origStyles = [];
     scrollEls.forEach((el) => {
@@ -334,7 +460,6 @@
       windowHeight: document.documentElement.offsetHeight,
     });
 
-    // Restore overflow styles
     origStyles.forEach(({ el, overflow, width }) => {
       el.style.overflow = overflow;
       el.style.width    = width;

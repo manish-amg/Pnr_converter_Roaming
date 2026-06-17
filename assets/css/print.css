@@ -1,57 +1,174 @@
-@media print {
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+/* ════════════════════════════════════════════════════
+   PRINT / PDF STYLES
+   Loaded only for print (media="print") — no @media wrapper needed.
+   Goal: clean full-width itinerary, no UI chrome, table reflowed to fit.
+════════════════════════════════════════════════════ */
 
-  body { background: #fff !important; margin: 0; }
-
-  /* ── Hide all UI chrome ── */
-  .no-print, .no-share,
-  .topbar, .app-sidebar,
-  .result-bar, .parse-bar,
-  .options-strip, .options-card,
-  .input-card, .share-hint,
-  .empty-hint, .empty-state,
-  .alert, .result-actions { display: none !important; }
-
-  /* ── Layout ── */
-  .page-wrap {
-    padding: 0 !important;
-    max-width: none !important;
-    margin: 0 !important;
-  }
-
-  .app-layout, .app-layout--split {
-    display: block !important;
-    gap: 0 !important;
-    padding: 0 !important;
-  }
-
-  .app-main {
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-
-  /* ── Card ── */
-  .itin-card {
-    max-width: none !important;
-    width: 100% !important;
-    margin: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    overflow: visible !important;
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  .flight-block, .leg-head, .lo-sep, .fb-body {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* ── Keep colors ── */
-  .card-agency { -webkit-print-color-adjust: exact !important; }
-  .leg-head    { -webkit-print-color-adjust: exact !important; }
-  .lo-sep      { -webkit-print-color-adjust: exact !important; }
+/* Force background colours (logos, tinted headers, badges) */
+*, *::before, *::after {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
 }
+
+/* ── Hide all UI chrome ── */
+.topbar,
+.app-sidebar,
+.ctrl-bar,
+.ctrl2,
+.result-bar,
+.parse-bar,
+.options-strip,
+.options-card,
+.input-card,
+.share-hint,
+.empty-hint,
+.empty-state,
+.alert,
+.result-actions,
+.result-actions-inline,
+.result-collapsed-actions,
+.min-dock,
+.no-print,
+.no-share,
+.history-panel,
+.gds-detect-chip,
+.copy-toast,
+#shareModeBtn, #resetBtn,
+#collapseInputBtn, #expandInputBtn,
+#printBtn,  #printBtn2,  #printBtnDock,
+#downloadPngBtn,  #downloadPngBtn2,  #downloadPngBtnDock,
+#copyImageBtn,    #copyImageBtn2,    #copyImageBtnDock,
+#copyTextBtn,
+#pnrPlainText { display: none !important; }
+
+/* ── Clean page ── */
+html, body {
+  background: #fff !important;
+  font-size: 11pt;
+  margin: 0;
+  padding: 0;
+}
+
+.page-wrap {
+  padding: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+/* ── Single-column layout ── */
+.app-layout,
+.app-layout--split {
+  display: block !important;
+  gap: 0 !important;
+  padding: 0 !important;
+}
+
+.app-main {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* ── Itinerary card: full page width ── */
+.itin-card {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border: 1px solid #ccc !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* ── Prevent orphaned blocks ── */
+.flight-block,
+.cpt-flight,
+.ref-tr,
+.leg-section { page-break-inside: avoid; break-inside: avoid; }
+
+.card-agency,
+.card-title-row,
+.leg-head { page-break-after: avoid; break-after: avoid; }
+
+.card-footer { page-break-inside: avoid; break-inside: avoid; }
+
+/* ════════════════════════════════════════════════════
+   TABLE FORMAT — fix horizontal overflow & column widths
+════════════════════════════════════════════════════ */
+.ref-table-wrap { padding: 0 4pt !important; }
+
+.ref-table-scroll {
+  overflow: visible !important;
+  width: 100% !important;
+}
+
+.ref-table {
+  table-layout: auto !important;   /* reflow columns to fit printed page */
+  font-size: 9pt !important;
+  width: 100% !important;
+  border: 1px solid #bbb !important;
+}
+
+/* Remove rigid pixel column widths — let browser size them */
+.ref-th-logo { width: auto !important; min-width: 28pt !important; }
+.ref-th-port { width: auto !important; }
+.ref-th-num  { width: auto !important; }
+
+.ref-th {
+  font-size: 8pt !important;
+  padding: 4pt 5pt !important;
+  white-space: nowrap;
+}
+
+.ref-td {
+  padding: 4pt 5pt !important;
+  font-size: 9pt !important;
+}
+
+.ref-logo-img    { height: 18pt !important; max-width: 32pt !important; }
+.ref-port-code   { font-size: 10pt !important; }
+.ref-port-name   { font-size: 8pt !important; }
+.ref-td-time     { font-size: 10pt !important; }
+.ref-leg-strip   { border-radius: 0 !important; }
+
+/* ════════════════════════════════════════════════════
+   DETAILED / 3-LINE FORMAT
+════════════════════════════════════════════════════ */
+.itin-title  { padding: 10pt 14pt 2pt !important; font-size: 14pt !important; }
+.leg-head    { margin: 5pt 12pt 8pt !important; }
+.fb-body     { padding: 0 12pt 6pt !important; }
+.fb-headline { padding: 3pt 12pt !important; padding-left: 84pt !important; }
+.fb-logo-col { width: 70pt !important; }
+.lo-sep      { margin: 4pt 12pt 8pt !important; padding-left: 70pt !important; }
+.itin-co2    { margin: 5pt 12pt 10pt !important; }
+
+/* ════════════════════════════════════════════════════
+   COMPACT FORMAT
+════════════════════════════════════════════════════ */
+.cpt-flight   { padding: 8pt 14pt !important; }
+.cpt-code-big { font-size: 20pt !important; }
+.cpt-time     { font-size: 11pt !important; }
+
+/* ════════════════════════════════════════════════════
+   PASSENGER ROW
+════════════════════════════════════════════════════ */
+.card-pax  { padding: 4pt 10pt !important; }
+.pax-list  { font-size: 10pt !important; }
+
+/* ════════════════════════════════════════════════════
+   AGENCY HEADER / FOOTER
+════════════════════════════════════════════════════ */
+.card-agency   { padding: 6pt 14pt !important; border-bottom: 1px solid #ccc !important; }
+.agency-logo   { height: 26pt !important; }
+.footer-compact { flex-wrap: nowrap !important; }
+.fc-branch     { min-width: 70pt !important; }
+.footer-note   { padding: 4pt 10pt 5pt !important; }
+
+/* ════════════════════════════════════════════════════
+   DISCLAIMER / MUST READ
+════════════════════════════════════════════════════ */
+.disclaimer      { font-size: 8pt !important; padding: 4pt 10pt !important; }
+.card-must-read  { margin: 0 10pt 0 !important; padding: 6pt 10pt !important; }
+.must-read-list  { font-size: 9pt !important; }
