@@ -83,9 +83,9 @@ abstract class BaseParser implements ParserInterface
 
         $letter = strtoupper($class[0]);
         return match (true) {
-            in_array($letter, ['F', 'A'], true) => 'First',
+            in_array($letter, ['F', 'A', 'P'], true) => 'First',
             in_array($letter, ['J', 'C', 'D', 'I', 'Z'], true) => 'Business',
-            in_array($letter, ['W', 'R', 'E', 'T'], true) => 'Premium Economy',
+            $letter === 'W' => 'Premium Economy',
             default => 'Economy',
         };
     }
@@ -124,7 +124,12 @@ abstract class BaseParser implements ParserInterface
                 continue;
             }
 
-            if (preg_match_all('/(?:^|(?<=\s))(?:NM\d+|\d+\.\d*|\d+)\s*([A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*\/[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*(?:\s+(?:MR|MRS|MS|MSTR|MISS|CHD|INF))?)/i', $line, $matches) > 0) {
+            // Skip GDS remark/OSI lines: "299 OD/..." — 3-digit element numbers are not passenger entries
+            if (preg_match('/^\s*\d{3,}\s+[A-Z0-9]{2}[\/\s]/i', $line) === 1) {
+                continue;
+            }
+            // Passenger prefix is 1–2 digits max; surname must be ≥3 letters (2-letter codes are airlines)
+            if (preg_match_all('/(?:^|(?<=\s))(?:NM\d+|\d{1,2}\.\d*|\d{1,2})\s*([A-Z][A-Z-]{2,}(?: [A-Z][A-Z-]*)*\/[A-Z][A-Z-]*(?: [A-Z][A-Z-]*)*(?:\s+(?:MR|MRS|MS|MSTR|MISS|CHD|INF))?)/i', $line, $matches) > 0) {
                 foreach ($matches[1] as $name) {
                     $passengers[] = new Passenger($this->formatPassengerName($name));
                 }
