@@ -369,7 +369,7 @@ textarea::placeholder { color: #3d5166; white-space: pre-wrap; }
 }
 .cb-opts[hidden] { display: none; }
 
-.opt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; }
+.opt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
 
 .opt {
   display: flex; align-items: center; justify-content: space-between;

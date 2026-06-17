@@ -53,7 +53,7 @@ $featureDefaults = [
     'show_agency_footer'     => false,
     'show_disclaimer'        => false,
     'show_must_read'         => false,
-    'show_co2'               => true,
+    'show_co2'               => false,
 ];
 
 $show             = static fn (string $key): bool
@@ -429,7 +429,7 @@ $renderable = $result !== null && $result->isRenderable();
                     <textarea
                         id="pnr_text"
                         name="pnr_text"
-                        rows="<?= $renderable ? '10' : '14' ?>"
+                        rows="<?= $renderable ? '8' : '14' ?>"
                         spellcheck="false"
                         placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
 
@@ -525,7 +525,6 @@ Example:
                             <div class="fmt-pills" role="radiogroup">
                                 <?php foreach ([
                                     'table'       => 'Table',
-                                    'three_lines' => '3 Lines',
                                     'two_lines'   => '2 Lines',
                                     'compact'     => 'Compact',
                                     'detailed'    => 'Graphic',
@@ -769,7 +768,7 @@ Example:
                     <table class="ref-table">
                         <thead>
                             <tr>
-                                <th class="ref-th ref-th-logo"></th>
+                                <th class="ref-th ref-th-logo">Carrier</th>
                                 <th class="ref-th ref-th-date">Date</th>
                                 <th class="ref-th ref-th-airline">Airline</th>
                                 <th class="ref-th ref-th-num">Flight<br>No</th>
