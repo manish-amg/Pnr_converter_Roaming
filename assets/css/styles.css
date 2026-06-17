@@ -309,91 +309,111 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
 }
 
 /* ════════════════════════════════════════════════════
-   COMPACT CONTROL BAR — single sleek panel
+   CONTROL BAR — slim collapsible command strip
 ════════════════════════════════════════════════════ */
 .ctrl-bar {
   background: var(--surface);
-  border: 1.5px solid var(--brand-border);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
-  padding: 10px 14px 12px;
   margin-bottom: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  overflow: hidden;
 }
 
-/* Row 1: Format + Agency */
+/* ── Row 1: always-visible command strip ── */
 .cb-row1 {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  padding: 7px 10px;
 }
 .cb-sect {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
 .cb-sect-lbl {
-  font-size: 9.5px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--muted); white-space: nowrap;
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); white-space: nowrap;
   flex-shrink: 0;
 }
-.cb-div {
-  width: 1px; height: 22px; background: var(--line); flex-shrink: 0;
-}
-.cb-presets { display: flex; gap: 5px; }
+.cb-div { width: 1px; height: 18px; background: var(--line); flex-shrink: 0; }
+.cb-presets { display: flex; gap: 4px; }
 
-/* Agency/theme preset pills */
+/* ── Preset pills (Agency) ── */
 .tpill {
-  border: 1.5px solid var(--line); background: #fff; color: var(--ink-mid);
-  font-size: 11.5px; font-weight: 700; padding: 5px 13px; border-radius: var(--radius-pill);
-  cursor: pointer; transition: all .12s;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-mid);
+  font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: var(--radius-pill);
+  cursor: pointer; transition: all .12s; line-height: 1.4;
 }
 .tpill:hover { border-color: var(--brand); color: var(--brand); }
 .tpill.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
 
-/* Format pills */
-.fmt-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+/* ── Format pills ── */
+.fmt-pills { display: flex; flex-wrap: wrap; gap: 4px; }
 .fpill { cursor: pointer; }
 .fpill input { position: absolute; opacity: 0; pointer-events: none; }
 .fpill span {
   display: inline-flex; align-items: center;
-  border: 1.5px solid var(--line); background: #fff; color: var(--ink-mid);
-  font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-pill);
-  transition: all .12s;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-mid);
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-pill);
+  transition: all .12s; line-height: 1.4;
 }
 .fpill:hover span { border-color: var(--brand); color: var(--brand); }
 .fpill input:checked + span,
-.fpill.is-active span { background: #7c3aed; border-color: #7c3aed; color: #fff; box-shadow: 0 1px 6px rgba(124,58,237,.30); }
+.fpill.is-active span { background: #7c3aed; border-color: #7c3aed; color: #fff; box-shadow: 0 1px 6px rgba(124,58,237,.25); }
 
-/* Row 2: Display options */
-.cb-opts {
-  border-top: 1px solid var(--line); padding-top: 10px;
+/* ── Options toggle button (right side of row1) ── */
+.cb-opts-toggle {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: auto; flex-shrink: 0;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  border: 1px solid var(--line); background: #fff; color: var(--muted);
+  font-size: 10.5px; font-weight: 700; cursor: pointer;
+  transition: all .12s;
 }
-.opt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 7px; }
+.cb-opts-toggle svg { width: 12px; height: 12px; flex-shrink: 0; }
+.cb-opts-toggle:hover { border-color: var(--brand-border); color: var(--brand); background: var(--brand-soft); }
+.cb-opts-toggle[aria-expanded="true"] { background: var(--brand-soft); border-color: var(--brand-border); color: var(--brand); }
+.cb-opts-toggle-lbl { white-space: nowrap; }
+
+/* ── Options drawer (collapsible) ── */
+.cb-opts {
+  border-top: 1px solid var(--line);
+  padding: 8px 10px 10px;
+  background: #fafbfc;
+}
+.cb-opts[hidden] { display: none; }
+
+/* ── Compact option toggles (horizontal rows, not tall cards) ── */
+.opt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 4px;
+}
 .opt {
-  display: flex; flex-direction: column; justify-content: space-between; gap: 6px;
-  min-height: 56px; padding: 7px 9px;
-  border: 1px solid var(--line); border-radius: 9px; background: #fbfcfe;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 6px; min-height: 30px; padding: 5px 8px;
+  border: 1px solid var(--line); border-radius: 7px; background: #fff;
   cursor: pointer; transition: border-color .12s, background .12s;
 }
-.opt:hover { border-color: var(--brand-border); }
-.opt:has(.opt-sw-input:checked) { background: var(--brand-soft); border-color: var(--brand-border); }
-.opt-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; }
-.opt-lbl { font-size: 10.5px; font-weight: 700; color: var(--ink); line-height: 1.2; }
-.opt-sw-wrap { position: relative; display: inline-flex; align-items: center; }
+.opt:hover { border-color: var(--brand-border); background: var(--brand-soft); }
+.opt:has(.opt-sw-input:checked) { background: #eff6ff; border-color: #bfdbfe; }
+.opt-top { display: contents; }          /* flatten so label+switch share the row */
+.opt-lbl { font-size: 10.5px; font-weight: 600; color: var(--ink-mid); line-height: 1.2; flex: 1; }
+.opt-sw-wrap { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
 .opt-sw-input { position: absolute; opacity: 0; width: 0; height: 0; }
 .opt-sw {
-  width: 34px; height: 18px; border-radius: 11px; background: #cdd6df;
-  position: relative; transition: background .18s; flex-shrink: 0;
+  width: 30px; height: 16px; border-radius: 10px; background: #cbd5e1;
+  position: relative; transition: background .15s; flex-shrink: 0;
 }
 .opt-sw::after {
-  content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
-  border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .18s;
+  content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.22); transition: transform .15s;
 }
 .opt-sw-input:checked ~ .opt-sw { background: var(--brand); }
-.opt-sw-input:checked ~ .opt-sw::after { transform: translateX(16px); }
+.opt-sw-input:checked ~ .opt-sw::after { transform: translateX(14px); }
 
-/* Distance mini pill selector inside a card */
-.opt-multi { cursor: default; }
-.opt-mini { display: inline-flex; gap: 2px; flex-wrap: wrap; }
+/* ── Distance mini pills (inside the Distance opt) ── */
+.opt-multi { cursor: default; flex-direction: column; min-height: auto; padding: 5px 8px; align-items: flex-start; gap: 3px; }
+.opt-multi .opt-lbl { font-size: 10px; }
+.opt-mini { display: inline-flex; gap: 2px; }
 .opt-mini-pill { cursor: pointer; }
 .opt-mini-pill input { position: absolute; opacity: 0; pointer-events: none; }
 .opt-mini-pill span {
@@ -401,14 +421,30 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
   border: 1px solid var(--line); background: #fff; color: var(--muted);
   font-size: 9.5px; font-weight: 700; transition: all .12s;
 }
-.opt-mini-pill input:checked + span,
-.opt-mini-pill.is-active span { background: var(--brand); border-color: var(--brand); color: #fff; }
+.opt-mini-pill input:checked + span { background: var(--brand); border-color: var(--brand); color: #fff; }
 
 @media (max-width: 600px) {
   .cb-row1 { flex-direction: column; align-items: flex-start; }
+  .cb-opts-toggle { margin-left: 0; }
   .cb-div { display: none; }
-  .opt-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+  .opt-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 }
+
+/* ── Sidebar export: 2×2 grid for compact layout ── */
+.sidebar-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+.sidebar-btn {
+  width: 100%; justify-content: center;
+  min-height: 38px; font-size: 11.5px; font-weight: 700;
+  border-radius: 9px; gap: 5px;
+  padding: 7px 8px;
+  flex-direction: column;
+}
+.sidebar-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
 /* ════════════════════════════════════════════════════
    CONTROL PANEL — dark slick options (legacy, unused)
@@ -1317,9 +1353,14 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
   line-height: 1.3;
   vertical-align: bottom;
 }
-.ref-th-logo { width: 48px; }
-.ref-th-port { width: 110px; }
-.ref-th-num  { width: 64px; white-space: nowrap; }
+/* Explicit column widths — total must fit ~860px card width */
+.ref-th-logo    { width: 44px; }
+.ref-th-date    { width: 78px; }
+.ref-th-airline { width: 120px; }        /* new: explicit width for long airline names */
+.ref-th-time    { width: 58px; }         /* new: depart / arrive time columns */
+.ref-th-port    { width: 108px; }
+.ref-th-num     { width: 62px; white-space: nowrap; }
+.ref-th-opby    { width: 100px; }        /* new: operated-by column */
 
 .ref-tr { transition: background .08s; }
 .ref-tr:hover td { background: #f0f9ff; }
@@ -1359,6 +1400,25 @@ textarea::placeholder { color: #475569; white-space: pre-wrap; }
 .ref-td-time {
   font-size: 13px; font-weight: 800; color: #0f172a;
   white-space: nowrap;
+}
+/* Airline cell — truncate long names, show full via tooltip (title attr) */
+.ref-td-airline {
+  vertical-align: middle;
+  overflow: hidden;
+}
+.ref-airline-name {
+  display: block;
+  font-size: 11.5px; font-weight: 600; color: #1f2937;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+/* Operated-by cell — same truncation treatment */
+.ref-td-opby { overflow: hidden; vertical-align: middle; }
+.ref-opby-name {
+  display: block;
+  font-size: 11px; color: #4b5563; font-style: italic;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
 }
 .ref-td-port {
   font-size: 11.5px; color: #374151; line-height: 1.35;

@@ -521,7 +521,7 @@ Example:
                 <!-- ── Compact control bar ─────────────────────────── -->
                 <div class="ctrl-bar settings-panel no-share">
 
-                    <!-- Row 1: Format + Agency presets -->
+                    <!-- Row 1: Format + Agency presets + Options toggle -->
                     <div class="cb-row1">
                         <div class="cb-sect">
                             <span class="cb-sect-lbl">Format</span>
@@ -548,10 +548,14 @@ Example:
                                 <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding — clean neutral look">Neutral</button>
                             </div>
                         </div>
+                        <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="<?= $renderable ? 'false' : 'true' ?>" aria-controls="cbOptsDrw">
+                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="4" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>
+                            <span class="cb-opts-toggle-lbl">Options</span>
+                        </button>
                     </div>
 
-                    <!-- Row 2: Display options (compact grid) -->
-                    <div class="cb-opts">
+                    <!-- Display options (compact grid, collapsible) -->
+                    <div class="cb-opts" id="cbOptsDrw"<?= $renderable ? ' hidden' : '' ?>>
                         <div class="opt-grid">
                             <!-- Distance (special: pill selector) -->
                             <div class="opt opt-multi">
@@ -772,13 +776,13 @@ Example:
                         <thead>
                             <tr>
                                 <th class="ref-th ref-th-logo"></th>
-                                <th class="ref-th">Date</th>
-                                <th class="ref-th">Airline</th>
-                                <th class="ref-th">Flight<br>No</th>
-                                <?php if ($showOpBy): ?><th class="ref-th">Operated<br>By</th><?php endif; ?>
-                                <th class="ref-th">Depart</th>
+                                <th class="ref-th ref-th-date">Date</th>
+                                <th class="ref-th ref-th-airline">Airline</th>
+                                <th class="ref-th ref-th-num">Flight<br>No</th>
+                                <?php if ($showOpBy): ?><th class="ref-th ref-th-opby">Operated<br>By</th><?php endif; ?>
+                                <th class="ref-th ref-th-time">Depart</th>
                                 <th class="ref-th ref-th-port">From</th>
-                                <th class="ref-th">Arrive</th>
+                                <th class="ref-th ref-th-time">Arrive</th>
                                 <th class="ref-th ref-th-port">At</th>
                                 <th class="ref-th ref-th-num">Duration</th>
                                 <?php if ($show('show_transit_time')): ?><th class="ref-th ref-th-num">Transit</th><?php endif; ?>
@@ -818,12 +822,8 @@ Example:
                                     <?= Html::e($datePretty($seg->departureDate)) ?>
                                 </td>
                                 <!-- Airline -->
-                                <td class="ref-td">
-                                    <?php if ($show('show_airline_name') && $seg->airlineName): ?>
-                                        <?= Html::e($seg->airlineName) ?>
-                                    <?php else: ?>
-                                        <?= Html::e($seg->airlineCode) ?>
-                                    <?php endif; ?>
+                                <td class="ref-td ref-td-airline" title="<?= Html::e($seg->airlineName ?? $seg->airlineCode) ?>">
+                                    <span class="ref-airline-name"><?php if ($show('show_airline_name') && $seg->airlineName): ?><?= Html::e($seg->airlineName) ?><?php else: ?><?= Html::e($seg->airlineCode) ?><?php endif; ?></span>
                                     <?php if ($showCabin && $seg->cabin): ?>
                                         <span class="ref-sub"><?= Html::e($seg->cabin) ?></span>
                                     <?php elseif ($showClass && $seg->bookingClass): ?>
@@ -839,8 +839,8 @@ Example:
                                 </td>
                                 <!-- Operated By (optional) -->
                                 <?php if ($showOpBy): ?>
-                                <td class="ref-td">
-                                    <?= Html::e($seg->operatedBy ?: ($seg->airlineName ?: $seg->airlineCode)) ?>
+                                <td class="ref-td ref-td-opby" title="<?= Html::e($seg->operatedBy ?: ($seg->airlineName ?: $seg->airlineCode)) ?>">
+                                    <span class="ref-opby-name"><?= Html::e($seg->operatedBy ?: ($seg->airlineName ?: $seg->airlineCode)) ?></span>
                                 </td>
                                 <?php endif; ?>
                                 <!-- Depart time -->

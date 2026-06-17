@@ -108,6 +108,30 @@
     expandInputBtn.addEventListener('click', () => setSidebarCollapsed(false));
   }
 
+  /* ── Options drawer toggle ──────────────────────── */
+  const optsToggle = byId('cbOptsToggle');
+  const optsDrw    = byId('cbOptsDrw');
+  const OPTS_OPEN_KEY = 'pnrc-opts-open';
+
+  function setOptsOpen(open) {
+    if (!optsDrw || !optsToggle) return;
+    optsDrw.hidden = !open;
+    optsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    try { localStorage.setItem(OPTS_OPEN_KEY, open ? '1' : '0'); } catch {}
+  }
+
+  if (optsToggle && optsDrw) {
+    // Restore state: if user previously opened it, keep open; never override when no result
+    const savedOpen = (() => { try { return localStorage.getItem(OPTS_OPEN_KEY); } catch { return null; } })();
+    // Only restore saved state on result pages (PHP hides drawer when result exists)
+    if (card && savedOpen === '1') setOptsOpen(true);
+    // On blank page, drawer starts open (PHP doesn't add hidden)
+
+    optsToggle.addEventListener('click', () => {
+      setOptsOpen(optsDrw.hidden);
+    });
+  }
+
   /* ── Dynamic tabs ──────────────────────────────── */
   const TAB_KEY   = 'pnrc-active-tab';
   const tabBtns   = document.querySelectorAll('.ctrl-tab, .opts-tab');

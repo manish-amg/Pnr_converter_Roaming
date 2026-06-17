@@ -162,9 +162,32 @@ html, body {
 ════════════════════════════════════════════════════ */
 .card-agency   { padding: 6pt 14pt !important; border-bottom: 1px solid #ccc !important; }
 .agency-logo   { height: 26pt !important; }
-.footer-compact { flex-wrap: nowrap !important; }
-.fc-branch     { min-width: 70pt !important; }
-.footer-note   { padding: 4pt 10pt 5pt !important; }
+
+/* Footer: allow wrapping, break long text, no overflow */
+.card-footer   { overflow: visible !important; }
+.footer-compact {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+}
+.fc-main, .fc-branch {
+  min-width: 0 !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}
+.fc-branch  { flex: 1 1 90pt !important; min-width: 80pt !important; }
+.fc-main    { flex: 2 1 140pt !important; }
+.fc-lines span {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+.fc-branch span {
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+.footer-note   { padding: 4pt 10pt 5pt !important; white-space: normal !important; }
 
 /* ════════════════════════════════════════════════════
    DISCLAIMER / MUST READ
