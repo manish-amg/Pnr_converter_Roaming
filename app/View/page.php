@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+// phpcs:disable Generic.Files.LineLength
 
 use RoamingNepal\PnrConverter\Parser\ParseResult;
 use RoamingNepal\PnrConverter\Parser\Segment;
@@ -380,7 +381,7 @@ $renderable = $result !== null && $result->isRenderable();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Free PNR converter by Roaming Nepal — turn raw GDS flight itineraries into beautiful, branded, customer-ready formats. Supports Amadeus, Galileo, Sabre, Worldspan & more. No sign-up needed.">
+    <meta name="description" content="Free PNR converter by Roaming Nepal — GDS flight itineraries into beautiful, branded, customer-ready formats.">
     <meta name="keywords" content="PNR converter, GDS itinerary converter, Amadeus, Galileo, Sabre, flight itinerary, travel agency tool">
     <title>PNR Converter — <?= Html::e($agencyName) ?> | Free GDS Flight Itinerary Tool</title>
     <link rel="stylesheet" href="<?= Html::e($asset('assets/css/styles.css')) ?>">
@@ -390,21 +391,172 @@ $renderable = $result !== null && $result->isRenderable();
 
 <div class="share-hint no-print" aria-hidden="true">Press Esc to exit share view</div>
 
-<header class="topbar no-share">
-    <a class="brand-link" href="/">
-        <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?>" class="brand-logo">
-    </a>
-    <div class="topbar-right">
-        <span class="privacy-tag">No PNR storage · v<?= Html::e($appVersion) ?></span>
-        <?php if ($renderable): ?>
-            <button class="btn btn-outline-sm" type="button" id="shareModeBtn">Share view</button>
-        <?php endif; ?>
-    </div>
-</header>
+<div class="rn-shell">
 
-<main class="page-wrap">
-    <form method="post" id="converterForm" autocomplete="off">
-        <div class="app-layout<?= $renderable ? ' app-layout--split' : '' ?>" id="appLayout">
+<!-- ══ NAV RAIL ══════════════════════════════════════════════════ -->
+<nav class="rn-rail no-print no-share" aria-label="Site navigation">
+    <div class="rail-logo">
+        <a href="/">
+            <?php
+            $logoFile = $projectRoot . '/' . ltrim($logoPath, '/');
+            if (is_file($logoFile)): ?>
+                <img src="<?= Html::e($asset($logoPath)) ?>" alt="<?= Html::e($agencyName) ?>">
+            <?php else: ?>
+                <span class="rail-logo-text">RN</span>
+            <?php endif; ?>
+        </a>
+    </div>
+    <div class="rail-nav">
+        <a class="rail-item is-active" href="/" title="PNR Converter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="rail-item-label">Convert</span>
+        </a>
+        <span class="rail-item is-disabled" title="Visa Itinerary — Phase 2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span class="rail-item-label">Visa Doc</span>
+        </span>
+        <span class="rail-item is-disabled" title="Account — Phase 2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span class="rail-item-label">Account</span>
+        </span>
+        <span class="rail-item is-disabled" title="Admin — Phase 2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span class="rail-item-label">Admin</span>
+        </span>
+    </div>
+    <div class="rail-footer">
+        <span class="rail-version">v<?= Html::e($appVersion) ?></span>
+        <div class="rail-avatar" title="No sign-in required · Free tool">RN</div>
+    </div>
+</nav>
+
+<!-- ══ WORKSPACE ══════════════════════════════════════════════════ -->
+<div class="rn-workspace">
+<main class="rn-page">
+<?php
+$optCard = static function (string $key, string $label) use ($show): string {
+    ob_start(); ?>
+    <label class="opt">
+        <span class="opt-top"><span class="opt-lbl"><?= Html::e($label) ?></span></span>
+        <span class="opt-sw-wrap">
+            <input type="hidden" name="<?= Html::e($key) ?>" value="0">
+            <input type="checkbox" class="opt-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
+            <span class="opt-sw" aria-hidden="true"></span>
+        </span>
+    </label>
+    <?php return (string) ob_get_clean();
+};
+?>
+
+<form method="post" id="converterForm" autocomplete="off">
+
+<!-- ── CTRL BAR ──────────────────────────────────────────────── -->
+<div class="ctrl-bar settings-panel no-share no-print">
+    <button type="button" class="cb-hamburger" id="sidebarToggleBtn" title="Toggle sidebar" aria-label="Toggle input sidebar">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><line x1="2" y1="5" x2="16" y2="5"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="13" x2="16" y2="13"/></svg>
+    </button>
+    <span class="cb-div"></span>
+    <div class="cb-sect">
+        <span class="cb-sect-lbl">Format</span>
+        <div class="fmt-pills" role="radiogroup">
+            <?php foreach ([
+                'table'     => 'Table',
+                'two_lines' => '2 Lines',
+                'compact'   => 'Compact',
+                'detailed'  => 'Graphic',
+            ] as $val => $lbl): ?>
+                <label class="fpill<?= $resultFormat === $val ? ' is-active' : '' ?>">
+                    <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
+                    <span><?= Html::e($lbl) ?></span>
+                </label>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <span class="cb-div"></span>
+    <div class="cb-sect">
+        <span class="cb-sect-lbl">Agency</span>
+        <div class="cb-presets">
+            <button type="button" class="tpill" data-preset="roaming" title="Enable Roaming Nepal header &amp; footer">Roaming Nepal</button>
+            <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding">Neutral</button>
+        </div>
+    </div>
+    <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="false" aria-controls="cbOptsDrw">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="4" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.3" fill="currentColor" stroke="none"/></svg>
+        <span class="cb-opts-toggle-lbl">Options</span>
+    </button>
+</div>
+
+<!-- ── OPTIONS POPOVER ────────────────────────────────────────── -->
+<div class="opts-popover settings-panel" id="cbOptsDrw" hidden>
+    <div class="opts-hd">
+        <span class="opts-hd-title">Display Options</span>
+        <button type="button" class="opts-close-btn" id="cbOptsClose" aria-label="Close options">&#x2715;</button>
+    </div>
+    <div class="opts-cols-hd">
+        <span class="opts-col-hd">Visual</span>
+        <span class="opts-col-hd">Flight Details</span>
+        <span class="opts-col-hd">Document</span>
+    </div>
+    <div class="opt-grid">
+        <!-- Distance (Visual col 1) -->
+        <label class="opt opt-multi">
+            <span class="opt-top"><span class="opt-lbl">Distance</span></span>
+            <span class="opt-mini" role="radiogroup">
+                <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Mi'] as $dv => $dl): ?>
+                    <label class="opt-mini-pill<?= ($features['distance_unit'] ?? 'off') === $dv ? ' is-active' : '' ?>">
+                        <input type="radio" name="distance_unit" value="<?= Html::e($dv) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $dv) ?>>
+                        <span><?= Html::e($dl) ?></span>
+                    </label>
+                <?php endforeach; ?>
+            </span>
+        </label>
+        <!-- Flight Details col 1 -->
+        <?= $optCard('show_cabin',         'Cabin') ?>
+        <!-- Document col 1 -->
+        <?= $optCard('show_ticket_numbers','Ticket No') ?>
+
+        <!-- Visual col 2 -->
+        <?= $optCard('show_airline_logo',  'Logos') ?>
+        <!-- Flight Details col 2 -->
+        <?= $optCard('show_booking_class', 'Booking Class') ?>
+        <!-- Document col 2 -->
+        <?= $optCard('show_seat_numbers',  'Seat No') ?>
+
+        <!-- Visual col 3 -->
+        <?= $optCard('show_airline_name',  'Airline Name') ?>
+        <!-- Flight Details col 3 -->
+        <?= $optCard('show_operated_by',   'Operated By') ?>
+        <!-- Document col 3 -->
+        <?= $optCard('show_agency_header', 'Agency Header') ?>
+
+        <!-- Visual col 1 -->
+        <?= $optCard('show_flight_duration','Duration') ?>
+        <!-- Flight Details col 1 -->
+        <?= $optCard('show_terminal',      'Terminal') ?>
+        <!-- Document col 1 -->
+        <?= $optCard('show_agency_footer', 'Footer') ?>
+
+        <!-- Visual col 2 -->
+        <?= $optCard('show_transit_time',  'Layover') ?>
+        <!-- Flight Details col 2 -->
+        <?= $optCard('show_aircraft',      'Aircraft') ?>
+        <!-- Document col 2 -->
+        <?= $optCard('show_disclaimer',    'Disclaimer') ?>
+
+        <!-- Visual col 3 -->
+        <?= $optCard('show_co2',           'CO&#8322; Estimate') ?>
+        <!-- Flight Details col 3 -->
+        <?= $optCard('show_booking_reference','Booking Ref') ?>
+        <!-- Document col 3 -->
+        <?= $optCard('show_must_read',     'Must Read') ?>
+
+        <!-- Visual col 1 -->
+        <?= $optCard('use_12_hour_clock',  '12hr Clock') ?>
+    </div>
+</div>
+
+<!-- ── APP LAYOUT ──────────────────────────────────────────────── -->
+<div class="app-layout" id="appLayout">
 
             <!-- ══════════════════════════════════════
                  SIDEBAR — Input + Export
@@ -413,12 +565,17 @@ $renderable = $result !== null && $result->isRenderable();
 
                 <div class="sidebar-hd">
                     <span class="sidebar-hd-title">
-                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 2h14v14H2z"/><path d="M2 7h14M7 7v9"/></svg>
-                        PNR Input
+                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 2l6 3.5V13L9 16.5 3 13V5.5L9 2z"/><path d="M9 2v14.5M3 5.5l6 4 6-4"/></svg>
+                        PNR Converter
                     </span>
-                    <button type="button" class="sidebar-collapse-btn" id="collapseInputBtn" title="Minimize — show only the itinerary">
-                        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/><path d="M12.5 7.5L10.5 9l2 1.5" stroke-width="1.5"/></svg>
-                    </button>
+                    <div class="sidebar-hd-actions">
+                        <button type="button" class="sidebar-icon-btn" title="Conversion history" aria-label="History">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="9" r="7"/><polyline points="9 5 9 9 12 11"/></svg>
+                        </button>
+                        <button type="button" class="sidebar-icon-btn sidebar-collapse-btn" id="collapseInputBtn" title="Collapse sidebar">
+                            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><line x1="4" y1="9" x2="14" y2="9"/><polyline points="8 5 4 9 8 13"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- PNR History — JS-rendered, hidden until entries exist -->
@@ -480,115 +637,10 @@ Example:
 
             </div><!-- /app-sidebar -->
 
-            <!-- Floating dock — visible only when minimized (clean screenshot view) -->
-            <div class="min-dock no-print no-share" id="minDock" aria-hidden="true">
-                <button type="button" class="min-dock-btn min-dock-restore" id="expandInputBtn" title="Show input &amp; options">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3" width="14" height="12" rx="2"/><line x1="7" y1="3" x2="7" y2="15"/><path d="M10.5 7.5L12.5 9l-2 1.5" stroke-width="1.5"/></svg>
-                    <span>Show panels</span>
-                </button>
-                <span class="min-dock-sep"></span>
-                <button type="button" class="min-dock-btn" id="copyImageBtnDock" title="Copy image to clipboard" aria-label="Copy image">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1.3" fill="currentColor" stroke="none"/><path d="M2 12l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
-                </button>
-                <button type="button" class="min-dock-btn" id="downloadPngBtnDock" title="Save as PNG" aria-label="Save PNG">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2.5v8M5.5 7L9 10.5 12.5 7M3.5 13v1.5a1 1 0 001 1h9a1 1 0 001-1V13"/></svg>
-                </button>
-                <button type="button" class="min-dock-btn" id="printBtnDock" title="Print or save PDF" aria-label="Print">
-                    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V2.5h8V6M5 12.5H3.5a1 1 0 01-1-1V8a1 1 0 011-1h11a1 1 0 011 1v3.5a1 1 0 01-1 1H13M5 10h8v5.5H5V10z"/></svg>
-                </button>
-            </div>
-
             <!-- ══════════════════════════════════════
-                 MAIN — Options strip + Result
+                 MAIN — Result area
             ══════════════════════════════════════ -->
             <div class="app-main">
-
-                <!-- ── Format · Agency · Options strip ── -->
-                <?php
-                $optCard = static function (string $key, string $label) use ($show): string {
-                    ob_start(); ?>
-                    <label class="opt">
-                        <span class="opt-top"><span class="opt-lbl"><?= Html::e($label) ?></span></span>
-                        <span class="opt-sw-wrap">
-                            <input type="hidden" name="<?= Html::e($key) ?>" value="0">
-                            <input type="checkbox" class="opt-sw-input" name="<?= Html::e($key) ?>" value="1"<?= Html::checked($show($key)) ?>>
-                            <span class="opt-sw" aria-hidden="true"></span>
-                        </span>
-                    </label>
-                    <?php return (string) ob_get_clean();
-                };
-                ?>
-                <div class="ctrl-bar settings-panel no-share no-print">
-                    <div class="cb-row1">
-                        <div class="cb-sect">
-                            <span class="cb-sect-lbl">Format</span>
-                            <div class="fmt-pills" role="radiogroup">
-                                <?php foreach ([
-                                    'table'       => 'Table',
-                                    'two_lines'   => '2 Lines',
-                                    'compact'     => 'Compact',
-                                    'detailed'    => 'Graphic',
-                                ] as $val => $lbl): ?>
-                                    <label class="fpill<?= $resultFormat === $val ? ' is-active' : '' ?>">
-                                        <input type="radio" name="result_format" value="<?= Html::e($val) ?>"<?= Html::checked($resultFormat === $val) ?>>
-                                        <span><?= Html::e($lbl) ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <span class="cb-div"></span>
-                        <div class="cb-sect">
-                            <span class="cb-sect-lbl">Agency</span>
-                            <div class="cb-presets">
-                                <button type="button" class="tpill is-active" data-preset="roaming" title="Enable Roaming Nepal header &amp; footer">Roaming Nepal</button>
-                                <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding — clean neutral look">Neutral</button>
-                            </div>
-                        </div>
-                        <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="<?= $renderable ? 'false' : 'true' ?>" aria-controls="cbOptsDrw">
-                            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="7" cy="4" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="7" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>
-                            <span class="cb-opts-toggle-lbl">Options</span>
-                        </button>
-                    </div>
-                    <div class="cb-opts" id="cbOptsDrw"<?= $renderable ? ' hidden' : '' ?>>
-                        <div class="opt-grid">
-                            <div class="opt opt-multi">
-                                <span class="opt-top"><span class="opt-lbl">Distance</span></span>
-                                <span class="opt-mini" role="radiogroup">
-                                    <?php foreach (['off' => 'Off', 'km' => 'KM', 'miles' => 'Mi'] as $dv => $dl): ?>
-                                        <label class="opt-mini-pill<?= ($features['distance_unit'] ?? 'off') === $dv ? ' is-active' : '' ?>">
-                                            <input type="radio" name="distance_unit" value="<?= Html::e($dv) ?>"<?= Html::checked(($features['distance_unit'] ?? 'off') === $dv) ?>>
-                                            <span><?= Html::e($dl) ?></span>
-                                        </label>
-                                    <?php endforeach; ?>
-                                </span>
-                            </div>
-                            <?php
-                            foreach ([
-                                'show_airline_logo'      => 'Logos',
-                                'show_airline_name'      => 'Airline Name',
-                                'show_flight_duration'   => 'Duration',
-                                'show_transit_time'      => 'Layover',
-                                'show_co2'               => 'CO₂ Estimate',
-                                'use_12_hour_clock'      => '12hr Clock',
-                                'show_cabin'             => 'Cabin',
-                                'show_booking_class'     => 'Class',
-                                'show_operated_by'       => 'Operated By',
-                                'show_terminal'          => 'Terminal',
-                                'show_aircraft'          => 'Aircraft',
-                                'show_booking_reference' => 'Booking Ref',
-                                'show_ticket_numbers'    => 'Ticket No',
-                                'show_seat_numbers'      => 'Seat No',
-                                'show_agency_header'     => 'Agency Header',
-                                'show_agency_footer'     => 'Footer',
-                                'show_disclaimer'        => 'Disclaimer',
-                                'show_must_read'         => 'Must Read',
-                            ] as $k => $lbl) {
-                                echo $optCard($k, $lbl);
-                            }
-                            ?>
-                        </div>
-                    </div>
-                </div><!-- /ctrl-bar -->
 
                 <!-- Result action bar -->
                 <?php if ($result !== null): ?>
@@ -602,7 +654,6 @@ Example:
                         <?php endif; ?>
                     </div>
                     <?php if ($renderable): ?>
-                        <!-- Collapsed-mode export actions (only visible when sidebar is hidden) -->
                         <div class="result-collapsed-actions" id="collapsedExportBtns">
                             <button type="button" class="btn btn-sm btn-export-sm" id="copyImageBtn2">
                                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="14" height="14" rx="1.5"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none"/><path d="M1 10.5l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
@@ -617,6 +668,7 @@ Example:
                                 Print
                             </button>
                         </div>
+                        <button type="button" class="btn btn-outline-sm result-share-btn" id="shareModeBtn">Share view</button>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
@@ -886,6 +938,88 @@ Example:
                 </div>
                 <?php endforeach; ?>
 
+            <?php elseif (in_array($resultFormat, ['two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'], true)): ?>
+                <!-- ── TWO LINES FORMAT ─────────────── -->
+                <?php foreach ($legs as $leg):
+                    $legSegs  = $leg['segments'];
+                    $legLabel = $leg['label'];
+                    $legFirst = $legSegs[0] ?? null;
+                    $legLast  = $legSegs[count($legSegs) - 1] ?? null;
+                    $legDur   = $legDuration($legSegs);
+                ?>
+                <?php if ($legLabel !== null && $legFirst && $legLast): ?>
+                    <div class="leg-head">
+                        <span><?= Html::e($legLabel) ?>: <?= Html::e($portCity($legFirst->departureAirport)) ?> &rarr; <?= Html::e($portCity($legLast->arrivalAirport)) ?></span>
+                        <?php if ($legDur): ?><span class="leg-dur"><?= Html::e($legDur) ?></span><?php endif; ?>
+                    </div>
+                <?php endif; ?>
+                <div class="tl-segment-list">
+                    <?php foreach ($legSegs as $seg): ?>
+                        <?php
+                        /** @var Segment $seg */
+                        $logo   = $show('show_airline_logo') ? $airlineLogo($seg->airlineCode) : null;
+                        $dur    = $flightDuration($seg);
+                        $offset = $arrivalOffset($seg);
+                        $depCity = $portCity($seg->departureAirport);
+                        $arrCity = $portCity($seg->arrivalAirport);
+                        ?>
+                        <div class="tl-flight">
+                            <div class="tl-logo-col">
+                                <?php if ($logo && $logo['src'] !== ''): ?>
+                                    <?= $logoImg($logo, 'tl-logo', $seg->airlineCode) ?>
+                                <?php else: ?>
+                                    <span class="tl-code-badge"><?= Html::e($seg->airlineCode) ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="tl-body">
+                                <div class="tl-row1">
+                                    <span class="tl-fn"><?= Html::e($seg->airlineCode . $seg->flightNumber) ?></span>
+                                    <span class="tl-sep">·</span>
+                                    <span class="tl-date"><?= Html::e($datePretty($seg->departureDate)) ?></span>
+                                    <?php if ($show('show_airline_name') && $seg->airlineName): ?>
+                                        <span class="tl-sep">·</span>
+                                        <span class="tl-airline"><?= Html::e($seg->airlineName) ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($dur): ?><span class="tl-dur"><?= Html::e($dur) ?></span><?php endif; ?>
+                                </div>
+                                <div class="tl-row2">
+                                    <div class="tl-port-grp">
+                                        <span class="tl-port-code"><?= Html::e(strtoupper($seg->departureAirport)) ?></span>
+                                        <span class="tl-port-time"><?= Html::e($formatTime($seg->departureTime, $use24HourTime)) ?></span>
+                                        <span class="tl-port-city"><?= Html::e($depCity) ?></span>
+                                    </div>
+                                    <div class="tl-line" aria-hidden="true"></div>
+                                    <div class="tl-port-grp tl-port-grp-r">
+                                        <span class="tl-port-code"><?= Html::e(strtoupper($seg->arrivalAirport)) ?><?php if ($offset > 0): ?><span class="day-badge">+<?= $offset ?>d</span><?php endif; ?></span>
+                                        <span class="tl-port-time"><?= Html::e($formatTime($seg->arrivalTime, $use24HourTime)) ?></span>
+                                        <span class="tl-port-city"><?= Html::e($arrCity) ?></span>
+                                    </div>
+                                </div>
+                                <?php
+                                $tlChips = [];
+                                if ($show('show_cabin') && $seg->cabin) $tlChips[] = Html::e($seg->cabin);
+                                if ($show('show_booking_class') && $seg->bookingClass) $tlChips[] = 'Class ' . Html::e($seg->bookingClass);
+                                if ($show('show_terminal') && $seg->departureTerminal) $tlChips[] = 'T' . Html::e($seg->departureTerminal);
+                                if ($show('show_aircraft') && $seg->aircraft) $tlChips[] = Html::e($seg->aircraft);
+                                if ($tlChips): ?>
+                                    <div class="tl-chips">
+                                        <?php foreach ($tlChips as $chip): ?>
+                                            <span class="tl-chip"><?= $chip ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php if (($show('show_transit_time') || $show('show_layover')) && $seg->layoverDuration): ?>
+                            <?php [$loClass, $loLabel] = $layoverMeta($seg->layoverDuration); $visa = $transitVisa($seg->arrivalAirport); ?>
+                            <div class="lo-sep <?= Html::e($loClass) ?>">
+                                &mdash;&mdash; <?= Html::e($loLabel) ?> at <?= Html::e($portCity($seg->arrivalAirport)) ?> (<?= Html::e($seg->arrivalAirport) ?>): <strong><?= Html::e($seg->layoverDuration) ?></strong><?php if ($visa): ?> &middot; <span class="visa-flag"><?= Html::e($visa) ?></span><?php endif; ?> &mdash;&mdash;
+                            </div>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+                <?php endforeach; ?>
+
             <?php elseif (in_array($resultFormat, ['compact', 'whatsapp'], true)): ?>
                 <!-- ── COMPACT FORMAT ────────────────── -->
                 <?php foreach ($legs as $leg):
@@ -1131,8 +1265,30 @@ Example:
 
             </div><!-- /app-main -->
         </div><!-- /app-layout -->
-    </form>
-</main>
+
+</form><!-- /converterForm -->
+
+<!-- Floating dock — visible only when sidebar is collapsed -->
+<div class="min-dock no-print no-share" id="minDock" aria-hidden="true">
+    <button type="button" class="min-dock-btn min-dock-restore" id="expandInputBtn" title="Show sidebar">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="4" y1="9" x2="14" y2="9"/><polyline points="10 5 14 9 10 13"/></svg>
+        <span>Show panels</span>
+    </button>
+    <span class="min-dock-sep"></span>
+    <button type="button" class="min-dock-btn" id="copyImageBtnDock" title="Copy image" aria-label="Copy image">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="2" width="14" height="14" rx="2"/><circle cx="6" cy="6" r="1.3" fill="currentColor" stroke="none"/><path d="M2 12l4-4 3.5 3.5 2-2 4.5 4.5"/></svg>
+    </button>
+    <button type="button" class="min-dock-btn" id="downloadPngBtnDock" title="Save PNG" aria-label="Save PNG">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 2.5v8M5.5 7L9 10.5 12.5 7M3.5 13v1.5a1 1 0 001 1h9a1 1 0 001-1V13"/></svg>
+    </button>
+    <button type="button" class="min-dock-btn" id="printBtnDock" title="Print" aria-label="Print">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6V2.5h8V6M5 12.5H3.5a1 1 0 01-1-1V8a1 1 0 011-1h11a1 1 0 011 1v3.5a1 1 0 01-1 1H13M5 10h8v5.5H5V10z"/></svg>
+    </button>
+</div>
+
+</main><!-- /rn-page -->
+</div><!-- /rn-workspace -->
+</div><!-- /rn-shell -->
 
 <div class="copy-toast" id="copyToast" aria-live="polite"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

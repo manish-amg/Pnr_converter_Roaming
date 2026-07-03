@@ -108,9 +108,19 @@
     expandInputBtn.addEventListener('click', () => setSidebarCollapsed(false));
   }
 
-  /* ── Options drawer toggle ──────────────────────── */
-  const optsToggle = byId('cbOptsToggle');
-  const optsDrw    = byId('cbOptsDrw');
+  /* ── Ctrl-bar hamburger toggle ──────────────────── */
+  const sidebarToggleBtn = byId('sidebarToggleBtn');
+  if (sidebarToggleBtn && appLayout) {
+    sidebarToggleBtn.addEventListener('click', () => {
+      const isCollapsed = appLayout.classList.contains('sidebar-collapsed');
+      setSidebarCollapsed(!isCollapsed);
+    });
+  }
+
+  /* ── Options popover toggle ─────────────────────── */
+  const optsToggle  = byId('cbOptsToggle');
+  const optsDrw     = byId('cbOptsDrw');
+  const optsClose   = byId('cbOptsClose');
   const OPTS_OPEN_KEY = 'pnrc-opts-open';
 
   function setOptsOpen(open) {
@@ -121,16 +131,24 @@
   }
 
   if (optsToggle && optsDrw) {
-    // Restore state: if user previously opened it, keep open; never override when no result
-    const savedOpen = (() => { try { return localStorage.getItem(OPTS_OPEN_KEY); } catch { return null; } })();
-    // Only restore saved state on result pages (PHP hides drawer when result exists)
-    if (card && savedOpen === '1') setOptsOpen(true);
-    // On blank page, drawer starts open (PHP doesn't add hidden)
-
-    optsToggle.addEventListener('click', () => {
+    optsToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
       setOptsOpen(optsDrw.hidden);
     });
   }
+  if (optsClose) {
+    optsClose.addEventListener('click', () => setOptsOpen(false));
+  }
+
+  /* Close opts popover when clicking outside */
+  document.addEventListener('click', (e) => {
+    if (!optsDrw || optsDrw.hidden) return;
+    if (optsDrw.contains(e.target) || (optsToggle && optsToggle.contains(e.target))) return;
+    setOptsOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && optsDrw && !optsDrw.hidden) setOptsOpen(false);
+  });
 
   /* ── Dynamic tabs ──────────────────────────────── */
   const TAB_KEY   = 'pnrc-active-tab';

@@ -11,45 +11,30 @@
 }
 
 /* ── Hide all UI chrome ── */
-.topbar,
+.rn-rail,
+.ctrl-bar,
+.opts-popover,
 .app-sidebar,
 .result-bar,
-.parse-bar,
 .share-hint,
 .empty-hint,
-.empty-state,
 .alert,
-.result-actions-inline,
-.result-collapsed-actions,
 .min-dock,
 .no-print,
-.no-share,
-.copy-toast,
-#shareModeBtn, #resetBtn,
-#printBtn2,
-#downloadPngBtn2,
-#copyImageBtn2 { display: none !important; }
+.copy-toast { display: none !important; }
 
 /* ── Clean page ── */
 html, body {
   background: #fff !important;
   font-size: 11pt;
-  margin: 0;
-  padding: 0;
+  margin: 0; padding: 0;
 }
 
-.page-wrap {
-  padding: 0 !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-}
+.rn-shell, .rn-workspace, .rn-page { display: block !important; }
 
-/* ── Single-column layout ── */
-.app-layout,
-.app-layout--split {
+.app-layout {
   display: block !important;
-  gap: 0 !important;
-  padding: 0 !important;
+  margin-left: 0 !important;
 }
 
 .app-main {
@@ -57,6 +42,7 @@ html, body {
   width: 100% !important;
   min-width: 0 !important;
   padding: 0 !important;
+  background: #fff !important;
   overflow: visible !important;
 }
 
@@ -74,113 +60,63 @@ html, body {
 /* ── Prevent orphaned blocks ── */
 .flight-block,
 .cpt-flight,
+.tl-flight,
 .ref-tr,
 .leg-section { page-break-inside: avoid; break-inside: avoid; }
 
 .card-agency,
 .card-title-row,
-.leg-head { page-break-after: avoid; break-after: avoid; }
+.leg-head,
+.ref-leg-strip { page-break-after: avoid; break-after: avoid; }
 
 .card-footer { page-break-inside: avoid; break-inside: avoid; }
 
 /* ════════════════════════════════════════════════════
-   TABLE FORMAT — fix horizontal overflow & column widths
+   TABLE FORMAT
 ════════════════════════════════════════════════════ */
-.ref-table-wrap { padding: 0 4pt !important; }
-
-.ref-table-scroll {
-  overflow: visible !important;
-  width: 100% !important;
-}
-
+.ref-table-scroll { overflow: visible !important; width: 100% !important; }
 .ref-table {
-  table-layout: auto !important;   /* reflow columns to fit printed page */
+  table-layout: auto !important;
   font-size: 9pt !important;
   width: 100% !important;
   border: 1px solid #bbb !important;
 }
-
-/* Remove rigid pixel column widths — let browser size them */
 .ref-th-logo { width: auto !important; min-width: 28pt !important; }
-.ref-th-port { width: auto !important; }
-.ref-th-num  { width: auto !important; }
-
-.ref-th {
-  font-size: 8pt !important;
-  padding: 4pt 5pt !important;
-  white-space: nowrap;
-}
-
-.ref-td {
-  padding: 4pt 5pt !important;
-  font-size: 9pt !important;
-}
-
-.ref-logo-img    { height: 18pt !important; max-width: 32pt !important; }
-.ref-port-code   { font-size: 10pt !important; }
-.ref-port-name   { font-size: 8pt !important; }
-.ref-td-time     { font-size: 10pt !important; }
-.ref-leg-strip   { border-radius: 0 !important; }
+.ref-th-port, .ref-th-num { width: auto !important; }
+.ref-th { font-size: 8pt !important; padding: 4pt 5pt !important; white-space: nowrap; }
+.ref-td { padding: 4pt 5pt !important; font-size: 9pt !important; }
+.ref-logo-img  { height: 18pt !important; max-width: 32pt !important; }
+.ref-port-code { font-size: 10pt !important; }
+.ref-port-name { font-size: 8pt !important; }
 
 /* ════════════════════════════════════════════════════
-   DETAILED / 3-LINE FORMAT
+   GRAPHIC / 2-LINE / COMPACT FORMATS
 ════════════════════════════════════════════════════ */
-.itin-title  { padding: 10pt 14pt 2pt !important; font-size: 14pt !important; }
-.leg-head    { margin: 5pt 12pt 8pt !important; }
 .fb-body     { padding: 0 12pt 6pt !important; }
-.fb-headline { padding: 3pt 12pt !important; padding-left: 84pt !important; }
-.fb-logo-col { width: 70pt !important; }
-.lo-sep      { margin: 4pt 12pt 8pt !important; padding-left: 70pt !important; }
-.itin-co2    { margin: 5pt 12pt 10pt !important; }
+.fb-headline { padding: 3pt 12pt !important; }
+.lo-sep      { margin: 4pt 12pt 8pt !important; }
+.cpt-flight  { padding: 8pt 14pt !important; }
+.tl-flight   { padding: 8pt 14pt !important; }
 
 /* ════════════════════════════════════════════════════
-   COMPACT FORMAT
+   PASSENGER / FARE / CARD SECTIONS
 ════════════════════════════════════════════════════ */
-.cpt-flight   { padding: 8pt 14pt !important; }
-.cpt-code-big { font-size: 20pt !important; }
-.cpt-time     { font-size: 11pt !important; }
+.card-pax     { padding: 4pt 14pt !important; }
+.card-agency  { padding: 6pt 14pt !important; border-bottom: 1px solid #ccc !important; }
+.agency-logo  { height: 26pt !important; }
 
 /* ════════════════════════════════════════════════════
-   PASSENGER ROW
+   FOOTER
 ════════════════════════════════════════════════════ */
-.card-pax  { padding: 4pt 10pt !important; }
-.pax-list  { font-size: 10pt !important; }
-
-/* ════════════════════════════════════════════════════
-   AGENCY HEADER / FOOTER
-════════════════════════════════════════════════════ */
-.card-agency   { padding: 6pt 14pt !important; border-bottom: 1px solid #ccc !important; }
-.agency-logo   { height: 26pt !important; }
-
-/* Footer: allow wrapping, break long text, no overflow */
-.card-footer   { overflow: visible !important; }
-.footer-compact {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  width: 100% !important;
-}
-.fc-main, .fc-branch {
-  min-width: 0 !important;
-  overflow-wrap: break-word !important;
-  word-break: break-word !important;
-  white-space: normal !important;
-}
-.fc-branch  { flex: 1 1 90pt !important; min-width: 80pt !important; }
-.fc-main    { flex: 2 1 140pt !important; }
-.fc-lines span {
-  white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word !important;
-}
-.fc-branch span {
-  white-space: normal !important;
-  word-break: break-word !important;
-}
-.footer-note   { padding: 4pt 10pt 5pt !important; white-space: normal !important; }
+.card-footer { overflow: visible !important; }
+.footer-compact { display: flex !important; flex-wrap: wrap !important; width: 100% !important; }
+.fc-main  { flex: 2 1 140pt !important; }
+.fc-branch { flex: 1 1 90pt !important; min-width: 80pt !important; overflow-wrap: break-word !important; }
+.fc-lines span, .fc-branch span { white-space: normal !important; word-break: break-word !important; }
 
 /* ════════════════════════════════════════════════════
    DISCLAIMER / MUST READ
 ════════════════════════════════════════════════════ */
-.disclaimer      { font-size: 8pt !important; padding: 4pt 10pt !important; }
-.card-must-read  { margin: 0 10pt 0 !important; padding: 6pt 10pt !important; }
-.must-read-list  { font-size: 9pt !important; }
+.disclaimer     { font-size: 8pt !important; }
+.card-must-read { padding: 6pt 14pt !important; }
+.must-read-list { font-size: 9pt !important; }
