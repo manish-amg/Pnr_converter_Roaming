@@ -377,7 +377,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .app-layout.sidebar-collapsed .app-sidebar { display: none; }
-.app-layout.sidebar-collapsed .min-dock { display: flex; }
+body.sidebar-collapsed .min-dock { display: flex; }
 
 /* ══ Sidebar ══════════════════════════════════════════════════════ */
 .app-sidebar {

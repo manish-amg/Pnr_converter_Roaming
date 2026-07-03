@@ -94,6 +94,7 @@
   function setSidebarCollapsed(collapsed) {
     if (!appLayout) return;
     appLayout.classList.toggle('sidebar-collapsed', collapsed);
+    document.body.classList.toggle('sidebar-collapsed', collapsed);
     try { localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'); } catch {}
   }
 
