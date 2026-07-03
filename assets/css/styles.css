@@ -150,6 +150,15 @@ a { color: inherit; text-decoration: none; }
   transition: border-color .14s;
 }
 .rail-avatar:hover { border-color: rgba(255,255,255,.5); }
+.rail-avatar { text-decoration: none; }
+.rail-logout {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  color: rgba(255,255,255,.4); text-decoration: none;
+  transition: background .14s, color .14s;
+}
+.rail-logout svg { width: 16px; height: 16px; }
+.rail-logout:hover { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); }
 
 /* ══ Workspace ════════════════════════════════════════════════════ */
 .rn-workspace {

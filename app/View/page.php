@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use RoamingNepal\PnrConverter\Parser\ParseResult;
 use RoamingNepal\PnrConverter\Parser\Segment;
+use RoamingNepal\PnrConverter\Support\Auth;
 use RoamingNepal\PnrConverter\Support\Html;
 use RoamingNepal\PnrConverter\Support\Metadata;
 
@@ -12,6 +13,7 @@ use RoamingNepal\PnrConverter\Support\Metadata;
 /** @var string $rawInput */
 /** @var ?ParseResult $result */
 /** @var bool $rateLimited */
+/** @var bool $dailyLimitReached */
 
 $basePath    = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
 $projectRoot = dirname(__DIR__, 2);
@@ -26,6 +28,14 @@ $agencyName  = (string) ($settings['agency_name'] ?? 'Roaming Nepal');
 $logoPath    = (string) ($settings['logo_path'] ?? 'assets/images/logo.svg');
 $appVersion  = (string) ($settings['app_version'] ?? '4.0.0');
 $rateLimited = (bool) ($rateLimited ?? false);
+$dailyLimitReached = (bool) ($dailyLimitReached ?? false);
+$authUser    = Auth::user();
+$authInitials = '?';
+if ($authUser !== null) {
+    $parts = preg_split('/\s+/', trim((string) $authUser['name']));
+    $authInitials = strtoupper(substr($parts[0] ?? '', 0, 1) . substr($parts[1] ?? '', 0, 1));
+    if ($authInitials === '') $authInitials = strtoupper(substr((string) $authUser['email'], 0, 2));
+}
 
 $distanceUnit = in_array((string) ($features['distance_unit'] ?? 'off'), ['off', 'km', 'miles'], true)
     ? (string) $features['distance_unit'] : 'off';
@@ -411,22 +421,34 @@ $renderable = $result !== null && $result->isRenderable();
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="rail-item-label">Convert</span>
         </a>
-        <span class="rail-item is-disabled" title="Visa Itinerary — Phase 2">
+        <span class="rail-item is-disabled" title="Visa Itinerary — coming soon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             <span class="rail-item-label">Visa Doc</span>
         </span>
-        <span class="rail-item is-disabled" title="Account — Phase 2">
+        <a class="rail-item" href="<?= Html::e($asset('account.php')) ?>" title="Account">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="rail-item-label">Account</span>
-        </span>
-        <span class="rail-item is-disabled" title="Admin — Phase 2">
+        </a>
+        <?php if ($authUser !== null && $authUser['role'] === 'superadmin'): ?>
+        <a class="rail-item" href="<?= Html::e($asset('admin.php')) ?>" title="Admin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span class="rail-item-label">Admin</span>
+        </a>
+        <?php else: ?>
+        <span class="rail-item is-disabled" title="Admin — superadmin only">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             <span class="rail-item-label">Admin</span>
         </span>
+        <?php endif; ?>
     </div>
     <div class="rail-footer">
         <span class="rail-version">v<?= Html::e($appVersion) ?></span>
-        <div class="rail-avatar" title="No sign-in required · Free tool">RN</div>
+        <?php if ($authUser !== null): ?>
+        <a class="rail-avatar" href="<?= Html::e($asset('account.php')) ?>" title="<?= Html::e((string) $authUser['name']) ?> — <?= Html::e((string) $authUser['role']) ?>"><?= Html::e($authInitials) ?></a>
+        <a class="rail-logout" href="<?= Html::e($asset('logout.php')) ?>" title="Log out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </a>
+        <?php endif; ?>
     </div>
 </nav>
 
@@ -680,13 +702,19 @@ Example:
                     </div>
                 <?php endif; ?>
 
+                <?php if ($dailyLimitReached): ?>
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Daily limit reached.</strong> You've used all <?= Html::e((string) Auth::dailyLimit()) ?> free conversions for today. Limit resets at midnight, or ask an admin to flag your account as internal for unlimited use.
+                    </div>
+                <?php endif; ?>
+
                 <?php if ($result !== null && count($result->warnings) > 0): ?>
                     <div class="alert alert-warn" role="alert">
                         <?php foreach ($result->warnings as $w): ?><p><?= Html::e($w) ?></p><?php endforeach; ?>
                     </div>
                 <?php endif; ?>
 
-                <?php if ($result === null && !$rateLimited): ?>
+                <?php if ($result === null && !$rateLimited && !$dailyLimitReached): ?>
                     <div class="empty-hint">
                         <svg class="empty-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
                         <p>Paste a GDS itinerary in the box and click <strong>Convert</strong></p>

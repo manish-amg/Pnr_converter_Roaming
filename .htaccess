@@ -6,7 +6,7 @@ DirectoryIndex index.php
     RewriteBase /
 
     # Block access to sensitive files
-    RewriteRule ^(\.git|composer\.json|composer\.lock|\.env) - [F,L]
+    RewriteRule ^(\.git|composer\.json|composer\.lock|\.env|schema\.sql|bin/) - [F,L]
 
     # Send everything through index.php if file/dir doesn't exist
     RewriteCond %{REQUEST_FILENAME} !-f

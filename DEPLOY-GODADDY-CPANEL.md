@@ -45,6 +45,35 @@ Open `config/settings.php` in cPanel File Manager and edit:
 
 Leave `privacy_logging_enabled` as `false` for normal use.
 
+## 3A. Database Setup (Phase 2 — auth & credits)
+
+The app now requires login. Set this up once:
+
+1. In cPanel, open **MySQL® Databases** and create a database and a database user (grant that user **All Privileges** on the database).
+2. Open **phpMyAdmin**, select the new database, go to the **Import** tab, and upload `schema.sql` from this repo. This creates `agencies`, `users`, `credit_ledger`, `usage_daily`, and `documents`, plus a seed row in `agencies` for the house agency.
+3. Add the DB credentials to `config/settings.php`:
+
+```php
+'db' => [
+    'host' => 'localhost',
+    'name' => 'yourcpanelusername_pnrconverter',
+    'user' => 'yourcpanelusername_pnruser',
+    'pass' => 'the-password-you-set',
+    'charset' => 'utf8mb4',
+],
+```
+
+4. Create the first superadmin login. If cPanel gives you SSH/Terminal access, run:
+
+```bash
+php bin/create-admin.php you@example.com "Your Name" "a-strong-password"
+```
+
+   If you don't have shell access, ask your host to enable **Terminal** in cPanel, or run the same script once via SSH from another machine pointed at the same database.
+5. Visit the site — you'll be redirected to `login.php`. Sign in with the superadmin account you just created.
+
+New agencies can self-register from `register.php` (creates an agency + an `owner` account with 0 credits). The superadmin flags trusted staff accounts as `internal` from `admin.php` to bypass the 50/day free-conversion cap.
+
 ## 4. Replace the Logo
 
 1. Upload the new logo to `assets/images/`.

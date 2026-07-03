@@ -2,10 +2,13 @@
 declare(strict_types=1);
 
 use RoamingNepal\PnrConverter\Parser\PnrParserFactory;
+use RoamingNepal\PnrConverter\Support\Auth;
 use RoamingNepal\PnrConverter\Support\Html;
 use RoamingNepal\PnrConverter\Support\PrivacyLogger;
 
 require_once __DIR__ . '/app/bootstrap.php';
+
+Auth::requireLogin('login.php');
 
 function checkRateLimit(): bool
 {
@@ -41,14 +44,29 @@ $rawInput = '';
 $result = null;
 
 $rateLimited = false;
+$dailyLimitReached = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = isset($_POST['pnr_text']) ? (string) $_POST['pnr_text'] : '';
     if (trim($rawInput) !== '' && !checkRateLimit()) {
         $rateLimited = true;
     }
-    if (trim($rawInput) !== '' && !$rateLimited) {
+
+    // Only count against the daily cap when the PNR text actually changed —
+    // re-submits triggered by toggling display options must not burn a credit.
+    $inputHash = trim($rawInput) !== '' ? hash('sha256', trim($rawInput)) : null;
+    $isNewConversion = $inputHash !== null && $inputHash !== ($_SESSION['pnrc_last_hash'] ?? null);
+
+    if (trim($rawInput) !== '' && !$rateLimited && $isNewConversion && Auth::dailyLimitReached()) {
+        $dailyLimitReached = true;
+    }
+
+    if (trim($rawInput) !== '' && !$rateLimited && !$dailyLimitReached) {
         $result = PnrParserFactory::parse($rawInput);
         PrivacyLogger::log($result, (bool) ($settings['privacy_logging_enabled'] ?? false));
+        if ($isNewConversion) {
+            Auth::recordConversion();
+            $_SESSION['pnrc_last_hash'] = $inputHash;
+        }
     }
     foreach ($features as $key => $value) {
         if (array_key_exists($key, $_POST)) {

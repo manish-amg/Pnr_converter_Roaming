@@ -12,6 +12,13 @@ return [
     'default_disclaimer' => 'Please verify final schedule, terminal and check-in details directly with the airline or airport before travel.',
     'base_url' => 'https://pnrconverter.roamingnepal.com',
     'privacy_logging_enabled' => false,
+    'db' => [
+        'host' => 'localhost',
+        'name' => '',
+        'user' => '',
+        'pass' => '',
+        'charset' => 'utf8mb4',
+    ],
     'footer' => [
         'head_office' => [
             'title' => 'ROAMING NEPAL TRAVEL & TOURS PVT. LTD.',
