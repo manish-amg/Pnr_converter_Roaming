@@ -81,13 +81,13 @@ html, body {
   width: 100% !important;
   border: 1px solid #bbb !important;
 }
-.ref-th-logo { width: auto !important; min-width: 28pt !important; }
+.ref-th-logo { width: auto !important; min-width: 40pt !important; }
 .ref-th-port, .ref-th-num { width: auto !important; }
-.ref-th { font-size: 8pt !important; padding: 4pt 5pt !important; white-space: nowrap; }
-.ref-td { padding: 4pt 5pt !important; font-size: 9pt !important; }
-.ref-logo-img  { height: 18pt !important; max-width: 32pt !important; }
-.ref-port-code { font-size: 10pt !important; }
-.ref-port-name { font-size: 8pt !important; }
+.ref-th { font-size: 8.5pt !important; padding: 6pt 5pt !important; white-space: nowrap; }
+.ref-td { padding: 9pt 5pt !important; font-size: 9.5pt !important; }
+.ref-logo-img  { height: 26pt !important; max-width: 46pt !important; }
+.ref-port-code { font-size: 11pt !important; }
+.ref-port-name { font-size: 8.5pt !important; }
 
 /* ════════════════════════════════════════════════════
    GRAPHIC / 2-LINE / COMPACT FORMATS

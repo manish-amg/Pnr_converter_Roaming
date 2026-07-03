@@ -735,8 +735,8 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
 .ref-table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-family: 'Inter', sans-serif; }
 
 .ref-th {
-  padding: 6px 10px; text-align: left;
-  font-size: 9.5px; font-weight: 700;
+  padding: 10px 12px; text-align: left;
+  font-size: 10.5px; font-weight: 700;
   font-family: 'Sora', 'Inter', sans-serif;
   letter-spacing: .08em; text-transform: uppercase;
   color: var(--rn-muted);
@@ -744,34 +744,34 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
   border-bottom: 2px solid var(--rn-line);
   white-space: nowrap;
 }
-.ref-th-logo { width: 52px; text-align: center; }
-.ref-th-num  { width: 80px; text-align: center; }
-.ref-th-time { width: 78px; }
-.ref-th-date { width: 88px; }
+.ref-th-logo { width: 76px; text-align: center; }
+.ref-th-num  { width: 88px; text-align: center; }
+.ref-th-time { width: 84px; }
+.ref-th-date { width: 92px; }
 
 .ref-tr:nth-child(odd)  { background: var(--rn-surface); }
 .ref-tr:nth-child(even) { background: #F9FAFE; }
 .ref-tr:hover { background: var(--rn-navy-light) !important; }
 
 .ref-td {
-  padding: 8px 10px; border-bottom: 1px solid var(--rn-line-soft);
-  vertical-align: top; font-size: 12.5px;
+  padding: 16px 12px; border-bottom: 1px solid var(--rn-line-soft);
+  vertical-align: top; font-size: 13.5px;
 }
 .ref-td-logo { text-align: center; vertical-align: middle; }
 .ref-td-num  { text-align: center; }
 
-.ref-logo-img { height: 22px; width: auto; max-width: 42px; object-fit: contain; vertical-align: middle; }
+.ref-logo-img { height: 38px; width: auto; max-width: 64px; object-fit: contain; vertical-align: middle; }
 .ref-code-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 19px; border-radius: 4px;
+  width: 46px; height: 26px; border-radius: 5px;
   background: var(--rn-navy-light); color: var(--rn-navy);
-  font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
 }
 
-.ref-port-code  { display: block; font-size: 13px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--rn-ink); line-height: 1.2; }
-.ref-port-name  { display: block; font-size: 10.5px; color: var(--rn-muted); font-weight: 500; }
-.ref-airline-name { font-weight: 600; color: var(--rn-ink); display: block; font-size: 12px; }
-.ref-sub   { display: block; font-size: 10.5px; color: var(--rn-muted); font-weight: 500; margin-top: 1px; }
+.ref-port-code  { display: block; font-size: 15px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--rn-ink); line-height: 1.25; }
+.ref-port-name  { display: block; font-size: 11.5px; color: var(--rn-muted); font-weight: 500; }
+.ref-airline-name { font-weight: 600; color: var(--rn-ink); display: block; font-size: 13.5px; }
+.ref-sub   { display: block; font-size: 11.5px; color: var(--rn-muted); font-weight: 500; margin-top: 1px; }
 .ref-opby-inline { color: var(--rn-purple); font-weight: 600; }
 .ref-nextday { display: block; font-size: 10px; color: var(--rn-amber); font-weight: 700; }
 .ref-transit {
