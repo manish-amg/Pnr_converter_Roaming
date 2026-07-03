@@ -9,12 +9,17 @@ final class GenericAirSegmentParser extends BaseParser
 {
     public function detect(string $raw): int
     {
-        $matches = preg_match_all('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}[A-Z]?(?:\s+[A-Z])?\s+\d{1,2}[A-Z]{3}(?:\d{2,4})?\s+(?:[1-7]\*?\s*)?[A-Z]{3}\s*[A-Z]{3}\s+[A-Z]{2}\d?\s+\d{3,4}\s+#?\d{3,4}/mi', $raw);
-        if ($matches === false || $matches === 0) {
+        // Standard GDS style: "1 QR651Y 25AUG KTMDOH HK1 1105 1300"
+        $m1 = preg_match_all('/^\s*\d+\s*\.?\s*[A-Z0-9]{2}\s*\d{1,4}[A-Z]?(?:\s+[A-Z])?\s+\d{1,2}[A-Z]{3}(?:\d{2,4})?\s+(?:[1-7]\*?\s*)?[A-Z]{3}\s*[A-Z]{3}\s+[A-Z]{2}\d?\s+\d{3,4}\s+#?\d{3,4}/mi', $raw);
+        // SQ/Abacus style: "1. SQ SQ441 Y 10Jul KTMSIN 1 2250 0615+1"
+        $m2 = preg_match_all('/^\s*\d+\s*[.)]\s*[A-Z]{2}\s+[A-Z]{2}\d{1,4}\s+[A-Z]\s+\d{1,2}[A-Za-z]{3}\s+[A-Z]{6}\s+\d/mi', $raw);
+
+        $total = ($m1 ?: 0) + ($m2 ?: 0);
+        if ($total === 0) {
             return 0;
         }
 
-        return min(70, 30 + ($matches * 15));
+        return min(70, 30 + ($total * 15));
     }
 
     public function parse(string $raw): ParseResult
@@ -87,6 +92,35 @@ final class GenericAirSegmentParser extends BaseParser
 
     private function parseSegmentLine(string $line, ?string $ticket, ?string $seat): ?Segment
     {
+        // Pattern 3: SQ/Abacus style — "1. SQ SQ441 Y 10Jul KTMSIN 1 2250 0615+1 1A/E"
+        // Carrier code is repeated as a prefix in the flight designator (SQ SQ441)
+        $pat3 = '/^\s*\d+\s*[.)]\s*([A-Z]{2})\s+[A-Z]{2}(\d{1,4})\s+([A-Z])\s+(\d{1,2}[A-Za-z]{3}(?:\d{2,4})?)\s+([A-Z]{3})([A-Z]{3})\s+\d+\s+(\d{3,4}(?:[APMapm]{1,2})?)\s+(\d{3,4}(?:[APMapm]{1,2})?(?:\+\d+)?)/i';
+        if (preg_match($pat3, $line, $p) === 1) {
+            $airlineCode  = strtoupper($p[1]);
+            $bookingClass = strtoupper($p[3]);
+            $depDate      = $this->normalizeDate($p[4]);
+            $arrTimeRaw   = $p[8];
+            // Detect next-day (or multi-day) arrival via +N suffix
+            $arrDate = null;
+            if (preg_match('/\+(\d+)$/i', $arrTimeRaw, $dm) === 1) {
+                $curr = $depDate;
+                for ($d = 0; $d < (int) $dm[1]; $d++) {
+                    $curr = $this->addOneDay($curr);
+                }
+                $arrDate = $curr;
+            }
+            return new Segment(
+                $airlineCode, $p[2], Metadata::airlineName($airlineCode),
+                'HK',
+                strtoupper($p[5]), strtoupper($p[6]),
+                $depDate, $this->normalizeTime($p[7]),
+                $arrDate, $this->normalizeTime($arrTimeRaw),
+                $bookingClass, $this->cabinFromClass($bookingClass),
+                null, $this->extractOperatedBy($line),
+                $ticket, $seat, $this->extractAircraft($line), $line
+            );
+        }
+
         // Pattern 2: Sabre/Amadeus concatenated-airport format with optional day-of-week and asterisk
         // e.g. "1 QR 651Y 25AUG 2 KTMDOH*SS1  1105  1300  /DCQR /E"
         $pat2 = '/^\s*\d+\s*\.?\s*([A-Z0-9]{2})\s*([0-9]{1,4})([A-Z])\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?)\s+\d\s+([A-Z]{3})([A-Z]{3})\*?[A-Z]{2}\d*\s+(\d{3,4})\s+(\d{3,4})(?:\s+(\d{1,2}[A-Z]{3}(?:\d{2,4})?))?/i';

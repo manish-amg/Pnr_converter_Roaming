@@ -620,6 +620,7 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
   border: 1px solid var(--rn-line);
   box-shadow: var(--rn-shadow-card);
   overflow: hidden;
+  max-width: 860px;
 }
 
 /* Agency header */

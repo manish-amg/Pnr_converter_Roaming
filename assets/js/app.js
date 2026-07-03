@@ -19,7 +19,7 @@
   const expandInputBtn    = byId('expandInputBtn');
   const appLayout         = byId('appLayout');
   const form              = document.querySelector('form');
-  const settingsPanel     = document.querySelector('.settings-panel');
+  const settingsPanels    = document.querySelectorAll('.settings-panel');
   const presetBtns        = document.querySelectorAll('[data-preset]');
   const textarea          = byId('pnr_text');
   const gdsChip           = byId('gdsDetectChip');
@@ -84,8 +84,8 @@
     }, 120);
   }
 
-  if (form && settingsPanel) {
-    settingsPanel.addEventListener('change', () => saveSettings());
+  if (form && settingsPanels.length) {
+    settingsPanels.forEach((panel) => panel.addEventListener('change', () => saveSettings()));
   }
 
   /* ── Sidebar collapse / expand ──────────────────── */
@@ -206,15 +206,16 @@
   }
 
   /* ── Auto-submit on options change ──────────────── */
-  if (form && settingsPanel && card) {
+  if (form && settingsPanels.length && card) {
     let timer;
-    settingsPanel.addEventListener('change', () => {
+    const resubmit = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
         if (typeof form.requestSubmit === 'function') form.requestSubmit();
         else form.submit();
       }, 120);
-    });
+    };
+    settingsPanels.forEach((panel) => panel.addEventListener('change', resubmit));
   }
 
   /* ── Preset buttons ─────────────────────────────── */
