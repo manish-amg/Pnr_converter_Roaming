@@ -74,6 +74,21 @@ php bin/create-admin.php you@example.com "Your Name" "a-strong-password"
 
 New agencies can self-register from `register.php` (creates an agency + an `owner` account with 0 credits). The superadmin flags trusted staff accounts as `internal` from `admin.php` to bypass the 50/day free-conversion cap.
 
+## 3B. Visa Doc Migration
+
+The Visa Doc feature (`visa-doc.php`, `verify.php`) needs a few extra columns on the `documents` table. Run once via phpMyAdmin's **SQL** tab after `schema.sql`:
+
+```sql
+ALTER TABLE documents
+  ADD COLUMN passenger_name VARCHAR(160) NULL AFTER type,
+  ADD COLUMN route_summary  VARCHAR(120) NULL AFTER passenger_name,
+  ADD COLUMN travel_date    DATE NULL AFTER route_summary,
+  ADD COLUMN reference_no   VARCHAR(20) NULL AFTER travel_date,
+  ADD UNIQUE KEY uniq_reference_no (reference_no);
+```
+
+(Also saved at `migrations/002_visa_doc_fields.sql`.) Without this migration, generating a visa document still works and still deducts a credit, but `verify.php` won't have a reference/route/passenger to show — the verify footer is silently omitted until the migration runs.
+
 ## 4. Replace the Logo
 
 1. Upload the new logo to `assets/images/`.

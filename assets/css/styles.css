@@ -245,6 +245,16 @@ a { color: inherit; text-decoration: none; }
 .tpill:hover { background: var(--rn-navy-light); color: var(--rn-navy); }
 .tpill.is-active { background: var(--rn-navy); color: #fff; border-color: var(--rn-navy); }
 
+/* Credit balance pill (Visa Doc mode) */
+.cb-credit-pill {
+  display: inline-flex; align-items: center;
+  padding: 6px 12px; margin-left: auto;
+  border-radius: var(--rn-radius-pill);
+  font-size: 12px; font-weight: 700; font-family: 'Inter', sans-serif;
+  background: var(--rn-navy-light); color: var(--rn-navy);
+  border: 1px solid var(--rn-navy-border); white-space: nowrap;
+}
+
 /* Options button */
 .cb-opts-toggle {
   display: inline-flex; align-items: center; gap: 6px;
@@ -458,6 +468,16 @@ body.sidebar-collapsed .min-dock { display: flex; }
   border-bottom: 1px solid #1A2E47;
 }
 .input-card:focus-within { box-shadow: inset 0 0 0 2px rgba(15,54,123,.3); }
+
+.visa-pax-input {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: 12px 16px; border: none; outline: none;
+  border-bottom: 1px solid #1A2E47;
+  background: transparent;
+  font: 13px/1.5 'Inter', sans-serif; font-weight: 600;
+  color: #E2E8F1;
+}
+.visa-pax-input::placeholder { color: #4A6483; font-weight: 500; }
 
 textarea {
   display: block; width: 100%;
@@ -936,6 +956,47 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
   color: var(--rn-amber); margin-bottom: 7px;
 }
 .must-read-list { margin: 0; padding-left: 16px; font-size: 12px; color: var(--rn-ink-mid); line-height: 1.7; }
+
+/* ══ Visa document banner + verify footer ═══════════════════════════ */
+.visa-banner {
+  padding: 12px 20px;
+  background: #FFFBEB;
+  border-bottom: 2px solid var(--rn-amber);
+}
+.visa-banner-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 4px;
+}
+.visa-banner-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: var(--rn-radius-pill);
+  font-size: 10.5px; font-weight: 800;
+  font-family: 'Sora', 'Inter', sans-serif; letter-spacing: .05em; text-transform: uppercase;
+  background: var(--rn-amber); color: #fff;
+}
+.visa-banner-ref {
+  font-size: 11.5px; font-weight: 700; color: #92400E;
+  font-family: 'JetBrains Mono', monospace;
+}
+.visa-banner-pax { font-size: 13px; color: var(--rn-ink); margin-bottom: 3px; }
+.visa-banner-pax strong { font-weight: 700; }
+.visa-banner-note { font-size: 11px; color: #92400E; line-height: 1.5; }
+
+.visa-verify {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 20px;
+  background: var(--rn-navy-light); border-top: 1px solid var(--rn-navy-border);
+  flex-wrap: wrap;
+}
+.visa-verify-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--rn-navy); font-family: 'Sora', 'Inter', sans-serif;
+}
+.visa-verify-url {
+  font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: var(--rn-navy);
+  word-break: break-all;
+}
+.visa-verify-issued { font-size: 11px; color: var(--rn-muted); white-space: nowrap; }
 
 /* ══ Card footer ══════════════════════════════════════════════════ */
 .card-footer {

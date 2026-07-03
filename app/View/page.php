@@ -29,6 +29,14 @@ $logoPath    = (string) ($settings['logo_path'] ?? 'assets/images/logo.svg');
 $appVersion  = (string) ($settings['app_version'] ?? '4.0.0');
 $rateLimited = (bool) ($rateLimited ?? false);
 $dailyLimitReached = (bool) ($dailyLimitReached ?? false);
+$visaMode    = (bool) ($visaMode ?? false);
+$passengerNameInput = (string) ($passengerNameInput ?? '');
+$verifyToken = (string) ($verifyToken ?? '');
+$docReference = (string) ($docReference ?? '');
+$verifyUrl   = (string) ($verifyUrl ?? '');
+$docIssuedAt = (string) ($docIssuedAt ?? '');
+$creditError = (string) ($creditError ?? '');
+$agencyCreditBalance = (int) ($agencyCreditBalance ?? 0);
 $authUser    = Auth::user();
 $authInitials = '?';
 if ($authUser !== null) {
@@ -417,14 +425,21 @@ $renderable = $result !== null && $result->isRenderable();
         </a>
     </div>
     <div class="rail-nav">
-        <a class="rail-item is-active" href="/" title="PNR Converter">
+        <a class="rail-item<?= !$visaMode ? ' is-active' : '' ?>" href="<?= Html::e($asset('index.php')) ?>" title="PNR Converter">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span class="rail-item-label">Convert</span>
         </a>
-        <span class="rail-item is-disabled" title="Visa Itinerary — coming soon">
+        <?php if ($authUser !== null): ?>
+        <a class="rail-item<?= $visaMode ? ' is-active' : '' ?>" href="<?= Html::e($asset('visa-doc.php')) ?>" title="Visa Itinerary Document">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span class="rail-item-label">Visa Doc</span>
+        </a>
+        <?php else: ?>
+        <span class="rail-item is-disabled" title="Sign in to generate visa documents">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             <span class="rail-item-label">Visa Doc</span>
         </span>
+        <?php endif; ?>
         <a class="rail-item" href="<?= Html::e($asset('account.php')) ?>" title="Account">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="rail-item-label">Account</span>
@@ -507,6 +522,11 @@ $optCard = static function (string $key, string $label) use ($show): string {
             <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding">Neutral</button>
         </div>
     </div>
+    <?php if ($visaMode): ?>
+    <span class="cb-credit-pill" title="Your agency's remaining credit balance">
+        <?= Html::e((string) $agencyCreditBalance) ?> credit<?= $agencyCreditBalance === 1 ? '' : 's' ?>
+    </span>
+    <?php endif; ?>
     <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="false" aria-controls="cbOptsDrw">
         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="4" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.3" fill="currentColor" stroke="none"/></svg>
         <span class="cb-opts-toggle-lbl">Options</span>
@@ -593,7 +613,7 @@ $optCard = static function (string $key, string $label) use ($show): string {
                 <div class="sidebar-hd">
                     <span class="sidebar-hd-title">
                         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 2l6 3.5V13L9 16.5 3 13V5.5L9 2z"/><path d="M9 2v14.5M3 5.5l6 4 6-4"/></svg>
-                        PNR Converter
+                        <?= $visaMode ? 'Visa Itinerary' : 'PNR Converter' ?>
                     </span>
                     <div class="sidebar-hd-actions">
                         <button type="button" class="sidebar-icon-btn" title="Conversion history" aria-label="History">
@@ -610,10 +630,19 @@ $optCard = static function (string $key, string $label) use ($show): string {
 
                 <!-- Input card -->
                 <div class="input-card">
+                    <?php if ($visaMode): ?>
+                    <input
+                        type="text"
+                        id="passenger_name"
+                        name="passenger_name"
+                        class="visa-pax-input"
+                        placeholder="Passenger name (as on passport)"
+                        value="<?= Html::e($passengerNameInput) ?>">
+                    <?php endif; ?>
                     <textarea
                         id="pnr_text"
                         name="pnr_text"
-                        rows="<?= $renderable ? '8' : '14' ?>"
+                        rows="<?= $renderable ? '8' : ($visaMode ? '12' : '14') ?>"
                         spellcheck="false"
                         placeholder="Paste GDS itinerary here — Amadeus, Galileo, Sabre, Worldspan, Smartpoint...
 
@@ -625,15 +654,18 @@ Example:
                         <div class="input-chips">
                             <span title="Your PNR is never saved or logged">🔒 Private</span>
                             <span title="Sensitive lines are automatically ignored">🚫 Docs ignored</span>
+                            <?php if ($visaMode): ?>
+                            <span title="Deducted from your agency's credit balance when generated">🎫 1 credit</span>
+                            <?php endif; ?>
                             <span class="gds-detect-chip" id="gdsDetectChip" style="display:none"><span class="gds-dot"></span><span id="gdsDetectLabel">Detecting…</span></span>
                         </div>
                         <div class="convert-btns">
-                            <button type="submit" class="btn btn-convert">✈ Convert</button>
+                            <button type="submit" class="btn btn-convert"><?= $visaMode ? '📄 Generate Document' : '✈ Convert' ?></button>
                             <button type="reset" id="resetBtn" class="btn btn-ghost">Clear</button>
                         </div>
                         <div class="kbd-hint">
                             <span class="kbd">Ctrl</span><span style="color:#334155">+</span><span class="kbd">↵</span>
-                            <span style="margin-left:4px">to convert instantly</span>
+                            <span style="margin-left:4px">to <?= $visaMode ? 'generate' : 'convert' ?> instantly</span>
                         </div>
                     </div>
                 </div>
@@ -713,17 +745,28 @@ Example:
                     </div>
                 <?php endif; ?>
 
+                <?php if ($creditError !== ''): ?>
+                    <div class="alert alert-danger" role="alert">
+                        <strong>Not enough credits.</strong> <?= Html::e($creditError) ?> <a href="<?= Html::e($asset('account.php')) ?>">View balance &amp; top up</a>
+                    </div>
+                <?php endif; ?>
+
                 <?php if ($result !== null && count($result->warnings) > 0): ?>
                     <div class="alert alert-warn" role="alert">
                         <?php foreach ($result->warnings as $w): ?><p><?= Html::e($w) ?></p><?php endforeach; ?>
                     </div>
                 <?php endif; ?>
 
-                <?php if ($result === null && !$rateLimited && !$dailyLimitReached): ?>
+                <?php if ($result === null && !$rateLimited && !$dailyLimitReached && $creditError === ''): ?>
                     <div class="empty-hint">
                         <svg class="empty-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+                        <?php if ($visaMode): ?>
+                        <p>Paste a GDS itinerary and enter the passenger's name, then click <strong>Generate Document</strong></p>
+                        <span class="empty-sub">Uses 1 credit per document &middot; <?= Html::e((string) $agencyCreditBalance) ?> remaining</span>
+                        <?php else: ?>
                         <p>Paste a GDS itinerary in the box and click <strong>Convert</strong></p>
                         <span class="empty-sub">Amadeus · Galileo · Sabre · Worldspan · Smartpoint</span>
+                        <?php endif; ?>
                     </div>
 
                 <?php elseif ($result !== null && !$result->isRenderable()): ?>
@@ -740,6 +783,19 @@ Example:
              ITINERARY CARD
         ══════════════════════════════════════ -->
         <article class="itin-card" id="itineraryCard" data-route="<?= Html::e($itinTitle($legs)) ?>" data-flights="<?= Html::e((string) count($result->segments)) ?>">
+
+            <?php if ($visaMode): ?>
+            <div class="visa-banner">
+                <div class="visa-banner-top">
+                    <span class="visa-banner-badge">Visa Application Document</span>
+                    <?php if ($docReference !== ''): ?><span class="visa-banner-ref">Ref: <?= Html::e($docReference) ?></span><?php endif; ?>
+                </div>
+                <?php if ($passengerNameInput !== ''): ?>
+                    <div class="visa-banner-pax">Passenger: <strong><?= Html::e($passengerNameInput) ?></strong></div>
+                <?php endif; ?>
+                <div class="visa-banner-note">For visa application purposes only. This document does not constitute a confirmed ticket and does not guarantee travel.</div>
+            </div>
+            <?php endif; ?>
 
             <?php if ($showAgencyHeader):
                 $agencyFooterCfg = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
@@ -1287,6 +1343,16 @@ Example:
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
+            <?php endif; ?>
+
+            <?php if ($visaMode && $verifyToken !== ''): ?>
+            <div class="visa-verify">
+                <div class="visa-verify-col">
+                    <div class="visa-verify-label">Verify this document</div>
+                    <div class="visa-verify-url"><?= Html::e($verifyUrl) ?></div>
+                </div>
+                <div class="visa-verify-issued">Issued <?= Html::e($docIssuedAt) ?> by <?= Html::e($agencyName) ?></div>
+            </div>
             <?php endif; ?>
 
         </article><!-- /itin-card -->

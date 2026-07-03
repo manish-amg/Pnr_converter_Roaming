@@ -67,6 +67,9 @@
 }
 .auth-submit:hover { background: var(--rn-navy-mid); }
 
+.verify-value { font-size: 14px; font-weight: 600; color: var(--rn-ink); }
+.verify-mono { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--rn-navy); }
+
 .auth-alert {
   padding: 10px 14px; border-radius: var(--rn-radius);
   margin-bottom: 18px; font-size: 13px;
