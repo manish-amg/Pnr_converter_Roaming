@@ -33,11 +33,15 @@ final class GenericAirSegmentParser extends BaseParser
         $count = count($lines);
         for ($i = 0; $i < $count; $i++) {
             $line = $lines[$i];
-            if ($this->isSensitiveLine($line)) {
+
+            // Try the strict flight-segment pattern before the privacy filter —
+            // dense HHMM time pairs (e.g. "2250 0615+1") can otherwise look like
+            // a 9+ digit phone number and get a genuine flight line dropped.
+            $segment = $this->parseSegmentLine($line, $ticket, $seat);
+            if ($segment === null && $this->isSensitiveLine($line)) {
                 continue;
             }
 
-            $segment = $this->parseSegmentLine($line, $ticket, $seat);
             if ($segment !== null) {
                 // Look ahead for "OPERATED BY ..." continuation lines
                 while (isset($lines[$i + 1]) && $this->isContinuationLine($lines[$i + 1])) {
