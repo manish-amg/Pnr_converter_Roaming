@@ -159,6 +159,15 @@ a { color: inherit; text-decoration: none; }
 }
 .rail-logout svg { width: 16px; height: 16px; }
 .rail-logout:hover { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); }
+.rail-signin {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; width: 56px; padding: 6px 4px; border-radius: 10px;
+  color: rgba(255,255,255,.55); text-decoration: none;
+  transition: background .14s, color .14s;
+}
+.rail-signin svg { width: 18px; height: 18px; }
+.rail-signin-lbl { font-size: 9px; font-weight: 700; font-family: 'Inter', sans-serif; }
+.rail-signin:hover { background: rgba(255,255,255,.1); color: #fff; }
 
 /* ══ Workspace ════════════════════════════════════════════════════ */
 .rn-workspace {

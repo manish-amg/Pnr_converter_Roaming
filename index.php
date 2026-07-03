@@ -8,7 +8,9 @@ use RoamingNepal\PnrConverter\Support\PrivacyLogger;
 
 require_once __DIR__ . '/app/bootstrap.php';
 
-Auth::requireLogin('login.php');
+// The converter itself is open to guests. Only Visa Doc / Account / Admin
+// (gated in their own files) require a login — see page.php nav rail.
+Auth::start();
 
 function checkRateLimit(): bool
 {
@@ -53,10 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Only count against the daily cap when the PNR text actually changed —
     // re-submits triggered by toggling display options must not burn a credit.
+    // Guests (not logged in) have no daily cap; they're bounded by the IP
+    // rate limiter above only.
     $inputHash = trim($rawInput) !== '' ? hash('sha256', trim($rawInput)) : null;
     $isNewConversion = $inputHash !== null && $inputHash !== ($_SESSION['pnrc_last_hash'] ?? null);
 
-    if (trim($rawInput) !== '' && !$rateLimited && $isNewConversion && Auth::dailyLimitReached()) {
+    if (trim($rawInput) !== '' && !$rateLimited && $isNewConversion && Auth::check() && Auth::dailyLimitReached()) {
         $dailyLimitReached = true;
     }
 
@@ -64,7 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = PnrParserFactory::parse($rawInput);
         PrivacyLogger::log($result, (bool) ($settings['privacy_logging_enabled'] ?? false));
         if ($isNewConversion) {
-            Auth::recordConversion();
+            if (Auth::check()) {
+                Auth::recordConversion();
+            }
             $_SESSION['pnrc_last_hash'] = $inputHash;
         }
     }

@@ -448,6 +448,11 @@ $renderable = $result !== null && $result->isRenderable();
         <a class="rail-logout" href="<?= Html::e($asset('logout.php')) ?>" title="Log out">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </a>
+        <?php else: ?>
+        <a class="rail-signin" href="<?= Html::e($asset('login.php')) ?>" title="Sign in for your team, credits &amp; history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span class="rail-signin-lbl">Sign in</span>
+        </a>
         <?php endif; ?>
     </div>
 </nav>

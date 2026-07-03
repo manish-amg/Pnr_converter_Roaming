@@ -76,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
 
             <div class="auth-foot">New agency? <a href="register.php">Create an account</a></div>
+            <div class="auth-foot">Just want to convert a PNR? <a href="index.php">Continue as guest</a></div>
         </div>
     </div>
 </div>
