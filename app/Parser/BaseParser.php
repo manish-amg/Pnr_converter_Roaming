@@ -17,8 +17,22 @@ abstract class BaseParser implements ParserInterface
     protected function lines(string $raw): array
     {
         $raw = str_replace(["\r\n", "\r"], "\n", $raw);
+        $raw = $this->stripInvisibleCharacters($raw);
         $lines = array_map(static fn (string $line): string => trim($line), explode("\n", $raw));
         return array_values(array_filter($lines, static fn (string $line): bool => $line !== ''));
+    }
+
+    /**
+     * Copy-pasting from Word, Outlook, or a numbered-list editor often embeds
+     * invisible Unicode characters (word joiners, zero-width spaces, BOM)
+     * around list numbers. These aren't ASCII whitespace, so \s in our
+     * parsing regexes silently fails to match past them. Strip them and
+     * normalize non-breaking spaces to regular spaces before any parsing.
+     */
+    private function stripInvisibleCharacters(string $raw): string
+    {
+        $raw = str_replace("\u{00A0}", ' ', $raw);
+        return preg_replace('/[\x{200B}-\x{200D}\x{2060}\x{FEFF}]/u', '', $raw) ?? $raw;
     }
 
     protected function isSensitiveLine(string $line): bool
