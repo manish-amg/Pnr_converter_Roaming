@@ -764,7 +764,7 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
   border-bottom: 2px solid var(--rn-line);
   white-space: nowrap;
 }
-.ref-th-logo { width: 76px; text-align: center; }
+.ref-th-carrier { width: 230px; }
 .ref-th-num  { width: 88px; text-align: center; }
 .ref-th-time { width: 84px; }
 .ref-th-date { width: 92px; }
@@ -777,20 +777,27 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
   padding: 16px 12px; border-bottom: 1px solid var(--rn-line-soft);
   vertical-align: top; font-size: 13.5px;
 }
-.ref-td-logo { text-align: center; vertical-align: middle; }
 .ref-td-num  { text-align: center; }
 
-.ref-logo-img { height: 38px; width: auto; max-width: 64px; object-fit: contain; vertical-align: middle; }
+/* Carrier cell — logo gets top billing so it reads at a glance */
+.ref-carrier { display: flex; align-items: center; gap: 12px; }
+.ref-carrier-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ref-logo-img { height: 52px; width: auto; max-width: 88px; object-fit: contain; flex-shrink: 0; }
 .ref-code-badge {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 46px; height: 26px; border-radius: 5px;
+  flex-shrink: 0;
+  width: 56px; height: 32px; border-radius: 6px;
   background: var(--rn-navy-light); color: var(--rn-navy);
-  font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+}
+.ref-carrier-flight {
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700;
+  color: var(--rn-muted);
 }
 
 .ref-port-code  { display: block; font-size: 15px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--rn-ink); line-height: 1.25; }
 .ref-port-name  { display: block; font-size: 11.5px; color: var(--rn-muted); font-weight: 500; }
-.ref-airline-name { font-weight: 600; color: var(--rn-ink); display: block; font-size: 13.5px; }
+.ref-airline-name { font-weight: 700; color: var(--rn-ink); display: block; font-size: 14.5px; }
 .ref-sub   { display: block; font-size: 11.5px; color: var(--rn-muted); font-weight: 500; margin-top: 1px; }
 .ref-opby-inline { color: var(--rn-purple); font-weight: 600; }
 .ref-nextday { display: block; font-size: 10px; color: var(--rn-amber); font-weight: 700; }

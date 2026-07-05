@@ -909,10 +909,8 @@ Example:
                     <table class="ref-table">
                         <thead>
                             <tr>
-                                <th class="ref-th ref-th-logo">Carrier</th>
+                                <th class="ref-th ref-th-carrier">Carrier</th>
                                 <th class="ref-th ref-th-date">Date</th>
-                                <th class="ref-th ref-th-airline">Airline</th>
-                                <th class="ref-th ref-th-num">Flight<br>No</th>
                                 <th class="ref-th ref-th-time">Depart</th>
                                 <th class="ref-th ref-th-port">From</th>
                                 <th class="ref-th ref-th-time">Arrive</th>
@@ -942,41 +940,39 @@ Example:
                             }
                             ?>
                             <tr class="ref-tr">
-                                <!-- Logo -->
-                                <td class="ref-td ref-td-logo">
-                                    <?php if ($logo): ?>
-                                        <?= $logoImg($logo, 'ref-logo-img', $seg->airlineCode) ?>
-                                    <?php else: ?>
-                                        <span class="ref-code-badge"><?= Html::e($seg->airlineCode) ?></span>
-                                    <?php endif; ?>
-                                </td>
-                                <!-- Date -->
-                                <td class="ref-td ref-td-date">
-                                    <?= Html::e($datePretty($seg->departureDate)) ?>
-                                </td>
-                                <!-- Airline -->
+                                <!-- Carrier: logo + airline name + flight no, combined for legibility -->
                                 <?php
                                 $opByDiffers = $showOpBy && $seg->operatedBy
                                     && strtolower(trim($seg->operatedBy)) !== strtolower(trim($seg->airlineName ?? ''))
                                     && strtolower(trim($seg->operatedBy)) !== strtolower(trim($seg->airlineCode));
                                 ?>
-                                <td class="ref-td ref-td-airline" title="<?= Html::e($seg->airlineName ?? $seg->airlineCode) ?>">
-                                    <span class="ref-airline-name"><?php if ($show('show_airline_name') && $seg->airlineName): ?><?= Html::e($seg->airlineName) ?><?php else: ?><?= Html::e($seg->airlineCode) ?><?php endif; ?></span>
-                                    <?php if ($opByDiffers): ?>
-                                        <span class="ref-sub ref-opby-inline">Op: <?= Html::e($seg->operatedBy) ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($showCabin && $seg->cabin): ?>
-                                        <span class="ref-sub"><?= Html::e($seg->cabin) ?></span>
-                                    <?php elseif ($showClass && $seg->bookingClass): ?>
-                                        <span class="ref-sub">Class <?= Html::e($seg->bookingClass) ?></span>
-                                    <?php endif; ?>
-                                    <?php if ($showAcft && $seg->aircraft): ?>
-                                        <span class="ref-sub"><?= Html::e($seg->aircraft) ?></span>
-                                    <?php endif; ?>
+                                <td class="ref-td ref-td-carrier" title="<?= Html::e($seg->airlineName ?? $seg->airlineCode) ?>">
+                                    <div class="ref-carrier">
+                                        <?php if ($logo): ?>
+                                            <?= $logoImg($logo, 'ref-logo-img', $seg->airlineCode) ?>
+                                        <?php else: ?>
+                                            <span class="ref-code-badge"><?= Html::e($seg->airlineCode) ?></span>
+                                        <?php endif; ?>
+                                        <div class="ref-carrier-info">
+                                            <span class="ref-airline-name"><?php if ($show('show_airline_name') && $seg->airlineName): ?><?= Html::e($seg->airlineName) ?><?php else: ?><?= Html::e($seg->airlineCode) ?><?php endif; ?></span>
+                                            <span class="ref-carrier-flight"><?= Html::e($seg->flightNumber) ?></span>
+                                            <?php if ($opByDiffers): ?>
+                                                <span class="ref-sub ref-opby-inline">Op: <?= Html::e($seg->operatedBy) ?></span>
+                                            <?php endif; ?>
+                                            <?php if ($showCabin && $seg->cabin): ?>
+                                                <span class="ref-sub"><?= Html::e($seg->cabin) ?></span>
+                                            <?php elseif ($showClass && $seg->bookingClass): ?>
+                                                <span class="ref-sub">Class <?= Html::e($seg->bookingClass) ?></span>
+                                            <?php endif; ?>
+                                            <?php if ($showAcft && $seg->aircraft): ?>
+                                                <span class="ref-sub"><?= Html::e($seg->aircraft) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
                                 </td>
-                                <!-- Flight No -->
-                                <td class="ref-td ref-td-num">
-                                    <strong><?= Html::e($seg->flightNumber) ?></strong>
+                                <!-- Date -->
+                                <td class="ref-td ref-td-date">
+                                    <?= Html::e($datePretty($seg->departureDate)) ?>
                                 </td>
                                 <!-- Depart time -->
                                 <td class="ref-td ref-td-time">
