@@ -85,8 +85,43 @@ abstract class BaseParser implements ParserInterface
         if (strlen($year) === 2) {
             $year = '20' . $year;
         }
+        if ($year === '') {
+            $year = (string) $this->inferYear((int) $day, strtoupper($m[2]));
+        }
 
         return $day . strtoupper($m[2]) . $year;
+    }
+
+    /**
+     * GDS date fields almost never carry an explicit year — the airline system
+     * assumes "the next occurrence of this day/month". Defaulting blindly to
+     * the current calendar year breaks any date that's already passed (e.g.
+     * booking in Jul 2026 for 15MAR with no year must mean 15MAR2027, not
+     * 15MAR2026) — the weekday shown then belongs to the wrong year entirely.
+     */
+    private function inferYear(int $day, string $monthAbbr): int
+    {
+        $months = ['JAN' => 1, 'FEB' => 2, 'MAR' => 3, 'APR' => 4, 'MAY' => 5, 'JUN' => 6,
+            'JUL' => 7, 'AUG' => 8, 'SEP' => 9, 'OCT' => 10, 'NOV' => 11, 'DEC' => 12];
+        $month = $months[$monthAbbr] ?? null;
+        $currentYear = (int) date('Y');
+        if ($month === null) {
+            return $currentYear;
+        }
+
+        try {
+            $candidate = new \DateTimeImmutable(sprintf('%04d-%02d-%02d', $currentYear, $month, $day));
+        } catch (\Exception) {
+            return $currentYear;
+        }
+
+        // More than a month in the past this year — assume it means next year.
+        $today = new \DateTimeImmutable('today');
+        if ($candidate < $today->modify('-30 days')) {
+            return $currentYear + 1;
+        }
+
+        return $currentYear;
     }
 
     protected function cabinFromClass(?string $class): ?string

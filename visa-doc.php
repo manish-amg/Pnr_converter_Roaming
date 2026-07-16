@@ -42,34 +42,35 @@ function visaDocGdsDateToSql(string $gdsDate): ?string
     return sprintf('%04d-%02d-%02d', $year, $month, (int) $m[1]);
 }
 
+// Visa Itinerary is a fixed, formal document — not a re-skin of the free
+// converter. There is no format picker and no Options popover; the only
+// thing the agent controls is the passenger name and whether the agency's
+// own branding appears. Everything else renders at its most complete.
+$features['result_format']         = 'detailed';
+$features['show_airline_logo']     = true;
+$features['show_airline_name']     = true;
+$features['show_flight_duration']  = true;
+$features['show_transit_time']     = true;
+$features['show_terminal']         = true;
+$features['show_cabin']            = true;
+$features['show_booking_class']    = false;
+$features['show_booking_reference'] = true;
+$features['show_aircraft']         = false;
+$features['show_operated_by']      = true;
+$features['show_disclaimer']       = true;
+$features['show_must_read']        = false;
+$features['show_co2']              = false;
+$features['show_ticket_numbers']   = false;
+$features['show_seat_numbers']     = false;
+$features['distance_unit']         = 'off';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = isset($_POST['pnr_text']) ? (string) $_POST['pnr_text'] : '';
     $passengerNameInput = trim((string) ($_POST['passenger_name'] ?? ''));
 
-    foreach ($features as $key => $value) {
-        if (array_key_exists($key, $_POST)) {
-            if ($key === 'distance_unit') {
-                $posted = (string) $_POST[$key];
-                $features[$key] = in_array($posted, ['off', 'km', 'miles'], true) ? $posted : 'off';
-                continue;
-            }
-            if ($key === 'result_format') {
-                $posted = (string) $_POST[$key];
-                $allowed = ['detailed', 'compact', 'table', 'whatsapp', 'two_lines', 'two_lines_reordered', 'three_lines', 'three_lines_reordered'];
-                $features[$key] = in_array($posted, $allowed, true) ? $posted : 'detailed';
-                continue;
-            }
-            $features[$key] = $_POST[$key] === '1';
-        }
-    }
-    foreach (['show_must_read'] as $extraKey) {
-        if (array_key_exists($extraKey, $_POST)) {
-            $features[$extraKey] = $_POST[$extraKey] === '1';
-        }
-    }
-    if (isset($features['use_12_hour_clock'])) {
-        $features['use_24_hour_time'] = !(bool) $features['use_12_hour_clock'];
-    }
+    $agencyBranding = ($_POST['agency_branding'] ?? '1') === '1';
+    $features['show_agency_header'] = $agencyBranding;
+    $features['show_agency_footer'] = $agencyBranding;
 
     // Re-rendering an already-issued document (e.g. toggling display options)
     // must not deduct a second credit — only charge when the PNR text changes.

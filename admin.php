@@ -86,10 +86,10 @@ $users = $pdo->query(
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span class="rail-item-label">Convert</span>
             </a>
-            <span class="rail-item is-disabled" title="Visa Itinerary — coming soon">
+            <a class="rail-item" href="visa-doc.php" title="Visa Itinerary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                <span class="rail-item-label">Visa Doc</span>
-            </span>
+                <span class="rail-item-label">Visa Itinerary</span>
+            </a>
             <a class="rail-item" href="account.php" title="Account">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span class="rail-item-label">Account</span>

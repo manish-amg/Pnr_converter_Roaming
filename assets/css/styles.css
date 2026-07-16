@@ -245,7 +245,7 @@ a { color: inherit; text-decoration: none; }
 .tpill:hover { background: var(--rn-navy-light); color: var(--rn-navy); }
 .tpill.is-active { background: var(--rn-navy); color: #fff; border-color: var(--rn-navy); }
 
-/* Credit balance pill (Visa Doc mode) */
+/* Credit balance pill + branding toggle (Visa Itinerary mode) */
 .cb-credit-pill {
   display: inline-flex; align-items: center;
   padding: 6px 12px; margin-left: auto;
@@ -254,6 +254,26 @@ a { color: inherit; text-decoration: none; }
   background: var(--rn-navy-light); color: var(--rn-navy);
   border: 1px solid var(--rn-navy-border); white-space: nowrap;
 }
+.cb-branding-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px; margin-left: 8px;
+  border-radius: var(--rn-radius-pill);
+  font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+  color: var(--rn-ink-mid); border: 1px solid var(--rn-line);
+  background: var(--rn-surface-2); cursor: pointer; white-space: nowrap;
+}
+.cb-branding-toggle input[type="checkbox"] {
+  appearance: none; width: 28px; height: 16px; border-radius: 999px;
+  background: var(--rn-line); position: relative; cursor: pointer;
+  transition: background .12s; flex-shrink: 0;
+}
+.cb-branding-toggle input[type="checkbox"]::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; transition: left .12s;
+}
+.cb-branding-toggle input[type="checkbox"]:checked { background: var(--rn-navy); }
+.cb-branding-toggle input[type="checkbox"]:checked::after { left: 14px; }
 
 /* Options button */
 .cb-opts-toggle {

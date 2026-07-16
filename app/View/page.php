@@ -432,12 +432,12 @@ $renderable = $result !== null && $result->isRenderable();
         <?php if ($authUser !== null): ?>
         <a class="rail-item<?= $visaMode ? ' is-active' : '' ?>" href="<?= Html::e($asset('visa-doc.php')) ?>" title="Visa Itinerary Document">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            <span class="rail-item-label">Visa Doc</span>
+            <span class="rail-item-label">Visa Itinerary</span>
         </a>
         <?php else: ?>
         <span class="rail-item is-disabled" title="Sign in to generate visa documents">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            <span class="rail-item-label">Visa Doc</span>
+            <span class="rail-item-label">Visa Itinerary</span>
         </span>
         <?php endif; ?>
         <a class="rail-item" href="<?= Html::e($asset('account.php')) ?>" title="Account">
@@ -497,6 +497,7 @@ $optCard = static function (string $key, string $label) use ($show): string {
     <button type="button" class="cb-hamburger" id="sidebarToggleBtn" title="Toggle sidebar" aria-label="Toggle input sidebar">
         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><line x1="2" y1="5" x2="16" y2="5"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="13" x2="16" y2="13"/></svg>
     </button>
+    <?php if (!$visaMode): ?>
     <span class="cb-div"></span>
     <div class="cb-sect">
         <span class="cb-sect-lbl">Format</span>
@@ -522,17 +523,26 @@ $optCard = static function (string $key, string $label) use ($show): string {
             <button type="button" class="tpill" data-preset="neutral" title="Hide agency branding">Neutral</button>
         </div>
     </div>
+    <?php endif; ?>
     <?php if ($visaMode): ?>
     <span class="cb-credit-pill" title="Your agency's remaining credit balance">
         <?= Html::e((string) $agencyCreditBalance) ?> credit<?= $agencyCreditBalance === 1 ? '' : 's' ?>
     </span>
+    <label class="cb-branding-toggle" title="Include your agency's logo and contact details on the document">
+        <input type="hidden" name="agency_branding" value="0">
+        <input type="checkbox" name="agency_branding" value="1"<?= Html::checked($show('show_agency_header')) ?>>
+        <span>Agency branding</span>
+    </label>
     <?php endif; ?>
+    <?php if (!$visaMode): ?>
     <button type="button" class="cb-opts-toggle" id="cbOptsToggle" aria-expanded="false" aria-controls="cbOptsDrw">
         <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="4" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="9" cy="14" r="1.3" fill="currentColor" stroke="none"/></svg>
         <span class="cb-opts-toggle-lbl">Options</span>
     </button>
+    <?php endif; ?>
 </div>
 
+<?php if (!$visaMode): ?>
 <!-- ── OPTIONS POPOVER ────────────────────────────────────────── -->
 <div class="opts-popover settings-panel" id="cbOptsDrw" hidden>
     <div class="opts-hd">
@@ -601,6 +611,7 @@ $optCard = static function (string $key, string $label) use ($show): string {
         <?= $optCard('use_12_hour_clock',  '12hr Clock') ?>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- ── APP LAYOUT ──────────────────────────────────────────────── -->
 <div class="app-layout" id="appLayout">
