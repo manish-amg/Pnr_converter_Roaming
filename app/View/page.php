@@ -440,6 +440,17 @@ $renderable = $result !== null && $result->isRenderable();
             <span class="rail-item-label">Visa Itinerary</span>
         </span>
         <?php endif; ?>
+        <?php if ($authUser !== null): ?>
+        <a class="rail-item" href="<?= Html::e($asset('eticket.php')) ?>" title="E-Ticket">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 10a2 2 0 100-4V5a1 1 0 011-1h16a1 1 0 011 1v1a2 2 0 100 4v0a2 2 0 100 4v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a2 2 0 100-4z"/><line x1="10" y1="4" x2="10" y2="20" stroke-dasharray="2 2"/></svg>
+            <span class="rail-item-label">E-Ticket</span>
+        </a>
+        <?php else: ?>
+        <span class="rail-item is-disabled" title="Sign in to generate e-tickets">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 10a2 2 0 100-4V5a1 1 0 011-1h16a1 1 0 011 1v1a2 2 0 100 4v0a2 2 0 100 4v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-1a2 2 0 100-4z"/><line x1="10" y1="4" x2="10" y2="20" stroke-dasharray="2 2"/></svg>
+            <span class="rail-item-label">E-Ticket</span>
+        </span>
+        <?php endif; ?>
         <a class="rail-item" href="<?= Html::e($asset('account.php')) ?>" title="Account">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span class="rail-item-label">Account</span>

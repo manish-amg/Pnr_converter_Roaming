@@ -120,3 +120,14 @@ html, body {
 .disclaimer     { font-size: 8pt !important; }
 .card-must-read { padding: 6pt 14pt !important; }
 .must-read-list { font-size: 9pt !important; }
+
+/* ════════════════════════════════════════════════════
+   E-TICKET
+════════════════════════════════════════════════════ */
+.et-layout { display: block !important; }
+.et-preview-pane { background: #fff !important; }
+.et-doc {
+  max-width: 100% !important; margin: 0 !important;
+  box-shadow: none !important; border-radius: 0 !important;
+}
+.et-leg, .et-connect-divider { page-break-inside: avoid; break-inside: avoid; }
