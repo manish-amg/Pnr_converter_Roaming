@@ -43,6 +43,10 @@ final class Metadata
         static $map = [
             // Nepal
             'KTM' => 'Asia/Kathmandu', 'PKR' => 'Asia/Kathmandu', 'BWA' => 'Asia/Kathmandu',
+            'BIR' => 'Asia/Kathmandu', 'JMO' => 'Asia/Kathmandu', 'KEP' => 'Asia/Kathmandu',
+            'BDP' => 'Asia/Kathmandu', 'DHI' => 'Asia/Kathmandu', 'SIF' => 'Asia/Kathmandu',
+            'LUA' => 'Asia/Kathmandu', 'RJB' => 'Asia/Kathmandu', 'TPU' => 'Asia/Kathmandu',
+            'IMK' => 'Asia/Kathmandu',
             // Middle East
             'DXB' => 'Asia/Dubai', 'AUH' => 'Asia/Dubai', 'SHJ' => 'Asia/Dubai',
             'DOH' => 'Asia/Qatar', 'BAH' => 'Asia/Bahrain', 'KWI' => 'Asia/Kuwait',
@@ -160,7 +164,12 @@ final class Metadata
             'TPE' => 'Asia/Taipei',
             'MNL' => 'Asia/Manila',
             'CGK' => 'Asia/Jakarta', 'DPS' => 'Asia/Makassar',
-            'SGN' => 'Asia/Ho_Chi_Minh', 'HAN' => 'Asia/Bangkok',
+            'SGN' => 'Asia/Ho_Chi_Minh', 'HAN' => 'Asia/Ho_Chi_Minh', 'DAD' => 'Asia/Ho_Chi_Minh',
+            'CXR' => 'Asia/Ho_Chi_Minh', 'PQC' => 'Asia/Ho_Chi_Minh', 'HPH' => 'Asia/Ho_Chi_Minh',
+            'VII' => 'Asia/Ho_Chi_Minh', 'HUI' => 'Asia/Ho_Chi_Minh', 'DLI' => 'Asia/Ho_Chi_Minh',
+            'VCA' => 'Asia/Ho_Chi_Minh', 'VCL' => 'Asia/Ho_Chi_Minh', 'UIH' => 'Asia/Ho_Chi_Minh',
+            'BMV' => 'Asia/Ho_Chi_Minh', 'PXU' => 'Asia/Ho_Chi_Minh', 'TBB' => 'Asia/Ho_Chi_Minh',
+            'VDH' => 'Asia/Ho_Chi_Minh', 'VKG' => 'Asia/Ho_Chi_Minh', 'CAH' => 'Asia/Ho_Chi_Minh',
             'RGN' => 'Asia/Rangoon',
             'KTI' => 'Asia/Phnom_Penh', 'PNH' => 'Asia/Phnom_Penh',
             'VTE' => 'Asia/Vientiane',
