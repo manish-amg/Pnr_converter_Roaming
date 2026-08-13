@@ -143,6 +143,7 @@ return [
     'PG' => ['name' => 'Bangkok Airways'],
     'PR' => ['name' => 'Philippine Airlines'],
     // Q
+    'Q6' => ['name' => 'Summit Air'],
     'QF' => ['name' => 'Qantas'],
     'QR' => ['name' => 'Qatar Airways'],
     // R
@@ -153,6 +154,7 @@ return [
     'S7' => ['name' => 'S7 Airlines'],
     'SA' => ['name' => 'South African Airways'],
     'SG' => ['name' => 'SpiceJet'],
+    'SHA' => ['name' => 'Shree Airlines'],
     'SK' => ['name' => 'Scandinavian Airlines (SAS)'],
     'SL' => ['name' => 'Thai Lion Air'],
     'SN' => ['name' => 'Brussels Airlines'],
@@ -160,6 +162,7 @@ return [
     'SU' => ['name' => 'Aeroflot'],
     'SV' => ['name' => 'Saudia'],
     // T
+    'TA' => ['name' => 'Tara Air'],
     'TG' => ['name' => 'Thai Airways International'],
     'TK' => ['name' => 'Turkish Airlines'],
     'TP' => ['name' => 'TAP Air Portugal'],
@@ -168,7 +171,7 @@ return [
     'TU' => ['name' => 'Tunisair'],
     // U
     'U2' => ['name' => 'easyJet'],
-    'U4' => ['name' => 'Yeti Airlines'],
+    'U4' => ['name' => 'Buddha Air'],
     'UA' => ['name' => 'United Airlines'],
     'UK' => ['name' => 'Vistara'],
     'UL' => ['name' => 'SriLankan Airlines'],
@@ -190,6 +193,8 @@ return [
     'XJ' => ['name' => 'Thai AirAsia X'],
     'XQ' => ['name' => 'SunExpress'],
     'XY' => ['name' => 'flynas'],
+    // Y
+    'YT' => ['name' => 'Yeti Airlines'],
     // Z
     'ZH' => ['name' => 'Shenzhen Airlines'],
     'ZI' => ['name' => 'Aigle Azur'],
