@@ -40,7 +40,7 @@ if ($token !== '' && preg_match('/^[a-f0-9]{32}$/', $token) === 1) {
         <div class="auth-brand-logo"><span><?= Html::e($agencyName) ?></span></div>
         <div class="auth-brand-mid">
             <div class="auth-brand-title">Document verification.</div>
-            <div class="auth-brand-sub">Confirming whether a visa itinerary document was genuinely issued by one of our partner agencies.</div>
+            <div class="auth-brand-sub">Confirming whether a visa itinerary or e-ticket document was genuinely issued by one of our partner agencies.</div>
         </div>
     </div>
     <div class="auth-main">
