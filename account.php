@@ -13,6 +13,7 @@ $pdo = DB::conn();
 $settings = load_settings();
 $agencyName = (string) ($settings['agency_name'] ?? 'Roaming Nepal');
 $isOwnerLike = in_array($user['role'], ['owner', 'superadmin'], true);
+const ACCT_SEAT_LIMIT = 5;
 
 $notice = null;
 $error = null;
@@ -28,13 +29,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim((string) ($_POST['agency_name'] ?? ''));
         $phone = trim((string) ($_POST['contact_phone'] ?? ''));
         $email = trim((string) ($_POST['contact_email'] ?? ''));
+        $logoPath = (string) $agency['logo_path'];
 
         if ($name === '') {
             $error = 'Agency name cannot be empty.';
-        } else {
-            $pdo->prepare('UPDATE agencies SET name = :name, contact_phone = :phone, contact_email = :email WHERE id = :id')
-                ->execute(['name' => $name, 'phone' => $phone, 'email' => $email, 'id' => $agency['id']]);
-            $notice = 'Agency details updated.';
+        } elseif (isset($_FILES['agency_logo']) && $_FILES['agency_logo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp', 'image/svg+xml' => 'svg'];
+            $mime = mime_content_type($_FILES['agency_logo']['tmp_name']);
+            if (!isset($allowed[$mime]) || $_FILES['agency_logo']['size'] > 1_500_000) {
+                $error = 'Logo must be a PNG, JPG, WEBP or SVG under 1.5MB.';
+            } else {
+                $uploadDir = __DIR__ . '/assets/uploads/agencies';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $filename = 'agency-' . $agency['id'] . '-' . time() . '.' . $allowed[$mime];
+                if (move_uploaded_file($_FILES['agency_logo']['tmp_name'], $uploadDir . '/' . $filename)) {
+                    $logoPath = 'assets/uploads/agencies/' . $filename;
+                } else {
+                    $error = 'Could not save the uploaded logo.';
+                }
+            }
+        }
+
+        if ($error === null) {
+            $pdo->prepare('UPDATE agencies SET name = :name, contact_phone = :phone, contact_email = :email, logo_path = :logo WHERE id = :id')
+                ->execute(['name' => $name, 'phone' => $phone, 'email' => $email, 'logo' => $logoPath !== '' ? $logoPath : null, 'id' => $agency['id']]);
+            $notice = 'Branding updated.';
             $agencyStmt->execute(['id' => $user['agency_id']]);
             $agency = $agencyStmt->fetch();
         }
@@ -45,7 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = strtolower(trim((string) ($_POST['agent_email'] ?? '')));
         $password = (string) ($_POST['agent_password'] ?? '');
 
-        if ($name === '' || $email === '' || strlen($password) < 8) {
+        $seatCountStmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE agency_id = :aid');
+        $seatCountStmt->execute(['aid' => $agency['id']]);
+        $currentSeats = (int) $seatCountStmt->fetchColumn();
+
+        if ($currentSeats >= ACCT_SEAT_LIMIT) {
+            $error = 'All ' . ACCT_SEAT_LIMIT . ' team seats are in use.';
+        } elseif ($name === '' || $email === '' || strlen($password) < 8) {
             $error = 'Enter a name, valid email, and a password of at least 8 characters.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $error = 'Enter a valid email address.';
@@ -103,6 +130,8 @@ if ($agency !== false) {
 
 $conversionsToday = Auth::conversionsToday();
 $dailyLimit = Auth::dailyLimit();
+$seatLimit = ACCT_SEAT_LIMIT;
+$creditBalance = $agency !== false ? (int) $agency['credit_balance'] : 0;
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -151,13 +180,42 @@ $dailyLimit = Auth::dailyLimit();
 
     <div class="rn-workspace">
     <main class="rn-page acct-page">
+        <div class="acct-eyebrow">ACCOUNT</div>
         <div class="acct-header">
-            <h1 class="acct-title">Account</h1>
+            <h1 class="acct-title"><?= Html::e($agency !== false ? (string) $agency['name'] : $agencyName) ?></h1>
             <span class="acct-role-badge"><?= Html::e(ucfirst((string) $user['role'])) ?></span>
         </div>
+        <div class="acct-header-sub"><?= Html::e((string) $user['email']) ?></div>
 
         <?php if ($notice !== null): ?><div class="alert" style="background:rgba(16,185,129,.09);color:#059669;border:1px solid rgba(16,185,129,.22);"><?= Html::e($notice) ?></div><?php endif; ?>
         <?php if ($error !== null): ?><div class="alert alert-danger"><?= Html::e($error) ?></div><?php endif; ?>
+
+        <div class="acct-stats-row">
+            <section class="acct-stat-card acct-stat-credit">
+                <div class="acct-stat-watermark">&#9889;</div>
+                <div class="acct-stat-label">Credit balance</div>
+                <div class="acct-stat-value"><?= Html::e((string) $creditBalance) ?></div>
+                <div class="acct-stat-note">1 credit = 1 visa itinerary or international e-ticket</div>
+                <?php if (Auth::isInternal()): ?>
+                    <span class="acct-topup-badge">Unlimited &middot; Roaming staff</span>
+                <?php elseif ($isOwnerLike && $agency !== false): ?>
+                    <a class="acct-topup-btn" href="mailto:<?= Html::e((string) ($settings['contact_email'] ?? 'support@roamingnepal.com')) ?>?subject=Credit%20top-up%20request%20-%20<?= rawurlencode((string) $agency['name']) ?>">Request top-up</a>
+                <?php endif; ?>
+            </section>
+            <section class="acct-stat-card">
+                <div class="acct-stat-label">Conversions today</div>
+                <div class="acct-stat-value acct-stat-value-navy"><?= Auth::isInternal() ? '&#8734;' : Html::e((string) $conversionsToday) ?></div>
+                <div class="acct-stat-note"><?= Auth::isInternal() ? 'Unlimited for internal staff' : 'of ' . Html::e((string) $dailyLimit) . ' free daily &middot; resets midnight' ?></div>
+                <?php if (!Auth::isInternal()): ?>
+                <div class="acct-progress"><div class="acct-progress-fill" style="width:<?= min(100, $dailyLimit > 0 ? (int) round($conversionsToday / $dailyLimit * 100) : 0) ?>%"></div></div>
+                <?php endif; ?>
+            </section>
+            <section class="acct-stat-card">
+                <div class="acct-stat-label">Plan</div>
+                <span class="acct-plan-pill"><?= Auth::isInternal() ? 'Internal &middot; Unlimited' : 'Agency &middot; Pay-as-you-go' ?></span>
+                <div class="acct-stat-note"><?= Auth::isInternal() ? 'No conversion limits or credit charges for Roaming Nepal staff.' : 'Conversions are free; documents are metered by credits topped up by an admin.' ?></div>
+            </section>
+        </div>
 
         <div class="acct-grid">
             <!-- Profile card -->
@@ -191,29 +249,45 @@ $dailyLimit = Auth::dailyLimit();
             </section>
 
             <?php if ($agency !== false): ?>
-            <!-- Agency & credits -->
-            <section class="acct-card">
-                <h2 class="acct-card-title">Agency</h2>
-                <div class="acct-kv"><span>Name</span><strong><?= Html::e((string) $agency['name']) ?></strong></div>
-                <div class="acct-kv"><span>Credit balance</span><strong class="acct-credit"><?= Html::e((string) $agency['credit_balance']) ?></strong></div>
+            <!-- Agency Branding -->
+            <section class="acct-card acct-card-wide">
+                <h2 class="acct-card-title">Agency Branding</h2>
 
                 <?php if ($isOwnerLike): ?>
-                <form method="post" autocomplete="off" class="acct-inline-form">
+                <form method="post" autocomplete="off" class="acct-inline-form" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="update_agency">
-                    <div class="auth-field">
-                        <label class="auth-label" for="agency_name">Agency name</label>
-                        <input class="auth-input" type="text" id="agency_name" name="agency_name" value="<?= Html::e((string) $agency['name']) ?>" required>
+                    <div class="acct-branding-row">
+                        <label class="acct-branding-drop" for="agency_logo">
+                            <?php if (!empty($agency['logo_path'])): ?>
+                                <img src="<?= Html::e((string) $agency['logo_path']) ?>" alt="Agency logo">
+                            <?php else: ?>
+                                <span class="acct-branding-drop-icon">&#8593;</span>
+                                <span>Upload logo</span>
+                            <?php endif; ?>
+                        </label>
+                        <input type="file" id="agency_logo" name="agency_logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none" onchange="this.closest('form').querySelector('.acct-branding-filename').textContent=this.files[0]?.name||''">
+                        <div class="acct-branding-fields">
+                            <div class="auth-field">
+                                <label class="auth-label" for="agency_name">Agency name</label>
+                                <input class="auth-input" type="text" id="agency_name" name="agency_name" value="<?= Html::e((string) $agency['name']) ?>" required>
+                            </div>
+                            <div class="auth-field">
+                                <label class="auth-label" for="contact_phone">Phone</label>
+                                <input class="auth-input" type="text" id="contact_phone" name="contact_phone" value="<?= Html::e((string) $agency['contact_phone']) ?>">
+                            </div>
+                            <div class="auth-field">
+                                <label class="auth-label" for="contact_email">Email</label>
+                                <input class="auth-input" type="email" id="contact_email" name="contact_email" value="<?= Html::e((string) $agency['contact_email']) ?>">
+                            </div>
+                            <div class="acct-branding-filename"></div>
+                        </div>
                     </div>
-                    <div class="auth-field">
-                        <label class="auth-label" for="contact_phone">Contact phone</label>
-                        <input class="auth-input" type="text" id="contact_phone" name="contact_phone" value="<?= Html::e((string) $agency['contact_phone']) ?>">
-                    </div>
-                    <div class="auth-field">
-                        <label class="auth-label" for="contact_email">Contact email</label>
-                        <input class="auth-input" type="email" id="contact_email" name="contact_email" value="<?= Html::e((string) $agency['contact_email']) ?>">
-                    </div>
-                    <button class="auth-submit acct-btn-sm" type="submit">Save agency details</button>
+                    <button class="auth-submit acct-btn-sm" type="submit">Save branding</button>
                 </form>
+                <?php else: ?>
+                    <div class="acct-kv"><span>Name</span><strong><?= Html::e((string) $agency['name']) ?></strong></div>
+                    <div class="acct-kv"><span>Phone</span><strong><?= Html::e((string) $agency['contact_phone']) ?></strong></div>
+                    <div class="acct-kv"><span>Email</span><strong><?= Html::e((string) $agency['contact_email']) ?></strong></div>
                 <?php endif; ?>
 
                 <?php if (count($ledger) > 0): ?>
@@ -233,7 +307,10 @@ $dailyLimit = Auth::dailyLimit();
             <!-- Team -->
             <?php if ($isOwnerLike): ?>
             <section class="acct-card acct-card-wide">
-                <h2 class="acct-card-title">Team</h2>
+                <div class="acct-team-header">
+                    <h2 class="acct-card-title">Team Seats</h2>
+                    <span class="acct-seat-count"><?= Html::e((string) count($team)) ?> of <?= Html::e((string) $seatLimit) ?> seats used</span>
+                </div>
                 <table class="acct-table">
                     <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
                     <tbody>
@@ -248,7 +325,10 @@ $dailyLimit = Auth::dailyLimit();
                     </tbody>
                 </table>
 
-                <h3 class="acct-subtitle">Add a team member</h3>
+                <h3 class="acct-subtitle">Invite member</h3>
+                <?php if (count($team) >= $seatLimit): ?>
+                    <div class="acct-seat-full">All <?= Html::e((string) $seatLimit) ?> seats are in use. Remove a member or contact support to add more seats.</div>
+                <?php else: ?>
                 <form method="post" autocomplete="off" class="acct-inline-form">
                     <input type="hidden" name="action" value="add_agent">
                     <div class="auth-field">
@@ -263,8 +343,9 @@ $dailyLimit = Auth::dailyLimit();
                         <label class="auth-label" for="agent_password">Temporary password</label>
                         <input class="auth-input" type="password" id="agent_password" name="agent_password" required minlength="8">
                     </div>
-                    <button class="auth-submit acct-btn-sm" type="submit">Add team member</button>
+                    <button class="auth-submit acct-btn-sm" type="submit">Invite member</button>
                 </form>
+                <?php endif; ?>
             </section>
             <?php endif; ?>
             <?php endif; ?>
