@@ -174,8 +174,75 @@ final class Metadata
             'KTI' => 'Asia/Phnom_Penh', 'PNH' => 'Asia/Phnom_Penh',
             'VTE' => 'Asia/Vientiane',
             'REP' => 'Asia/Phnom_Penh',
+            // New Zealand
+            'ZQN' => 'Pacific/Auckland', 'DUD' => 'Pacific/Auckland', 'NPE' => 'Pacific/Auckland',
+            'ROT' => 'Pacific/Auckland', 'NSN' => 'Pacific/Auckland', 'IVC' => 'Pacific/Auckland',
         ];
-        return $map[strtoupper($code)] ?? null;
+        $code = strtoupper($code);
+        if (isset($map[$code])) {
+            return $map[$code];
+        }
+
+        // Fallback: every airport not explicitly listed above still resolves to its
+        // country's primary timezone, so an unmapped code is never silently treated
+        // as UTC while the other side of a segment resolves correctly (the root
+        // cause of large, systematic duration errors on routes involving a smaller
+        // airport, e.g. AKL-ZQN or KUL-DAD before their codes were added here).
+        $country = self::airport($code)['country'] ?? null;
+        return $country !== null ? self::countryTimezone((string) $country) : null;
+    }
+
+    /**
+     * One representative IANA timezone per country — used only as a fallback when an
+     * airport code has no explicit entry in the override map above. Multi-timezone
+     * countries (US, Canada, Russia, Australia, Brazil, China, Indonesia...) point to
+     * their most common hub zone; this is an approximation, but far closer than the
+     * alternative of silently defaulting to the server's UTC clock.
+     */
+    private static function countryTimezone(string $country): ?string
+    {
+        static $map = [
+            'Afghanistan' => 'Asia/Kabul', 'Albania' => 'Europe/Tirane', 'Argentina' => 'America/Argentina/Buenos_Aires',
+            'Armenia' => 'Asia/Yerevan', 'Australia' => 'Australia/Sydney', 'Austria' => 'Europe/Vienna',
+            'Azerbaijan' => 'Asia/Baku', 'Bahrain' => 'Asia/Bahrain', 'Bangladesh' => 'Asia/Dhaka',
+            'Belgium' => 'Europe/Brussels', 'Bolivia' => 'America/La_Paz', 'Bosnia' => 'Europe/Sarajevo',
+            'Brazil' => 'America/Sao_Paulo', 'Brunei' => 'Asia/Brunei', 'Bulgaria' => 'Europe/Sofia',
+            'Cambodia' => 'Asia/Phnom_Penh', 'Canada' => 'America/Toronto', 'Chile' => 'America/Santiago',
+            'China' => 'Asia/Shanghai', 'Colombia' => 'America/Bogota', 'Croatia' => 'Europe/Zagreb',
+            'Cuba' => 'America/Havana', 'Cyprus' => 'Asia/Nicosia', 'Czech Republic' => 'Europe/Prague',
+            'Denmark' => 'Europe/Copenhagen', 'Dominican Republic' => 'America/Santo_Domingo',
+            'Ecuador' => 'America/Guayaquil', 'Egypt' => 'Africa/Cairo', 'Estonia' => 'Europe/Tallinn',
+            'Ethiopia' => 'Africa/Addis_Ababa', 'Fiji' => 'Pacific/Fiji', 'Finland' => 'Europe/Helsinki',
+            'France' => 'Europe/Paris', 'French Polynesia' => 'Pacific/Tahiti', 'Georgia' => 'Asia/Tbilisi',
+            'Germany' => 'Europe/Berlin', 'Ghana' => 'Africa/Accra', 'Greece' => 'Europe/Athens',
+            'Guyana' => 'America/Guyana', 'Hong Kong' => 'Asia/Hong_Kong', 'Hungary' => 'Europe/Budapest',
+            'India' => 'Asia/Kolkata', 'Indonesia' => 'Asia/Jakarta', 'Iran' => 'Asia/Tehran',
+            'Iraq' => 'Asia/Baghdad', 'Ireland' => 'Europe/Dublin', 'Israel' => 'Asia/Jerusalem',
+            'Italy' => 'Europe/Rome', 'Jamaica' => 'America/Jamaica', 'Japan' => 'Asia/Tokyo',
+            'Jordan' => 'Asia/Amman', 'Kazakhstan' => 'Asia/Almaty', 'Kenya' => 'Africa/Nairobi',
+            'Kuwait' => 'Asia/Kuwait', 'Kyrgyzstan' => 'Asia/Bishkek', 'Laos' => 'Asia/Vientiane',
+            'Latvia' => 'Europe/Riga', 'Lebanon' => 'Asia/Beirut', 'Lithuania' => 'Europe/Vilnius',
+            'Macau' => 'Asia/Macau', 'Madagascar' => 'Indian/Antananarivo', 'Malaysia' => 'Asia/Kuala_Lumpur',
+            'Maldives' => 'Indian/Maldives', 'Mauritius' => 'Indian/Mauritius', 'Mexico' => 'America/Mexico_City',
+            'Morocco' => 'Africa/Casablanca', 'Mozambique' => 'Africa/Maputo', 'Myanmar' => 'Asia/Yangon',
+            'Nepal' => 'Asia/Kathmandu', 'Netherlands' => 'Europe/Amsterdam', 'New Zealand' => 'Pacific/Auckland',
+            'Nigeria' => 'Africa/Lagos', 'North Macedonia' => 'Europe/Skopje', 'Norway' => 'Europe/Oslo',
+            'Oman' => 'Asia/Muscat', 'Pakistan' => 'Asia/Karachi', 'Paraguay' => 'America/Asuncion',
+            'Peru' => 'America/Lima', 'Philippines' => 'Asia/Manila', 'Poland' => 'Europe/Warsaw',
+            'Portugal' => 'Europe/Lisbon', 'Qatar' => 'Asia/Qatar', 'Romania' => 'Europe/Bucharest',
+            'Russia' => 'Europe/Moscow', 'Rwanda' => 'Africa/Kigali', 'Saudi Arabia' => 'Asia/Riyadh',
+            'Senegal' => 'Africa/Dakar', 'Serbia' => 'Europe/Belgrade', 'Seychelles' => 'Indian/Mahe',
+            'Singapore' => 'Asia/Singapore', 'Slovakia' => 'Europe/Bratislava', 'Slovenia' => 'Europe/Ljubljana',
+            'South Africa' => 'Africa/Johannesburg', 'South Korea' => 'Asia/Seoul', 'Spain' => 'Europe/Madrid',
+            'Sri Lanka' => 'Asia/Colombo', 'Sweden' => 'Europe/Stockholm', 'Switzerland' => 'Europe/Zurich',
+            'Taiwan' => 'Asia/Taipei', 'Tanzania' => 'Africa/Dar_es_Salaam', 'Thailand' => 'Asia/Bangkok',
+            'Trinidad and Tobago' => 'America/Port_of_Spain', 'Turkey' => 'Europe/Istanbul',
+            'Turkmenistan' => 'Asia/Ashgabat', 'Uganda' => 'Africa/Kampala', 'United Arab Emirates' => 'Asia/Dubai',
+            'United Kingdom' => 'Europe/London', 'United States' => 'America/New_York', 'Uruguay' => 'America/Montevideo',
+            'Uzbekistan' => 'Asia/Tashkent', 'Venezuela' => 'America/Caracas', 'Vietnam' => 'Asia/Ho_Chi_Minh',
+            'Yemen' => 'Asia/Aden',
+        ];
+        return $map[$country] ?? null;
     }
 
     public static function distanceLabel(string $from, string $to, string $unit): ?string

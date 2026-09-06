@@ -132,9 +132,7 @@ abstract class BaseParser implements ParserInterface
 
         $letter = strtoupper($class[0]);
         return match (true) {
-            in_array($letter, ['F', 'A', 'P'], true) => 'First',
-            in_array($letter, ['J', 'C', 'D', 'I', 'Z'], true) => 'Business',
-            $letter === 'W' => 'Premium Economy',
+            in_array($letter, ['F', 'A', 'P', 'J', 'C', 'D', 'I', 'Z'], true) => 'Business',
             default => 'Economy',
         };
     }

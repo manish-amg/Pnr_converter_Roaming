@@ -199,9 +199,7 @@ final class TravelportParser extends BaseParser
     private function cabinFromTravelportCode(?string $code): ?string
     {
         return match (strtoupper((string) $code)) {
-            'F' => 'First',
-            'C', 'J' => 'Business',
-            'W', 'P' => 'Premium Economy',
+            'F', 'C', 'J', 'W', 'P' => 'Business',
             'Y', 'E' => 'Economy',
             default => null,
         };
