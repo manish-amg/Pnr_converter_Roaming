@@ -91,11 +91,12 @@ $flightDuration = static function (Segment $seg) use ($gdsDateTime): ?string {
     return sprintf('%dh %02dm', intdiv($mins, 60), $mins % 60);
 };
 $arrivalOffset = static function (Segment $seg) use ($gdsDateTime): int {
-    if (!$seg->arrivalDate) return 0;
-    $dep = $gdsDateTime($seg->departureDate, $seg->departureTime, $seg->departureAirport);
-    $arr = $gdsDateTime($seg->arrivalDate, $seg->arrivalTime, $seg->arrivalAirport);
-    if ($dep === null || $arr === null || $arr->getTimestamp() <= $dep->getTimestamp()) return 0;
-    return min(2, (int) $dep->diff($arr)->days);
+    if (!$seg->arrivalDate || $seg->arrivalDate === $seg->departureDate) return 0;
+    $dep = $gdsDateTime($seg->departureDate, '00:00');
+    $arr = $gdsDateTime($seg->arrivalDate, '00:00');
+    if ($dep === null || $arr === null) return 0;
+    $days = (int) round(($arr->getTimestamp() - $dep->getTimestamp()) / 86400);
+    return max(0, min(2, $days));
 };
 $portCity = static function (string $code): string {
     $meta = Metadata::airport($code);

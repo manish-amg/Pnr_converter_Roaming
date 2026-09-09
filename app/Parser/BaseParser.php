@@ -266,6 +266,14 @@ abstract class BaseParser implements ParserInterface
             return $segments;
         }
 
+        // Resolve a real arrival date for every segment first (GDS text very often
+        // omits it when the arrival just rolls past midnight, e.g. "2305 0615" with
+        // no trailing date token) — every downstream consumer (layover/transit time,
+        // duration, the "+1 day" arrival badge, e-ticket rendering) reads
+        // Segment::$arrivalDate directly, so this has to be correct once, here,
+        // rather than re-derived inconsistently in each view.
+        $segments = array_map(fn (Segment $segment): Segment => $this->withResolvedArrivalDate($segment), $segments);
+
         $withLayovers = [];
         foreach ($segments as $index => $segment) {
             $layover = null;
@@ -298,6 +306,57 @@ abstract class BaseParser implements ParserInterface
         }
 
         return $withLayovers;
+    }
+
+    /**
+     * If the GDS line didn't carry an explicit arrival date, infer it by comparing
+     * arrival time against departure time on the same calendar day: an arrival
+     * clock-time earlier than the departure clock-time means the flight lands the
+     * next day (or later, for multi-day segments — but a single day rollover is by
+     * far the common case for a missing arrival date and matches how every other
+     * duration calculation in this codebase already infers it).
+     */
+    private function withResolvedArrivalDate(Segment $segment): Segment
+    {
+        if (($segment->arrivalDate ?? '') !== '') {
+            return $segment;
+        }
+
+        $departure = $this->dateTimeFromGds($segment->departureDate, $segment->departureTime);
+        $arrival = $this->dateTimeFromGds($segment->departureDate, $segment->arrivalTime);
+        if ($departure === null || $arrival === null) {
+            return $segment;
+        }
+
+        if ($arrival < $departure) {
+            $arrival = $arrival->modify('+1 day');
+        }
+
+        if ($arrival->format('Ymd') === $departure->format('Ymd')) {
+            return $segment;
+        }
+
+        return new Segment(
+            $segment->airlineCode,
+            $segment->flightNumber,
+            $segment->airlineName,
+            $segment->status,
+            $segment->departureAirport,
+            $segment->arrivalAirport,
+            $segment->departureDate,
+            $segment->departureTime,
+            strtoupper($arrival->format('dM')) . $arrival->format('Y'),
+            $segment->arrivalTime,
+            $segment->bookingClass,
+            $segment->cabin,
+            $segment->layoverDuration,
+            $segment->operatedBy,
+            $segment->ticketNumber,
+            $segment->seatNumber,
+            $segment->aircraft,
+            $segment->rawLine,
+            $segment->departureTerminal,
+        );
     }
 
     protected function extractAircraft(string $line): ?string

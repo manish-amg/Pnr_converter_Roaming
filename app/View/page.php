@@ -174,13 +174,18 @@ $legDuration = static function (array $segs) use ($gdsDateTime): ?string {
     return sprintf('%dh %02dm', intdiv($mins, 60), $mins % 60);
 };
 
-// Arrival day offset +1/+2
+// Arrival day offset +1/+2 — a calendar-date difference (dep date vs arr date),
+// deliberately NOT derived from elapsed flight time: a 4h55m flight can still
+// land a full calendar day later (e.g. crossing the international date line, or
+// simply departing late at night), and conversely elapsed hours alone can
+// exceed 24 without the *date* actually rolling over across some timezones.
 $arrivalOffset = static function (Segment $seg) use ($gdsDateTime): int {
-    if (!$seg->arrivalDate) return 0;
-    $dep = $gdsDateTime($seg->departureDate, $seg->departureTime, $seg->departureAirport);
-    $arr = $gdsDateTime($seg->arrivalDate, $seg->arrivalTime, $seg->arrivalAirport);
-    if ($dep === null || $arr === null || $arr->getTimestamp() <= $dep->getTimestamp()) return 0;
-    return min(2, (int) $dep->diff($arr)->days);
+    if (!$seg->arrivalDate || $seg->arrivalDate === $seg->departureDate) return 0;
+    $dep = $gdsDateTime($seg->departureDate, '00:00');
+    $arr = $gdsDateTime($seg->arrivalDate, '00:00');
+    if ($dep === null || $arr === null) return 0;
+    $days = (int) round(($arr->getTimestamp() - $dep->getTimestamp()) / 86400);
+    return max(0, min(2, $days));
 };
 
 // Full airport display: "Tribhuvan International Airport, Kathmandu (KTM)"
