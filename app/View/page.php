@@ -739,6 +739,20 @@ Example:
                             <span class="pbadge"><?= Html::e((string) count($result->passengers)) ?> pax</span>
                         <?php endif; ?>
                     </div>
+                    <?php if ($renderable && $authUser !== null && !$visaMode): ?>
+                        <div class="result-generate-actions">
+                            <form method="post" action="<?= Html::e($asset('visa-doc.php')) ?>">
+                                <input type="hidden" name="pnr_text" value="<?= Html::e($rawInput) ?>">
+                                <input type="hidden" name="prefill" value="1">
+                                <button type="submit" class="btn btn-outline-sm">Generate Visa Itinerary</button>
+                            </form>
+                            <form method="post" action="<?= Html::e($asset('eticket.php')) ?>">
+                                <input type="hidden" name="pnr_text" value="<?= Html::e($rawInput) ?>">
+                                <input type="hidden" name="prefill" value="1">
+                                <button type="submit" class="btn btn-outline-sm">Generate E-Ticket</button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
                     <?php if ($renderable): ?>
                         <div class="result-collapsed-actions" id="collapsedExportBtns">
                             <button type="button" class="btn btn-sm btn-export-sm" id="copyImageBtn2">

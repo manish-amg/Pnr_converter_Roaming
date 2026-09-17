@@ -37,7 +37,14 @@ $verifyUrl = '';
 $docIssuedAt = '';
 $agencyCreditBalance = $agencyId > 0 ? Auth::creditBalance($agencyId) : 0;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// The "Generate E-Ticket" shortcut on the Convert screen hands the pasted PNR
+// text over so the agent doesn't have to paste it twice — but it must only
+// pre-fill the textarea, not immediately generate (and charge a credit for)
+// a document before they've reviewed fare/baggage/refundable settings.
+$isPrefillOnly = $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['prefill'] ?? '') === '1';
+if ($isPrefillOnly) {
+    $rawInput = isset($_POST['pnr_text']) ? (string) $_POST['pnr_text'] : '';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rawInput = isset($_POST['pnr_text']) ? (string) $_POST['pnr_text'] : '';
     $fareBase = trim((string) ($_POST['fare_base'] ?? ''));
     $fareFsc  = trim((string) ($_POST['fare_fsc'] ?? ''));

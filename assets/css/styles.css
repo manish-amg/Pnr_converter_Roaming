@@ -645,6 +645,8 @@ textarea::placeholder { color: #2D4766; white-space: pre-wrap; }
 .pbadge-low    { background: rgba(239,68,68,.09);  color: #DC2626; border-color: rgba(239,68,68,.22); }
 .pbadge-fmt    { background: var(--rn-navy-light); color: var(--rn-navy); border-color: var(--rn-navy-border); }
 
+.result-generate-actions { display: flex; gap: 6px; }
+.result-generate-actions form { margin: 0; }
 .result-collapsed-actions { display: flex; gap: 6px; margin-left: auto; }
 .result-share-btn { margin-left: auto; }
 
