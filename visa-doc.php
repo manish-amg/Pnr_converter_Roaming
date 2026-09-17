@@ -161,10 +161,31 @@ if ($isPrefillOnly) {
                     }
                 }
             } elseif ($result->isRenderable() && !$isNewDocument) {
-                // Same PNR re-submitted (option toggle) — re-show without re-charging.
-                // We don't have the original verify token/reference in this request,
-                // so the verify footer is intentionally omitted on re-renders.
-                $docIssuedAt = date('d M Y');
+                // Same PNR re-submitted (option toggle, or just revisiting the same
+                // PNR later) — re-show without re-charging, but the verify QR/
+                // reference must come from the document that was already issued
+                // rather than be dropped: they only ever lived in the request that
+                // created them, so without this lookup every re-render showed a
+                // document with no verify code, even though it's real and still
+                // verifiable at its original link.
+                $pdo = DB::conn();
+                $existing = $pdo->prepare(
+                    'SELECT reference_no, verify_token, created_at FROM documents
+                     WHERE agency_id = :aid AND pnr_text_hash = :hash AND type = :type
+                     ORDER BY created_at DESC LIMIT 1'
+                );
+                $existing->execute(['aid' => $agencyId, 'hash' => $inputHash, 'type' => 'visa_itinerary']);
+                $prior = $existing->fetch();
+                if ($prior !== false) {
+                    $docReference = (string) ($prior['reference_no'] ?? '');
+                    $verifyToken = (string) ($prior['verify_token'] ?? '');
+                    if ($verifyToken !== '') {
+                        $verifyUrl = rtrim((string) ($settings['base_url'] ?? ''), '/') . '/verify.php?token=' . $verifyToken;
+                    }
+                    $docIssuedAt = date('d M Y', strtotime((string) $prior['created_at']));
+                } else {
+                    $docIssuedAt = date('d M Y');
+                }
             }
         }
     }

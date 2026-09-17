@@ -140,8 +140,31 @@ if ($isPrefillOnly) {
                 }
             } else {
                 // Same PNR re-submitted (e.g. toggling the fare display) — re-show
-                // without re-charging or re-issuing a reference number.
-                $docIssuedAt = date('d M Y, H:i');
+                // without re-charging or re-issuing a reference number. The verify
+                // QR/reference must still come from the document that was already
+                // issued, not be silently dropped — they only ever lived in the
+                // request that created them, so without this lookup every re-render
+                // (including just revisiting the same PNR later) showed a ticket
+                // with no verify code at all, even though the document is real and
+                // still verifiable at its original link.
+                $pdo = DB::conn();
+                $existing = $pdo->prepare(
+                    'SELECT reference_no, verify_token, created_at FROM documents
+                     WHERE agency_id = :aid AND pnr_text_hash = :hash AND type = :type
+                     ORDER BY created_at DESC LIMIT 1'
+                );
+                $existing->execute(['aid' => $agencyId, 'hash' => $inputHash, 'type' => 'eticket']);
+                $prior = $existing->fetch();
+                if ($prior !== false) {
+                    $docReference = (string) ($prior['reference_no'] ?? '');
+                    $verifyToken = (string) ($prior['verify_token'] ?? '');
+                    if ($verifyToken !== '') {
+                        $verifyUrl = rtrim((string) ($settings['base_url'] ?? ''), '/') . '/verify.php?token=' . $verifyToken;
+                    }
+                    $docIssuedAt = date('d M Y, H:i', strtotime((string) $prior['created_at']));
+                } else {
+                    $docIssuedAt = date('d M Y, H:i');
+                }
             }
         }
     }
