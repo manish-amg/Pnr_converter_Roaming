@@ -166,7 +166,12 @@
   text-transform: uppercase; font-family: 'Sora', sans-serif; white-space: nowrap; flex: none !important;
 }
 
+.et-leg-badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; margin: 14px 0 0;
+  border-radius: 999px; background: var(--rn-navy-light); color: var(--rn-navy); font-size: 10.5px; font-weight: 700;
+}
 .et-leg { margin-top: 16px; }
+.et-leg-badge + .et-leg { margin-top: 8px; }
 .et-leg-airline-bar {
   background: var(--rn-surface-2); border: 1px solid var(--rn-line);
   border-radius: 8px 8px 0 0; padding: 10px 16px;

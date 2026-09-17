@@ -128,7 +128,13 @@ if ($renderable) {
         if ($seg->ticketNumber) { $sharedTicketNo = $seg->ticketNumber; break; }
     }
 }
-$isRoundTrip = $renderable && $isDomestic && count($result->segments) === 2
+// Applies to both templates: a same-day connection (layoverDuration set) and a
+// multi-day round trip look identical structurally (leg 2 departs from where
+// leg 1 landed) but must never be labelled the same way — calculateLayover()
+// already returns null past a 48h gap, so a real round trip previously fell
+// through both branches and rendered with no divider between outbound/return
+// at all on the international template.
+$isRoundTrip = $renderable && count($result->segments) === 2
     && $result->segments[1]->departureAirport === $result->segments[0]->arrivalAirport
     && $result->segments[1]->arrivalAirport === $result->segments[0]->departureAirport;
 
@@ -609,12 +615,22 @@ $promoOffers = [
                     $dur  = $flightDuration($seg);
                     $offset = $arrivalOffset($seg);
                     ?>
-                    <?php if ($idx > 0 && $seg->layoverDuration !== null): ?>
+                    <?php if ($isRoundTrip && $idx === 1): ?>
+                    <div class="et-connect-divider">
+                        <span></span>
+                        <span class="et-connect-label">Return Flight</span>
+                        <span></span>
+                    </div>
+                    <?php elseif ($idx > 0 && $seg->layoverDuration !== null): ?>
                     <div class="et-connect-divider">
                         <span></span>
                         <span class="et-connect-label">Connecting via <?= Html::e($portCity($seg->departureAirport)) ?> (<?= Html::e(strtoupper($seg->departureAirport)) ?>) &middot; Layover <?= Html::e($seg->layoverDuration) ?></span>
                         <span></span>
                     </div>
+                    <?php endif; ?>
+
+                    <?php if ($isRoundTrip): ?>
+                        <span class="et-leg-badge"><?= $idx === 0 ? '&#8599; Outbound Flight' : '&#8601; Return Flight' ?></span>
                     <?php endif; ?>
 
                     <div class="et-leg">
