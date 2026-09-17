@@ -96,7 +96,7 @@ final class AmadeusParser extends BaseParser
             isset($m[10]) && $m[10] !== '' ? $this->normalizeDate($m[10]) : null,
             $this->normalizeTime($m[9]),
             strtoupper($m[3]),
-            $this->cabinFromClass($m[3]),
+            $this->cabinFromClass($m[3], $airlineCode),
             null,
             $this->extractOperatedBy($line),
             $ticket,

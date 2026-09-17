@@ -119,7 +119,7 @@ final class GenericAirSegmentParser extends BaseParser
                 strtoupper($p[5]), strtoupper($p[6]),
                 $depDate, $this->normalizeTime($p[7]),
                 $arrDate, $this->normalizeTime($arrTimeRaw),
-                $bookingClass, $this->cabinFromClass($bookingClass),
+                $bookingClass, $this->cabinFromClass($bookingClass, $airlineCode),
                 null, $this->extractOperatedBy($line),
                 $ticket, $seat, $this->extractAircraft($line), $line
             );
@@ -139,7 +139,7 @@ final class GenericAirSegmentParser extends BaseParser
                 $depDate, $this->normalizeTime($p[7]),
                 isset($p[9]) && $p[9] !== '' ? $this->normalizeDate($p[9]) : null,
                 $this->normalizeTime($arrRaw),
-                strtoupper($p[3]), $this->cabinFromClass($p[3]),
+                strtoupper($p[3]), $this->cabinFromClass($p[3], $airlineCode),
                 null, $this->extractOperatedBy($line),
                 $ticket, $seat, $this->extractAircraft($line), $line
             );
@@ -168,7 +168,7 @@ final class GenericAirSegmentParser extends BaseParser
             $this->arrivalDate($departureDate, $arrivalTimeRaw, $m[11] ?? null),
             $this->normalizeTime($arrivalTimeRaw),
             $bookingClass,
-            $this->cabinFromClass($bookingClass),
+            $this->cabinFromClass($bookingClass, $airlineCode),
             null,
             $this->extractOperatedBy($line),
             $ticket,

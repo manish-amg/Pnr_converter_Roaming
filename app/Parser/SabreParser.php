@@ -87,7 +87,7 @@ final class SabreParser extends BaseParser
                 $this->normalizeDate($p[4]), $this->normalizeTime($p[7]),
                 isset($p[9]) && $p[9] !== '' ? $this->normalizeDate($p[9]) : null,
                 $this->normalizeTime($p[8]),
-                strtoupper($p[3]), $this->cabinFromClass($p[3]),
+                strtoupper($p[3]), $this->cabinFromClass($p[3], $airlineCode),
                 null, $this->extractOperatedBy($line),
                 $ticket, $seat, $this->extractAircraft($line), $line
             );
@@ -111,7 +111,7 @@ final class SabreParser extends BaseParser
             isset($m[10]) && $m[10] !== '' ? $this->normalizeDate($m[10]) : null,
             $this->normalizeTime($m[9]),
             strtoupper($m[3]),
-            $this->cabinFromClass($m[3]),
+            $this->cabinFromClass($m[3], $airlineCode),
             null,
             $this->extractOperatedBy($line),
             $ticket,

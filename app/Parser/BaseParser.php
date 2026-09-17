@@ -124,13 +124,35 @@ abstract class BaseParser implements ParserInterface
         return $currentYear;
     }
 
-    protected function cabinFromClass(?string $class): ?string
+    /**
+     * A booking-class letter is only meaningful per-airline — most carriers follow
+     * the common IATA convention handled by the generic table below, but a few
+     * assign letters differently for their own fare buckets. flydubai and Emirates
+     * (sister carriers under the Emirates Group, sharing a reservations platform)
+     * both sell a "Business Special" fare under class H, which the generic table
+     * would otherwise read as a discounted Economy fare — confirmed against a real
+     * flydubai e-ticket showing "Class : H-Business".
+     */
+    private const AIRLINE_CABIN_OVERRIDES = [
+        'FZ' => ['H' => 'Business'],
+        'EK' => ['H' => 'Business'],
+    ];
+
+    protected function cabinFromClass(?string $class, ?string $airlineCode = null): ?string
     {
         if ($class === null || $class === '') {
             return null;
         }
 
         $letter = strtoupper($class[0]);
+
+        if ($airlineCode !== null) {
+            $override = self::AIRLINE_CABIN_OVERRIDES[strtoupper($airlineCode)][$letter] ?? null;
+            if ($override !== null) {
+                return $override;
+            }
+        }
+
         return match (true) {
             in_array($letter, ['F', 'A', 'P', 'J', 'C', 'D', 'I', 'Z'], true) => 'Business',
             default => 'Economy',

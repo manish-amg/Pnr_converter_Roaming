@@ -113,7 +113,7 @@ final class TravelportParser extends BaseParser
                 $this->arrivalDate($departureDate, $arrivalTimeRaw, $m[10] ?? null),
                 $this->normalizeTime($arrivalTimeRaw),
                 strtoupper($m[3]),
-                $this->cabinFromClass($m[3]),
+                $this->cabinFromClass($m[3], $airlineCode),
                 null,
                 $this->extractOperatedBy($line),
                 $ticket,
@@ -130,7 +130,7 @@ final class TravelportParser extends BaseParser
 
         $airlineCode = strtoupper($m[1]);
         $bookingClass = isset($m[3]) && $m[3] !== '' ? strtoupper($m[3]) : (isset($m[10]) && $m[10] !== '' ? strtoupper($m[10]) : null);
-        $cabin = $bookingClass !== null ? $this->cabinFromClass($bookingClass) : $this->cabinFromTravelportCode($m[11] ?? null);
+        $cabin = $bookingClass !== null ? $this->cabinFromClass($bookingClass, $airlineCode) : $this->cabinFromTravelportCode($m[11] ?? null);
         $departureDate = $this->normalizeDate($m[4]);
         $arrivalTimeRaw = $m[9];
 
