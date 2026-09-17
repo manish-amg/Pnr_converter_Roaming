@@ -96,10 +96,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $verifyToken = bin2hex(random_bytes(16));
                     $firstSeg = $result->segments[0] ?? null;
-                    $lastSeg  = $result->segments[count($result->segments) - 1] ?? null;
-                    $routeSummary = $firstSeg !== null && $lastSeg !== null
-                        ? $firstSeg->departureAirport . ' → ' . $lastSeg->arrivalAirport
-                        : null;
+                    // Walk every leg's arrival rather than just first-departure →
+                    // last-arrival: on a round trip those are the same airport
+                    // (e.g. KTM → KTM), which reads as a zero-length route on the
+                    // verify page. Collapsing consecutive duplicates gives the real
+                    // path, e.g. KTM → DXB → KTM.
+                    $routeSummary = null;
+                    if ($firstSeg !== null) {
+                        $waypoints = [$firstSeg->departureAirport];
+                        foreach ($result->segments as $seg) {
+                            if ($seg->arrivalAirport !== end($waypoints)) {
+                                $waypoints[] = $seg->arrivalAirport;
+                            }
+                        }
+                        $routeSummary = implode(' → ', $waypoints);
+                    }
                     $travelDate = $firstSeg !== null ? visaDocGdsDateToSql($firstSeg->departureDate) : null;
 
                     $pdo = DB::conn();
