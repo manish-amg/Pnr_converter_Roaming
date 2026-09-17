@@ -25,14 +25,24 @@ if ($token !== '' && preg_match('/^[a-f0-9]{32}$/', $token) === 1) {
         $agency = $agStmt->fetch();
     }
 }
+
+// Cache-bust static assets with each file's own mtime (Cloudflare caches
+// .css/.js by extension regardless of origin Cache-Control, so a plain href
+// can keep serving a stale copy indefinitely even after a correct deploy).
+$asset = static function (string $path): string {
+    $rel = ltrim($path, '/');
+    $url = $rel;
+    if (is_file(__DIR__ . '/' . $rel)) $url .= '?v=' . filemtime(__DIR__ . '/' . $rel);
+    return $url;
+};
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Document Verification — <?= Html::e($agencyName) ?></title>
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/auth.css">
+    <link rel="stylesheet" href="<?= Html::e($asset('assets/css/styles.css')) ?>">
+    <link rel="stylesheet" href="<?= Html::e($asset('assets/css/auth.css')) ?>">
 </head>
 <body>
 <div class="auth-shell">

@@ -132,15 +132,29 @@ $conversionsToday = Auth::conversionsToday();
 $dailyLimit = Auth::dailyLimit();
 $seatLimit = ACCT_SEAT_LIMIT;
 $creditBalance = $agency !== false ? (int) $agency['credit_balance'] : 0;
+
+// Cache-bust static assets with each file's own mtime so a CDN (e.g.
+// Cloudflare, which caches .css/.js by extension regardless of the origin's
+// Cache-Control header) fetches a fresh copy whenever the file's content
+// actually changes, instead of serving a stale cached response under the
+// same URL indefinitely. page.php and eticketPage.php already do this;
+// account.php and admin.php had been left on plain hrefs, which is why a
+// CSS fix could be deployed correctly and still not show up for visitors.
+$asset = static function (string $path): string {
+    $rel = ltrim($path, '/');
+    $url = $rel;
+    if (is_file(__DIR__ . '/' . $rel)) $url .= '?v=' . filemtime(__DIR__ . '/' . $rel);
+    return $url;
+};
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Account — <?= Html::e($agencyName) ?> PNR Converter</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/auth.css">
-    <link rel="stylesheet" href="assets/css/account.css">
+    <link rel="stylesheet" href="<?= Html::e($asset('assets/css/styles.css')) ?>">
+    <link rel="stylesheet" href="<?= Html::e($asset('assets/css/auth.css')) ?>">
+    <link rel="stylesheet" href="<?= Html::e($asset('assets/css/account.css')) ?>">
 </head>
 <body>
 <div class="rn-shell">
