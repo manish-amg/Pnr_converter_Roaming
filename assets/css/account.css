@@ -201,6 +201,9 @@
   position: fixed; inset: 0; background: rgba(15,54,123,.28);
   display: flex; align-items: center; justify-content: center; z-index: 200;
 }
+.acct-modal-backdrop[hidden] {
+  display: none;
+}
 .acct-modal {
   width: 400px; max-width: calc(100vw - 32px); background: var(--rn-surface);
   border-radius: var(--rn-radius); box-shadow: var(--rn-shadow-popover); padding: 22px 24px;
