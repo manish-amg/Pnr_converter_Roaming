@@ -142,22 +142,28 @@ $isRoundTrip = $renderable && count($result->segments) === 2
 // configured for the main itinerary footer — Kathmandu, Pokhara, Australia —
 // rather than a second, easily-out-of-sync copy of the same addresses.
 $footerCfg = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
+$officeFlag = static fn (string $label): string => stripos($label, 'australia') !== false ? '🇦🇺' : '🇳🇵';
 $officeGrid = [];
 if (isset($footerCfg['head_office']['lines'])) {
-    $officeGrid[] = ['label' => 'Kathmandu', 'lines' => $footerCfg['head_office']['lines']];
+    $officeGrid[] = ['label' => 'Kathmandu', 'flag' => $officeFlag('Kathmandu'), 'lines' => $footerCfg['head_office']['lines']];
 }
 foreach ((array) ($footerCfg['branches'] ?? []) as $branch) {
-    $officeGrid[] = ['label' => (string) ($branch['title'] ?? ''), 'lines' => (array) ($branch['lines'] ?? [])];
+    $label = (string) ($branch['title'] ?? '');
+    $officeGrid[] = ['label' => $label, 'flag' => $officeFlag($label), 'lines' => (array) ($branch['lines'] ?? [])];
 }
 
 // Rotating promo strip — 6 offers, shown 3 at a time, swapped client-side.
+// "tag" is the offer's name (small gold label), "title" is the value-prop
+// headline (large, bold, white), "body" the supporting detail — matching the
+// live design reference exactly (Domestic E-Ticket.dc.html), not just the
+// shorter paraphrase in its own written spec.
 $promoOffers = [
-    ['icon' => '👥', 'tag' => 'Save More', 'title' => 'Group Booking', 'body' => 'Up to 15% off for groups of 10+'],
-    ['icon' => '🌏', 'tag' => 'Go Further', 'title' => 'International Flights', 'body' => 'Best fares to 50+ destinations'],
-    ['icon' => '🏨', 'tag' => 'Bundle', 'title' => 'Hotel + Flight Package', 'body' => 'Bundle & save 20%'],
-    ['icon' => '🛡️', 'tag' => 'Stay Covered', 'title' => 'Travel Insurance', 'body' => 'From NPR 500 only'],
-    ['icon' => '🚌', 'tag' => 'Door to Door', 'title' => 'Airport Transfer', 'body' => 'KTM pickup from NPR 1,200'],
-    ['icon' => '🎓', 'tag' => 'For Students', 'title' => 'Student Fares', 'body' => 'Up to 10% off'],
+    ['icon' => '👥', 'tag' => 'Group Booking', 'title' => 'Up to 15% Off', 'body' => 'Groups of 10+ on any domestic or international route. Call for rates.'],
+    ['icon' => '🌏', 'tag' => 'International Flights', 'title' => 'Best Fares, 50+ Destinations', 'body' => 'Dubai, Qatar, Malaysia, Australia & beyond. Exclusive deals available.'],
+    ['icon' => '🏨', 'tag' => 'Hotel + Flight Package', 'title' => 'Bundle & Save 20%', 'body' => 'Book flights + hotels together for maximum savings. Call us.'],
+    ['icon' => '🛡️', 'tag' => 'Travel Insurance', 'title' => 'From NPR 500 Only', 'body' => 'Medical cover, trip cancellation & delay protection included.'],
+    ['icon' => '🚌', 'tag' => 'Airport Transfer', 'title' => 'KTM Pickup from NPR 1,200', 'body' => 'Reliable private cab to/from Tribhuvan International Airport.'],
+    ['icon' => '🎓', 'tag' => 'Student Fares', 'title' => 'Up to 10% Off', 'body' => 'Show a valid student ID at booking to claim your special discount.'],
 ];
 ?><!DOCTYPE html>
 <html lang="en">
@@ -485,25 +491,27 @@ $promoOffers = [
                         <div>
                             <span class="det-detail-label">Free Baggage</span>
                             <div class="det-detail-val det-detail-val-sm det-detail-bag"><?= Html::e($baggage) ?></div>
+                            <span class="det-detail-sub">Checked + Cabin</span>
                         </div>
                     </div>
                 <?php endforeach; ?>
 
                 <?php if ($hasFareInput): ?>
+                <?php $legsPaxNote = Html::e((string) $legCount) . ' leg' . ($legCount === 1 ? '' : 's') . ' &times; ' . Html::e((string) $paxCount) . ' pax'; ?>
                 <div class="det-divider"></div>
                 <div class="det-fare-section">
                     <div>
-                        <div class="det-section-label">Fare Breakdown</div>
-                        <?php if ($fBase !== null): ?><div class="det-fare-row"><span>Base Fare</span><span><?= Html::e($fmtNpr($fBase)) ?></span></div><?php endif; ?>
-                        <?php if ($fFsc !== null): ?><div class="det-fare-row"><span>Fuel Surcharge (FSC)</span><span><?= Html::e($fmtNpr($fFsc)) ?></span></div><?php endif; ?>
-                        <?php if ($fTax !== null): ?><div class="det-fare-row"><span>Tax &amp; Fees</span><span><?= Html::e($fmtNpr($fTax)) ?></span></div><?php endif; ?>
-                        <div class="det-fare-row det-fare-subtotal"><span>Per Passenger</span><span><?= Html::e($fmtNpr($perPaxFare)) ?></span></div>
-                        <div class="det-fare-legs-note"><?= Html::e((string) $legCount) ?> leg<?= $legCount === 1 ? '' : 's' ?> &times; <?= Html::e((string) $paxCount) ?> passenger<?= $paxCount === 1 ? '' : 's' ?></div>
+                        <div class="det-section-label">Fare Details</div>
+                        <div class="det-fare-row"><span>Base Fare <span class="det-fare-unit">(per pax / leg)</span></span><span><?= $fBase !== null ? Html::e($fmtNpr($fBase)) : '&mdash;' ?></span></div>
+                        <div class="det-fare-row"><span>Fuel Surcharge (FSC)</span><span><?= $fFsc !== null ? Html::e($fmtNpr($fFsc)) : '&mdash;' ?></span></div>
+                        <div class="det-fare-row"><span>Airport Tax &amp; Fees</span><span><?= $fTax !== null ? Html::e($fmtNpr($fTax)) : '&mdash;' ?></span></div>
+                        <div class="det-fare-row det-fare-subtotal"><span>Total Per Pax / Leg</span><span><?= Html::e($fmtNpr($perPaxFare)) ?></span></div>
+                        <div class="det-fare-legs-note"><?= $legsPaxNote ?></div>
                     </div>
                     <div class="det-total-card">
                         <span class="det-section-label">Grand Total</span>
                         <div class="det-total-amount"><?= Html::e($fmtNpr($domesticGrandTotal)) ?></div>
-                        <div class="det-total-sub">All passengers &amp; legs included</div>
+                        <div class="det-total-sub">All taxes &amp; fees included &middot; <?= $legsPaxNote ?></div>
                         <div class="det-total-guarantee">&#9733; Best Price Guaranteed by Roaming Nepal</div>
                     </div>
                 </div>
@@ -521,7 +529,7 @@ $promoOffers = [
                         <div class="det-office-grid">
                             <?php foreach ($officeGrid as $office): ?>
                             <div class="det-office-card">
-                                <span class="det-office-label"><?= Html::e($office['label']) ?></span>
+                                <span class="det-office-label"><?= $office['flag'] ?> <?= Html::e($office['label']) ?></span>
                                 <?php foreach ($office['lines'] as $i => $line): ?>
                                 <div class="det-office-line<?= $i > 0 ? ' is-muted' : '' ?>"><?= Html::e($line) ?></div>
                                 <?php endforeach; ?>
@@ -535,6 +543,7 @@ $promoOffers = [
                         <span class="det-verify-label">Verify Booking</span>
                         <div class="det-qr" id="etQr"></div>
                         <?php if ($docReference !== ''): ?><div class="det-verify-ref"><?= Html::e($docReference) ?></div><?php endif; ?>
+                        <div class="det-verify-sub">Scan to confirm booking details at roamingnepal.com</div>
                     </div>
                     <?php endif; ?>
                 </div>

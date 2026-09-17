@@ -397,6 +397,7 @@
 .det-fare-row.det-fare-subtotal span:first-child { font-size: 12.5px; font-weight: 700; color: #111827; }
 .det-fare-row.det-fare-subtotal span:last-child { font-size: 13.5px; font-weight: 700; color: #111827; }
 .det-fare-legs-note { font-size: 10px; color: #9CA3AF; margin-top: 4px; }
+.det-fare-unit { font-weight: 400; color: #9CA3AF; }
 .det-total-card { background: #0F367B; border-radius: 10px; padding: 18px 20px; }
 .det-total-card .det-section-label { color: rgba(255,255,255,.45); }
 .det-total-amount { font: 800 26px 'Poppins', sans-serif; letter-spacing: -1px; color: #fff; }
@@ -419,6 +420,7 @@
 .det-verify-label { display: block; font: 700 8px 'Sora', sans-serif; letter-spacing: 1.5px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 6px; }
 .det-qr { width: 92px; height: 92px; border: 1px solid #E5E7EB; border-radius: 6px; overflow: hidden; background: #fff; }
 .det-verify-ref { font-size: 9px; color: #C0C4CC; letter-spacing: 1.2px; margin-top: 4px; font-family: 'Inter', sans-serif; }
+.det-verify-sub { font-size: 8px; color: #B0B7C3; max-width: 92px; line-height: 1.5; text-align: center; margin-top: 6px; }
 
 /* T&C */
 .det-tnc { background: #F9FAFB; border-top: 1px solid #F0F2F5; padding: 12px 28px; }
