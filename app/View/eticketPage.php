@@ -14,6 +14,8 @@ use RoamingNepal\PnrConverter\Support\Metadata;
 /** @var string $fareBase */
 /** @var string $fareFsc */
 /** @var string $fareTax */
+/** @var string $baggage */
+/** @var bool $refundable */
 /** @var bool $showFare */
 /** @var string $creditError */
 /** @var string $docReference */
@@ -114,6 +116,43 @@ $fTax  = $fareTax !== '' ? (float) $fareTax : null;
 $fTotal = ($fBase ?? 0) + ($fFsc ?? 0) + ($fTax ?? 0);
 $hasFareInput = $fBase !== null || $fFsc !== null || $fTax !== null;
 $fmtNpr = static fn (float $n): string => 'NPR ' . number_format($n, 0);
+
+// ── Domestic-ticket-only extras ─────────────────────────────────────
+$paxCount = $renderable ? max(1, count($result->passengers)) : 1;
+$legCount = $renderable ? max(1, count($result->segments)) : 1;
+$perPaxFare = ($fBase ?? 0) + ($fFsc ?? 0) + ($fTax ?? 0);
+$domesticGrandTotal = $perPaxFare * $legCount * $paxCount;
+$sharedTicketNo = null;
+if ($renderable) {
+    foreach ($result->segments as $seg) {
+        if ($seg->ticketNumber) { $sharedTicketNo = $seg->ticketNumber; break; }
+    }
+}
+$isRoundTrip = $renderable && $isDomestic && count($result->segments) === 2
+    && $result->segments[1]->departureAirport === $result->segments[0]->arrivalAirport
+    && $result->segments[1]->arrivalAirport === $result->segments[0]->departureAirport;
+
+// The 3-office grid reuses the same head-office/branches data already
+// configured for the main itinerary footer — Kathmandu, Pokhara, Australia —
+// rather than a second, easily-out-of-sync copy of the same addresses.
+$footerCfg = is_array($settings['footer'] ?? null) ? $settings['footer'] : [];
+$officeGrid = [];
+if (isset($footerCfg['head_office']['lines'])) {
+    $officeGrid[] = ['label' => 'Kathmandu', 'lines' => $footerCfg['head_office']['lines']];
+}
+foreach ((array) ($footerCfg['branches'] ?? []) as $branch) {
+    $officeGrid[] = ['label' => (string) ($branch['title'] ?? ''), 'lines' => (array) ($branch['lines'] ?? [])];
+}
+
+// Rotating promo strip — 6 offers, shown 3 at a time, swapped client-side.
+$promoOffers = [
+    ['icon' => '👥', 'tag' => 'Save More', 'title' => 'Group Booking', 'body' => 'Up to 15% off for groups of 10+'],
+    ['icon' => '🌏', 'tag' => 'Go Further', 'title' => 'International Flights', 'body' => 'Best fares to 50+ destinations'],
+    ['icon' => '🏨', 'tag' => 'Bundle', 'title' => 'Hotel + Flight Package', 'body' => 'Bundle & save 20%'],
+    ['icon' => '🛡️', 'tag' => 'Stay Covered', 'title' => 'Travel Insurance', 'body' => 'From NPR 500 only'],
+    ['icon' => '🚌', 'tag' => 'Door to Door', 'title' => 'Airport Transfer', 'body' => 'KTM pickup from NPR 1,200'],
+    ['icon' => '🎓', 'tag' => 'For Students', 'title' => 'Student Fares', 'body' => 'Up to 10% off'],
+];
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,6 +255,24 @@ $fmtNpr = static fn (float $n): string => 'NPR ' . number_format($n, 0);
                 <span>Show fare on ticket <span class="et-toggle-note">(international tickets hide fare by default)</span></span>
             </label>
             <?php endif; ?>
+
+            <?php if ($isDomestic === true): ?>
+            <div class="et-fieldset">
+                <label class="et-sublabel" for="baggage">Free baggage allowance</label>
+                <input class="et-input" type="text" id="baggage" name="baggage" value="<?= Html::e($baggage) ?>" placeholder="15 KG + 5 KG">
+            </div>
+            <div class="et-fieldset">
+                <span class="et-label">Fare type</span>
+                <div class="et-segmented">
+                    <label class="et-segmented-opt<?= $refundable ? ' is-active' : '' ?>">
+                        <input type="radio" name="refundable" value="1"<?= Html::checked($refundable) ?>> Refundable
+                    </label>
+                    <label class="et-segmented-opt<?= !$refundable ? ' is-active' : '' ?>">
+                        <input type="radio" name="refundable" value="0"<?= Html::checked(!$refundable) ?>> Non-Refundable
+                    </label>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="et-form-ft">
@@ -253,6 +310,258 @@ $fmtNpr = static fn (float $n): string => 'NPR ' . number_format($n, 0);
                 <p>Paste a GDS itinerary and click <strong>Generate Ticket</strong></p>
                 <span class="et-empty-sub">Auto-detects Domestic vs. International and picks the right template</span>
             </div>
+        <?php elseif ($isDomestic): ?>
+
+        <?php
+        $airlineBadgeColors = [
+            'U4' => ['bg' => '#FFF8E1', 'text' => '#7B5800'],
+            'YT' => ['bg' => '#E8F5E9', 'text' => '#1B5E20'],
+            'TA' => ['bg' => '#FBE9E7', 'text' => '#C75000'],
+            'SHA' => ['bg' => '#FFEBEE', 'text' => '#C62828'],
+            'Q6' => ['bg' => '#E8EAF6', 'text' => '#283593'],
+        ];
+        $firstLeg = $result->segments[0];
+        $badge = $airlineBadgeColors[strtoupper($firstLeg->airlineCode)] ?? ['bg' => 'var(--rn-navy-light)', 'text' => 'var(--rn-navy)'];
+        $firstLegLogo = $airlineLogo($firstLeg->airlineCode);
+        ?>
+        <article class="det-doc" id="eticketDoc">
+            <!-- HEADER -->
+            <div class="det-header">
+                <div class="det-header-left">
+                    <?php if (is_file($projectRoot . '/assets/images/roaming-nepal-logo.png')): ?>
+                    <div class="det-logo-pill"><img src="<?= Html::e($asset('assets/images/roaming-nepal-logo.png')) ?>" alt="<?= Html::e($agencyName) ?>"></div>
+                    <div class="det-vdiv"></div>
+                    <?php endif; ?>
+                    <div>
+                        <div class="det-eyebrow">Domestic Flight</div>
+                        <div class="det-title">E-Ticket</div>
+                    </div>
+                </div>
+                <div class="det-header-right">
+                    <div class="det-eyebrow">PNR &middot; Booking Ref</div>
+                    <div class="det-pnr"><?= Html::e($result->recordLocator ?? '—') ?></div>
+                </div>
+            </div>
+
+            <!-- PROMO BANNER -->
+            <div class="det-promo">
+                <div class="det-promo-head">
+                    <span class="det-promo-label">Roaming Nepal &mdash; Exclusive Offers</span>
+                    <div class="det-promo-dots" id="detPromoDots">
+                        <span class="det-dot is-active"></span><span class="det-dot"></span>
+                    </div>
+                </div>
+                <div class="det-promo-grid" id="detPromoGrid" data-offers="<?= Html::e(json_encode($promoOffers)) ?>">
+                    <?php foreach (array_slice($promoOffers, 0, 3) as $offer): ?>
+                    <div class="det-offer">
+                        <div class="det-offer-icon"><?= $offer['icon'] ?></div>
+                        <span class="det-offer-tag"><?= Html::e($offer['tag']) ?></span>
+                        <div class="det-offer-title"><?= Html::e($offer['title']) ?></div>
+                        <div class="det-offer-body"><?= Html::e($offer['body']) ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- AIRLINE BAR (first leg's carrier) -->
+            <div class="det-airline-bar">
+                <div class="det-airline-left">
+                    <div>
+                        <span class="det-airline-microlabel">Operated By</span>
+                        <span class="det-airline-op"><?= Html::e($firstLeg->airlineName ?? $firstLeg->airlineCode) ?></span>
+                    </div>
+                    <div>
+                        <span class="det-airline-microlabel">Flight No.</span>
+                        <span class="det-airline-flightno"><?= Html::e($firstLeg->airlineCode . ' ' . $firstLeg->flightNumber) ?></span>
+                    </div>
+                    <?php if ($firstLeg->aircraft): ?>
+                    <div>
+                        <span class="det-airline-microlabel">Aircraft</span>
+                        <span class="det-airline-aircraft"><?= Html::e($firstLeg->aircraft) ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <div class="det-airline-right">
+                    <span class="det-airline-code-badge" style="background:<?= Html::e($badge['bg']) ?>;color:<?= Html::e($badge['text']) ?>;border-color:<?= Html::e($badge['text']) ?>33;"><?= Html::e(strtoupper($firstLeg->airlineCode)) ?></span>
+                    <?php if ($firstLegLogo['src'] !== ''): ?>
+                        <img src="<?= Html::e($firstLegLogo['src']) ?>" alt="<?= Html::e($firstLeg->airlineCode) ?>" class="det-airline-logo">
+                    <?php endif; ?>
+                    <span class="det-refund-badge <?= $refundable ? 'is-refundable' : 'is-norefund' ?>"><?= $refundable ? 'Refundable' : 'Non-Refundable' ?></span>
+                </div>
+            </div>
+
+            <div class="det-body">
+                <!-- PASSENGERS -->
+                <div class="det-section-label">Passenger(s)</div>
+                <table class="det-pax-table">
+                    <thead><tr><th>Name</th><th>Type</th><th>Nationality</th><th>E-Ticket No.</th><th>Free Baggage</th></tr></thead>
+                    <tbody>
+                        <?php if (count($result->passengers) > 0): ?>
+                            <?php foreach ($result->passengers as $pax): ?>
+                            <tr>
+                                <td class="det-pax-name"><?= Html::e($pax->name) ?></td>
+                                <td><?= Html::e($pax->type ?? 'Adult') ?></td>
+                                <td>Nepali</td>
+                                <td class="det-pax-tkno"><?= Html::e($sharedTicketNo ?? '—') ?></td>
+                                <td class="det-pax-bag"><?= Html::e($baggage) ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="5" class="det-pax-empty">No passenger name detected in the pasted text</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+
+                <div class="det-perforation"><span></span><span></span></div>
+
+                <!-- FLIGHT LEG(S) -->
+                <?php foreach ($result->segments as $idx => $seg): ?>
+                    <?php
+                    /** @var Segment $seg */
+                    $dur  = $flightDuration($seg);
+                    $offset = $arrivalOffset($seg);
+                    ?>
+                    <?php if ($isRoundTrip && $idx === 1): ?>
+                    <div class="det-return-divider">
+                        <span></span><span class="det-return-label">Return Flight</span><span></span>
+                    </div>
+                    <?php elseif ($idx > 0 && $seg->layoverDuration !== null): ?>
+                    <div class="det-return-divider">
+                        <span></span>
+                        <span class="det-return-label">Connecting via <?= Html::e($portCity($seg->departureAirport)) ?> (<?= Html::e(strtoupper($seg->departureAirport)) ?>) &middot; Layover <?= Html::e($seg->layoverDuration) ?></span>
+                        <span></span>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($isRoundTrip): ?>
+                        <span class="det-leg-badge"><?= $idx === 0 ? '&#8599; Outbound Flight' : '&#8601; Return Flight' ?></span>
+                    <?php endif; ?>
+
+                    <div class="det-route-row">
+                        <div class="det-route-port">
+                            <span class="det-route-label">From</span>
+                            <div class="det-route-code"><?= Html::e(strtoupper($seg->departureAirport)) ?></div>
+                            <div class="det-route-name"><?= Html::e($portName($seg->departureAirport)) ?></div>
+                        </div>
+                        <div class="det-route-mid">
+                            <?php if ($dur): ?><div class="det-route-dur">Direct &middot; <?= Html::e($dur) ?></div><?php endif; ?>
+                            <div class="det-route-line"><span class="det-route-plane">&#9992;</span></div>
+                            <div class="det-route-date"><?= Html::e($datePretty($seg->departureDate)) ?></div>
+                        </div>
+                        <div class="det-route-port det-route-port-r">
+                            <span class="det-route-label">To</span>
+                            <div class="det-route-code"><?= Html::e(strtoupper($seg->arrivalAirport)) ?></div>
+                            <div class="det-route-name"><?= Html::e($portName($seg->arrivalAirport)) ?></div>
+                        </div>
+                    </div>
+
+                    <div class="det-detail-strip">
+                        <div>
+                            <span class="det-detail-label">Departure</span>
+                            <div class="det-detail-val"><?= Html::e($formatTime($seg->departureTime)) ?></div>
+                            <span class="det-detail-sub">Local time</span>
+                        </div>
+                        <div>
+                            <span class="det-detail-label">Boarding</span>
+                            <div class="det-detail-val"><?= Html::e($boardingTime($seg->departureTime)) ?></div>
+                            <span class="det-detail-sub">30 min before</span>
+                        </div>
+                        <div>
+                            <span class="det-detail-label">Arrival</span>
+                            <div class="det-detail-val"><?= Html::e($formatTime($seg->arrivalTime)) ?><?php if ($offset > 0): ?><span class="det-plus-day">+<?= $offset ?></span><?php endif; ?></div>
+                            <span class="det-detail-sub">Local time</span>
+                        </div>
+                        <div>
+                            <span class="det-detail-label">Class</span>
+                            <div class="det-detail-val det-detail-val-sm"><?= Html::e($seg->cabin ?? ($seg->bookingClass ?? '—')) ?></div>
+                            <span class="det-detail-sub">Cabin class</span>
+                        </div>
+                        <div>
+                            <span class="det-detail-label">Free Baggage</span>
+                            <div class="det-detail-val det-detail-val-sm det-detail-bag"><?= Html::e($baggage) ?></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+                <?php if ($hasFareInput): ?>
+                <div class="det-divider"></div>
+                <div class="det-fare-section">
+                    <div>
+                        <div class="det-section-label">Fare Breakdown</div>
+                        <?php if ($fBase !== null): ?><div class="det-fare-row"><span>Base Fare</span><span><?= Html::e($fmtNpr($fBase)) ?></span></div><?php endif; ?>
+                        <?php if ($fFsc !== null): ?><div class="det-fare-row"><span>Fuel Surcharge (FSC)</span><span><?= Html::e($fmtNpr($fFsc)) ?></span></div><?php endif; ?>
+                        <?php if ($fTax !== null): ?><div class="det-fare-row"><span>Tax &amp; Fees</span><span><?= Html::e($fmtNpr($fTax)) ?></span></div><?php endif; ?>
+                        <div class="det-fare-row det-fare-subtotal"><span>Per Passenger</span><span><?= Html::e($fmtNpr($perPaxFare)) ?></span></div>
+                        <div class="det-fare-legs-note"><?= Html::e((string) $legCount) ?> leg<?= $legCount === 1 ? '' : 's' ?> &times; <?= Html::e((string) $paxCount) ?> passenger<?= $paxCount === 1 ? '' : 's' ?></div>
+                    </div>
+                    <div class="det-total-card">
+                        <span class="det-section-label">Grand Total</span>
+                        <div class="det-total-amount"><?= Html::e($fmtNpr($domesticGrandTotal)) ?></div>
+                        <div class="det-total-sub">All passengers &amp; legs included</div>
+                        <div class="det-total-guarantee">&#9733; Best Price Guaranteed by Roaming Nepal</div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div class="det-divider"></div>
+
+                <!-- ISSUED BY + QR -->
+                <div class="det-issued-row">
+                    <div class="det-issued-info">
+                        <div class="det-section-label">Issued By</div>
+                        <div class="det-issued-name"><?= Html::e($agencyName) ?></div>
+                        <div class="det-issued-meta">IATA Accredited Agency &middot; Issued: <?= Html::e($docIssuedAt) ?></div>
+                        <?php if (count($officeGrid) > 0): ?>
+                        <div class="det-office-grid">
+                            <?php foreach ($officeGrid as $office): ?>
+                            <div class="det-office-card">
+                                <span class="det-office-label"><?= Html::e($office['label']) ?></span>
+                                <?php foreach ($office['lines'] as $i => $line): ?>
+                                <div class="det-office-line<?= $i > 0 ? ' is-muted' : '' ?>"><?= Html::e($line) ?></div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($verifyUrl !== ''): ?>
+                    <div class="det-verify-box">
+                        <span class="det-verify-label">Verify Booking</span>
+                        <div class="det-qr" id="etQr"></div>
+                        <?php if ($docReference !== ''): ?><div class="det-verify-ref"><?= Html::e($docReference) ?></div><?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- T&C -->
+            <div class="det-tnc">
+                <div class="det-section-label">Important Notices</div>
+                <div class="det-tnc-grid">
+                    <span class="det-tnc-item"><span class="det-bullet">&middot;</span>Passenger name must exactly match their valid government-issued ID.</span>
+                    <span class="det-tnc-item"><span class="det-bullet">&middot;</span>Report any ticket errors to us within 1 hour of receiving it.</span>
+                    <span class="det-tnc-item"><span class="det-bullet">&middot;</span>Re-confirm your flight at least 1 day before scheduled departure.</span>
+                    <span class="det-tnc-item"><span class="det-bullet">&middot;</span>Arrive at the airport at least 1.5 hours before domestic departure.</span>
+                    <span class="det-tnc-item"><span class="det-bullet">&middot;</span>Changes &amp; cancellations must be made &ge;4 hrs before departure, per airline terms.</span>
+                    <span class="det-tnc-item"><span class="det-bullet">&middot;</span>Bank card surcharges are non-refundable. Call or message us anytime for help.</span>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="det-tagline-row">
+                <div><span class="det-tagline">Your Trusted Travel Partner Since 2012</span><span class="det-tagline-site">roamingnepal.com</span></div>
+                <div class="det-social" aria-hidden="true">
+                    <span title="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0022 12z"/></svg></span>
+                    <span title="Instagram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.7 0 3.1 0 4.1.1 1.1 0 1.8.2 2.4.5.6.2 1.1.6 1.6 1.1.5.5.8.9 1.1 1.6.2.6.4 1.3.5 2.4.1 1 .1 1.4.1 4.1s0 3.1-.1 4.1c0 1.1-.2 1.8-.5 2.4-.2.6-.6 1.1-1.1 1.6-.5.5-.9.8-1.6 1.1-.6.2-1.3.4-2.4.5-1 .1-1.4.1-4.1.1s-3.1 0-4.1-.1c-1.1 0-1.8-.2-2.4-.5-.6-.2-1.1-.6-1.6-1.1-.5-.5-.8-.9-1.1-1.6-.2-.6-.4-1.3-.5-2.4C2 15.1 2 14.7 2 12s0-3.1.1-4.1c0-1.1.2-1.8.5-2.4.2-.6.6-1.1 1.1-1.6.5-.5.9-.8 1.6-1.1.6-.2 1.3-.4 2.4-.5C8.9 2 9.3 2 12 2zm0 5a5 5 0 100 10 5 5 0 000-10zm0 8.2a3.2 3.2 0 110-6.4 3.2 3.2 0 010 6.4zm5.2-8.4a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4z"/></svg></span>
+                    <span title="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.5 15.2L2 22l4.9-1.5A10 10 0 1012 2zm5.8 14.3c-.2.7-1.4 1.3-2 1.4-.5.1-1.1.2-3.6-.8-3-1.2-4.9-4.3-5.1-4.5-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.4.8-.4h.5c.2 0 .4 0 .6.5.2.5.7 1.8.8 1.9.1.2.1.3 0 .5-.1.2-.1.3-.3.5-.1.2-.3.4-.4.5-.1.1-.3.3-.1.6.2.3.9 1.4 1.9 2.3 1.3 1.2 2.4 1.5 2.7 1.7.3.2.5.1.7-.1.2-.2.8-.9 1-1.2.2-.3.4-.2.7-.1.3.1 1.7.8 2 1 .3.1.5.2.6.3.1.2.1.9-.1 1.6z"/></svg></span>
+                </div>
+            </div>
+            <div class="det-copyright">
+                <span>&copy; <?= date('Y') ?> <?= Html::e($agencyName) ?> &middot; IATA Accredited Agency</span>
+                <span class="is-italic">This is NOT a VAT / Tax Invoice</span>
+            </div>
+        </article>
+
         <?php else: ?>
 
         <article class="et-doc" id="eticketDoc">
@@ -468,12 +777,55 @@ $fmtNpr = static fn (float $n): string => 'NPR ' . number_format($n, 0);
   <?php if ($verifyUrl !== ''): ?>
   if (qrEl && window.QRCode) {
     try {
-      new window.QRCode(qrEl, { text: <?= json_encode($verifyUrl) ?>, width: 84, height: 84, colorDark: '#0F367B', colorLight: '#ffffff' });
+      var qrSize = <?= $isDomestic ? 92 : 84 ?>;
+      new window.QRCode(qrEl, { text: <?= json_encode($verifyUrl) ?>, width: qrSize, height: qrSize, colorDark: '#0F367B', colorLight: '#ffffff' });
     } catch (e) {}
   }
   <?php endif; ?>
   var printBtn = document.getElementById('etPrintBtn');
   if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+
+  // Fare-type segmented control: highlight the picked option immediately,
+  // without waiting for the form to resubmit.
+  document.querySelectorAll('input[name="refundable"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      document.querySelectorAll('.et-segmented-opt').forEach(function (opt) { opt.classList.remove('is-active'); });
+      input.closest('.et-segmented-opt').classList.add('is-active');
+    });
+  });
+
+  // Domestic promo banner: cycle the 6 offers 3-at-a-time, fading between sets.
+  var promoGrid = document.getElementById('detPromoGrid');
+  if (promoGrid) {
+    var offers = [];
+    try { offers = JSON.parse(promoGrid.dataset.offers || '[]'); } catch (e) {}
+    var dots = document.querySelectorAll('#detPromoDots .det-dot');
+    var slot = 0;
+    function renderSlot(i) {
+      var set = offers.slice(i, i + 3);
+      promoGrid.innerHTML = set.map(function (o) {
+        return '<div class="det-offer"><div class="det-offer-icon">' + o.icon + '</div>' +
+          '<span class="det-offer-tag"></span><div class="det-offer-title"></div><div class="det-offer-body"></div></div>';
+      }).join('');
+      var cards = promoGrid.querySelectorAll('.det-offer');
+      set.forEach(function (o, idx) {
+        cards[idx].querySelector('.det-offer-tag').textContent = o.tag;
+        cards[idx].querySelector('.det-offer-title').textContent = o.title;
+        cards[idx].querySelector('.det-offer-body').textContent = o.body;
+      });
+      dots.forEach(function (d, idx) { d.classList.toggle('is-active', idx === (i === 0 ? 0 : 1)); });
+    }
+    if (offers.length > 3) {
+      setInterval(function () {
+        promoGrid.classList.add('is-fading');
+        setTimeout(function () {
+          slot = slot === 0 ? 3 : 0;
+          renderSlot(slot);
+          promoGrid.classList.remove('is-fading');
+        }, 550);
+      }, 5000);
+    }
+  }
 })();
 </script>
 </body>

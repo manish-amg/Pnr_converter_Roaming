@@ -126,8 +126,9 @@ html, body {
 ════════════════════════════════════════════════════ */
 .et-layout { display: block !important; }
 .et-preview-pane { background: #fff !important; }
-.et-doc {
+.et-doc, .det-doc {
   max-width: 100% !important; margin: 0 !important;
   box-shadow: none !important; border-radius: 0 !important;
 }
-.et-leg, .et-connect-divider { page-break-inside: avoid; break-inside: avoid; }
+.et-leg, .et-connect-divider, .det-return-divider { page-break-inside: avoid; break-inside: avoid; }
+.det-promo { display: none !important; }

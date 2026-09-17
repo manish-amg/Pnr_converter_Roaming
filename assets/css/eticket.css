@@ -69,6 +69,15 @@
 }
 .et-toggle-note { color: var(--rn-muted); font-size: 11px; }
 
+.et-segmented { display: flex; border: 1px solid var(--rn-line); border-radius: 8px; overflow: hidden; }
+.et-segmented-opt {
+  flex: 1; text-align: center; padding: 8px 6px; font-size: 12px; font-weight: 600;
+  color: var(--rn-ink-mid); cursor: pointer; background: var(--rn-surface);
+}
+.et-segmented-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.et-segmented-opt.is-active { background: var(--rn-navy-light); color: var(--rn-navy); }
+.et-segmented-opt + .et-segmented-opt { border-left: 1px solid var(--rn-line); }
+
 .et-form-ft { padding: 14px 20px; border-top: 1px solid var(--rn-line); }
 .et-generate-btn {
   width: 100%; padding: 12px; border: none; border-radius: var(--rn-radius);
@@ -247,6 +256,194 @@
 .et-doc-footer span { color: rgba(255,255,255,.6); font-size: 10px; }
 .et-doc-footer strong { color: #fff; }
 .et-doc-footer-note { font-style: italic; color: rgba(255,255,255,.35) !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DOMESTIC E-TICKET — rich branded document (Buddha/Yeti/Tara/
+   Shree/Summit Air). Its own "det-" namespace since the layout
+   (promo banner, fare breakdown, office grid) is materially
+   different from the shared "et-" international template above.
+═══════════════════════════════════════════════════════════════ */
+.det-doc {
+  max-width: 794px; margin: 24px auto 60px; background: #fff;
+  border-radius: 4px; overflow: hidden;
+  box-shadow: 0 6px 48px rgba(15,54,123,.18);
+}
+
+.det-header {
+  background: #0F367B; padding: 16px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.det-header-left { display: flex; align-items: center; gap: 14px; }
+.det-logo-pill { background: #fff; border-radius: 10px; padding: 8px 16px; line-height: 0; box-shadow: 0 2px 16px rgba(0,0,0,.28); }
+.det-logo-pill img { height: 46px; width: auto; object-fit: contain; display: block; }
+.det-vdiv { width: 1px; height: 36px; background: rgba(255,255,255,.18); }
+.det-eyebrow { font: 600 9px/1 'Sora', sans-serif; letter-spacing: 2.5px; color: rgba(255,255,255,.5); text-transform: uppercase; margin-bottom: 3px; }
+.det-title { font: 600 14px 'Poppins', sans-serif; color: #fff; }
+.det-header-right { text-align: right; }
+.det-header-right .det-eyebrow { letter-spacing: 2px; color: rgba(255,255,255,.45); }
+.det-pnr { font: 700 22px 'Poppins', sans-serif; letter-spacing: 3.5px; color: #fff; }
+
+/* Promo banner */
+.det-promo { background: #0A2B68; padding: 14px 28px; }
+.det-promo-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.det-promo-label { font: 600 8px 'Sora', sans-serif; letter-spacing: 2.5px; color: rgba(255,255,255,.38); text-transform: uppercase; }
+.det-promo-dots { display: flex; gap: 5px; }
+.det-dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; opacity: .25; }
+.det-dot.is-active { opacity: 1; }
+.det-promo-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+  border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.07);
+  transition: opacity .55s ease;
+}
+.det-promo-grid.is-fading { opacity: 0; }
+.det-offer { background: rgba(255,255,255,.04); padding: 12px 14px; }
+.det-offer-icon {
+  width: 22px; height: 22px; border-radius: 4px; background: #299FEF;
+  display: flex; align-items: center; justify-content: center; font-size: 11px; margin-bottom: 8px;
+}
+.det-offer-tag { display: block; font: 700 8.5px 'Sora', sans-serif; letter-spacing: .8px; color: #F5BC41; text-transform: uppercase; margin-bottom: 3px; }
+.det-offer-title { font: 700 13px 'Poppins', sans-serif; color: #fff; line-height: 1.2; margin-bottom: 4px; }
+.det-offer-body { font-size: 9.5px; color: rgba(255,255,255,.5); line-height: 1.5; }
+
+/* Airline bar */
+.det-airline-bar {
+  background: #F6F9FF; border-bottom: 1px solid #E6EDF8; padding: 10px 28px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+.det-airline-left { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.det-airline-left > div + div { border-left: 1px solid #E5E7EB; padding-left: 18px; }
+.det-airline-microlabel { display: block; font: 600 9px 'Sora', sans-serif; letter-spacing: 1.5px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 2px; }
+.det-airline-op { font: 700 13.5px 'Poppins', sans-serif; color: #111827; }
+.det-airline-flightno { font: 700 13.5px 'Poppins', sans-serif; color: #0F367B; }
+.det-airline-aircraft { font-size: 12px; font-weight: 500; color: #6B7280; }
+.det-airline-right { display: flex; align-items: center; gap: 10px; }
+.det-airline-code-badge { padding: 5px 13px; border-radius: 6px; font: 800 13px 'Poppins', sans-serif; letter-spacing: 1px; border: 1.5px solid; }
+.det-airline-logo { height: 34px; max-width: 110px; object-fit: contain; }
+.det-refund-badge { padding: 4px 12px; border-radius: 999px; color: #fff; font-size: 10px; font-weight: 600; letter-spacing: .3px; }
+.det-refund-badge.is-refundable { background: #219653; }
+.det-refund-badge.is-norefund { background: #FF3B53; }
+
+.det-body { padding: 20px 28px; }
+.det-section-label { font: 600 9px 'Sora', sans-serif; letter-spacing: 2px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 9px; }
+
+/* Passenger table */
+.det-pax-table { width: 100%; border-collapse: collapse; }
+.det-pax-table th {
+  text-align: left; font: 600 9px 'Sora', sans-serif; letter-spacing: .8px; color: #D1D5DB;
+  text-transform: uppercase; padding-bottom: 6px; border-bottom: 1px solid #F3F4F6;
+}
+.det-pax-table td { padding: 8px 0; border-bottom: 1px solid #F9FAFB; font-size: 11px; color: #6B7280; }
+.det-pax-table td.det-pax-name { font-size: 12px; font-weight: 700; color: #111827; letter-spacing: -.2px; }
+.det-pax-table td.det-pax-tkno { color: #374151; letter-spacing: .5px; }
+.det-pax-table td.det-pax-bag { font-weight: 600; color: #0F367B; }
+.det-pax-empty { color: #9CA3AF !important; font-style: italic; }
+
+.det-perforation { display: flex; align-items: center; margin: 18px -28px; }
+.det-perforation span { width: 14px; height: 14px; border-radius: 50%; background: #E4EAF3; flex-shrink: 0; }
+.det-perforation::before { content: ''; flex: 1; border-top: 2px dashed #DDE3EE; }
+
+/* Flight legs */
+.det-leg-badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; margin-bottom: 10px;
+  border-radius: 999px; background: #EAF6FE; color: #1E8AD9; font-size: 10.5px; font-weight: 700;
+}
+.det-return-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0 14px; }
+.det-return-divider span:first-child, .det-return-divider span:last-child { flex: 1; border-top: 2px dashed #DDE3EE; }
+.det-return-label {
+  font: 600 10.5px 'Sora', sans-serif; letter-spacing: .04em; color: #9CA3AF;
+  text-transform: uppercase; white-space: nowrap;
+}
+
+.det-route-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.det-route-port { width: 148px; flex: none; }
+.det-route-port-r { text-align: right; }
+.det-route-label { display: block; font: 600 9px 'Sora', sans-serif; letter-spacing: 1.5px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 3px; }
+.det-route-code { font: 800 50px/1 'Poppins', sans-serif; letter-spacing: -2px; color: #0F367B; }
+.det-route-name { font-size: 10.5px; color: #6B7280; margin-top: 4px; line-height: 1.35; }
+.det-route-mid { flex: 1; text-align: center; padding: 0 8px; }
+.det-route-dur { font-size: 10.5px; color: #9CA3AF; margin-bottom: 7px; }
+.det-route-line { position: relative; height: 1px; background: linear-gradient(to right, #E5E7EB, #299FEF 45%, #299FEF 55%, #E5E7EB); }
+.det-route-plane {
+  position: absolute; top: -11px; left: 50%; transform: translateX(-50%) rotate(90deg);
+  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #D5EDFD; background: #fff;
+  box-shadow: 0 2px 6px rgba(41,159,239,.18); display: flex; align-items: center; justify-content: center;
+  color: #299FEF; font-size: 13px;
+}
+.det-route-date { font-size: 10.5px; color: #9CA3AF; margin-top: 9px; }
+
+.det-detail-strip {
+  background: #F7FBFF; border: 1px solid #D5EDFD; border-radius: 8px; padding: 12px 16px;
+  display: grid; grid-template-columns: repeat(5, 1fr); margin-bottom: 4px;
+}
+.det-detail-label { display: block; font: 600 8.5px 'Sora', sans-serif; letter-spacing: 1px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 3px; }
+.det-detail-val { font: 700 19px 'Poppins', sans-serif; color: #111827; line-height: 1.2; }
+.det-detail-val-sm { font-size: 13px; }
+.det-detail-bag { color: #0F367B; }
+.det-detail-sub { display: block; font-size: 9px; color: #9CA3AF; margin-top: 2px; }
+.det-plus-day { color: #FF3B53; font-size: 11px; font-weight: 800; vertical-align: super; margin-left: 1px; }
+
+.det-divider { border-top: 1px solid #F1F5F9; margin: 20px 0; }
+
+/* Fare breakdown */
+.det-fare-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.det-fare-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F3F4F6; font-size: 12px; color: #6B7280; }
+.det-fare-row span:last-child { font: 600 12.5px 'Inter', sans-serif; color: #374151; }
+.det-fare-row.det-fare-subtotal { border-bottom: none; }
+.det-fare-row.det-fare-subtotal span:first-child { font-size: 12.5px; font-weight: 700; color: #111827; }
+.det-fare-row.det-fare-subtotal span:last-child { font-size: 13.5px; font-weight: 700; color: #111827; }
+.det-fare-legs-note { font-size: 10px; color: #9CA3AF; margin-top: 4px; }
+.det-total-card { background: #0F367B; border-radius: 10px; padding: 18px 20px; }
+.det-total-card .det-section-label { color: rgba(255,255,255,.45); }
+.det-total-amount { font: 800 26px 'Poppins', sans-serif; letter-spacing: -1px; color: #fff; }
+.det-total-sub { font-size: 9.5px; color: rgba(255,255,255,.38); margin-top: 4px; }
+.det-total-guarantee {
+  display: flex; align-items: center; gap: 6px; border-top: 1px solid rgba(255,255,255,.1);
+  padding-top: 11px; margin-top: 12px; font-size: 9.5px; font-weight: 600; color: #F5BC41;
+}
+
+/* Issued by + QR */
+.det-issued-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.det-issued-name { font: 700 13.5px 'Poppins', sans-serif; color: #0F367B; }
+.det-issued-meta { font-size: 10px; color: #9CA3AF; margin-top: 2px; }
+.det-office-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.det-office-card { background: #F7FAFF; border: 1px solid #E6EDF8; border-radius: 6px; padding: 9px 11px; }
+.det-office-label { display: block; font: 700 8px 'Sora', sans-serif; letter-spacing: 1px; color: #299FEF; text-transform: uppercase; margin-bottom: 5px; }
+.det-office-line { font-size: 9px; color: #374151; line-height: 1.55; }
+.det-office-line.is-muted { color: #6B7280; margin-top: 4px; }
+.det-verify-box { text-align: center; flex-shrink: 0; }
+.det-verify-label { display: block; font: 700 8px 'Sora', sans-serif; letter-spacing: 1.5px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 6px; }
+.det-qr { width: 92px; height: 92px; border: 1px solid #E5E7EB; border-radius: 6px; overflow: hidden; background: #fff; }
+.det-verify-ref { font-size: 9px; color: #C0C4CC; letter-spacing: 1.2px; margin-top: 4px; font-family: 'Inter', sans-serif; }
+
+/* T&C */
+.det-tnc { background: #F9FAFB; border-top: 1px solid #F0F2F5; padding: 12px 28px; }
+.det-tnc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }
+.det-tnc-item { display: flex; gap: 5px; align-items: flex-start; font-size: 10px; color: #9CA3AF; line-height: 1.5; }
+.det-tnc-item .det-bullet { color: #299FEF; flex-shrink: 0; margin-top: 2px; }
+
+/* Footer */
+.det-tagline-row {
+  background: #0A2B68; padding: 10px 28px; border-top: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.det-tagline { font: italic 400 10px 'Poppins', sans-serif; color: rgba(255,255,255,.5); }
+.det-tagline-site { color: #299FEF; font-weight: 500; font-size: 10px; margin-left: 8px; }
+.det-social { display: flex; gap: 6px; }
+.det-social span {
+  width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6);
+}
+.det-social svg { width: 12px; height: 12px; }
+.det-copyright { background: #0F367B; padding: 7px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.det-copyright span { font-size: 9px; color: rgba(255,255,255,.3); }
+.det-copyright span.is-italic { font-style: italic; color: rgba(255,255,255,.24); }
+
+@media (max-width: 900px) {
+  .det-promo-grid { grid-template-columns: 1fr; }
+  .det-detail-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .det-office-grid { grid-template-columns: 1fr; }
+  .det-route-port { width: auto; }
+}
 
 /* ══ Responsive ══════════════════════════════════════════════════ */
 @media (max-width: 900px) {

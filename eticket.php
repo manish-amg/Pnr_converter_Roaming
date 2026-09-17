@@ -26,6 +26,8 @@ $result = null;
 $fareBase = '';
 $fareFsc = '';
 $fareTax = '';
+$baggage = '15 KG + 5 KG';
+$refundable = true;
 $showFare = true;
 $isDomestic = null;
 $creditError = '';
@@ -40,6 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fareBase = trim((string) ($_POST['fare_base'] ?? ''));
     $fareFsc  = trim((string) ($_POST['fare_fsc'] ?? ''));
     $fareTax  = trim((string) ($_POST['fare_tax'] ?? ''));
+    $baggage  = trim((string) ($_POST['baggage'] ?? '')) !== '' ? trim((string) $_POST['baggage']) : '15 KG + 5 KG';
+    $refundable = ($_POST['refundable'] ?? '1') === '1';
 
     $inputHash = trim($rawInput) !== '' ? hash('sha256', trim($rawInput)) : null;
     $isNewDocument = $inputHash !== null && $inputHash !== ($_SESSION['pnrc_eticket_last_hash'] ?? null);
