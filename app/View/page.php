@@ -1340,7 +1340,7 @@ Example:
                 ];
                 $branches = is_array($footerCfg['branches'] ?? null) ? $footerCfg['branches'] : [
                     ['title' => 'POKHARA', 'lines' => ['Lakeside (Khahare), Kaski', '+977-61-591401 / 591402']],
-                    ['title' => 'AUSTRALIA', 'lines' => ['15 Crossing Rd, Mernda VIC 3754', '+(61) 0452055393']],
+                    ['title' => 'AUSTRALIA', 'lines' => ['823 Pascoe Vale Road, Glenroy VIC 3046', '+(61) 0452055393']],
                 ];
             ?>
                 <div class="card-footer">
