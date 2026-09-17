@@ -121,7 +121,14 @@ final class Auth
     public static function isInternal(): bool
     {
         $user = self::user();
-        return $user !== null && in_array($user['role'], ['internal', 'superadmin'], true);
+        if ($user === null) {
+            return false;
+        }
+        // Superadmin is always unlimited. Everyone else is unlimited only via
+        // the is_internal flag — decoupled from role so an agency owner can
+        // be granted it without losing owner-level permissions elsewhere,
+        // which required role='owner' specifically.
+        return $user['role'] === 'superadmin' || (int) ($user['is_internal'] ?? 0) === 1;
     }
 
     /** True when the current user has hit today's free-conversion cap. */

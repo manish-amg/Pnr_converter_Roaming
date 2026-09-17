@@ -35,17 +35,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'toggle_internal') {
         $targetId = (int) ($_POST['user_id'] ?? 0);
-        $target = $pdo->prepare('SELECT id, role FROM users WHERE id = :id LIMIT 1');
+        $target = $pdo->prepare('SELECT id, role, is_internal FROM users WHERE id = :id LIMIT 1');
         $target->execute(['id' => $targetId]);
         $targetRow = $target->fetch();
 
-        if ($targetRow !== false && in_array($targetRow['role'], ['agent', 'internal'], true)) {
-            $newRole = $targetRow['role'] === 'internal' ? 'agent' : 'internal';
-            $pdo->prepare('UPDATE users SET role = :role WHERE id = :id')
-                ->execute(['role' => $newRole, 'id' => $targetId]);
-            $notice = 'Role updated.';
+        // Agent or owner — internal status is a flag independent of role, so
+        // flagging an owner doesn't strip their owner-level permissions
+        // (team management, branding) elsewhere in the app.
+        if ($targetRow !== false && in_array($targetRow['role'], ['agent', 'owner'], true)) {
+            $newVal = ((int) $targetRow['is_internal']) === 1 ? 0 : 1;
+            $pdo->prepare('UPDATE users SET is_internal = :v WHERE id = :id')
+                ->execute(['v' => $newVal, 'id' => $targetId]);
+            $notice = $newVal === 1 ? 'Flagged as internal (unlimited, no credit charges).' : 'Internal flag removed.';
         } else {
-            $error = 'Only agent accounts can be flagged internal.';
+            $error = 'Only agency owner or agent accounts can be flagged internal.';
         }
     }
 
@@ -255,21 +258,23 @@ $asset = static function (string $path): string {
             <section class="acct-card acct-card-wide">
                 <h2 class="acct-card-title">Users</h2>
                 <table class="acct-table">
-                    <thead><tr><th>Name</th><th>Email</th><th>Agency</th><th>Role</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Name</th><th>Email</th><th>Agency</th><th>Role</th><th>Internal</th><th>Status</th><th></th></tr></thead>
                     <tbody>
                         <?php foreach ($users as $u): ?>
+                        <?php $uIsInternal = ((int) ($u['is_internal'] ?? 0)) === 1; ?>
                         <tr>
                             <td><?= Html::e((string) $u['name']) ?></td>
                             <td><?= Html::e((string) $u['email']) ?></td>
                             <td><?= Html::e((string) ($u['agency_name'] ?? '—')) ?></td>
                             <td><?= Html::e(ucfirst((string) $u['role'])) ?></td>
+                            <td><?= $uIsInternal ? 'Yes' : '—' ?></td>
                             <td><?= ((int) $u['is_active']) === 1 ? 'Active' : 'Disabled' ?></td>
                             <td style="white-space:nowrap;">
-                                <?php if (in_array($u['role'], ['agent', 'internal'], true)): ?>
+                                <?php if (in_array($u['role'], ['agent', 'owner'], true)): ?>
                                 <form method="post" style="display:inline;">
                                     <input type="hidden" name="action" value="toggle_internal">
                                     <input type="hidden" name="user_id" value="<?= Html::e((string) $u['id']) ?>">
-                                    <button type="submit" class="acct-pill-btn"><?= $u['role'] === 'internal' ? 'Unflag internal' : 'Flag internal' ?></button>
+                                    <button type="submit" class="acct-pill-btn"><?= $uIsInternal ? 'Unflag internal' : 'Flag internal' ?></button>
                                 </form>
                                 <?php endif; ?>
                                 <?php if ($u['role'] !== 'superadmin'): ?>
